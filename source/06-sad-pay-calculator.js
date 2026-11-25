@@ -1,0 +1,260 @@
+<!-- 06-sad-pay-calculator.js -->
+
+/* ====================================================================================
+   [EDIT-PAY-DB] SAD PAY CALCULATOR (BASE PAY + BAH + BAS + ROLE BONUS -> PAY PERIOD)
+   ==================================================================================== */
+const PAY_DB_FALLBACK = {
+  baseByGradeAndYos: {},
+  mhaNames: [],
+  zipToMhaIdx: {},
+  mhaBahByIdx: {}
+};
+
+const PAY_DAYS_PER_MONTH = 30;
+
+// Manual code switch: set to false to turn BAS off globally without adding UI controls
+const INCLUDE_BAS_BY_DEFAULT = true;
+
+// 2026 monthly BAS rates (Enlisted vs. Officer/Warrant)
+const BAS_MONTHLY_RATES_2026 = {
+  enlisted: 476.95,
+  officer: 328.48
+};
+
+// Per-pay-period role incentive bonuses (USD per pay period, awarded in full if >= 1 On Shift day in PP)
+const ROLE_PP_INCENTIVE_BONUS = {
+  "C2": 1000,
+  "External Support": 1000,
+  "Facility Leadership": 2000,
+  "General Purpose": 2000
+};
+
+// Display labels & pre-tax estimate tag
+const PAY_LABELS = {
+  base: "Fee-DMNA (Base Pay)",
+  adlCom: "Adl Com (BAH + BAS)",
+  incentive: "Role Bonus",
+  estimateTag: "Est. · Before Tax"
+};
+
+function getPayDatabase() {
+  return (typeof PAY_RATE_DB !== "undefined" && PAY_RATE_DB) ? PAY_RATE_DB : PAY_DB_FALLBACK;
+}
+
+const PAY_PROFILE_DEFAULTS = {
+  grade: "E-4",
+  yosKey: "over4",
+  zipCode: "",
+  depStatus: "withoutDep", // "withDep" | "withoutDep"
+  bahEntitled: true,
+  basEntitled: true,
+  roleName: ""           // "C2" | "External Support" | "Facility Leadership" | "General Purpose" | ""
+};
+
+function normalizeBooleanFlag(val, fallback = true) {
+  if (typeof val === "boolean") return val;
+  if (typeof val === "string") {
+    const lower = val.trim().toLowerCase();
+    if (lower === "true" || lower === "yes" || lower === "1") return true;
+    if (lower === "false" || lower === "no" || lower === "0") return false;
+  }
+  return Boolean(fallback);
+}
+
+function normalizeZip5(rawZip) {
+  const digits = String(rawZip || "").replace(/\D/g, "");
+  return digits.length >= 5 ? digits.slice(0, 5) : digits;
+}
+
+function normalizeRoleName(rawRole, legacyRoleTier) {
+  const role = String(rawRole || "").trim();
+  if (ROLE_PP_INCENTIVE_BONUS[role] !== undefined) return role;
+  if (legacyRoleTier === "c2") return "C2";
+  if (legacyRoleTier === "fac_gen") return "Facility Leadership";
+  return "";
+}
+
+function getPayProfile() {
+  try {
+    const raw = localStorage.getItem(`${STORAGE_KEY}_PAY_PROFILE`);
+    if (!raw) return { ...PAY_PROFILE_DEFAULTS };
+    const parsed = JSON.parse(raw);
+    return {
+      grade: parsed.grade || PAY_PROFILE_DEFAULTS.grade,
+      yosKey: parsed.yosKey || PAY_PROFILE_DEFAULTS.yosKey,
+      zipCode: normalizeZip5(parsed.zipCode),
+      depStatus: parsed.depStatus === "withDep" ? "withDep" : "withoutDep",
+      bahEntitled: normalizeBooleanFlag(parsed.bahEntitled, PAY_PROFILE_DEFAULTS.bahEntitled),
+      basEntitled: normalizeBooleanFlag(parsed.basEntitled, PAY_PROFILE_DEFAULTS.basEntitled),
+      roleName: normalizeRoleName(parsed.roleName, parsed.roleTier)
+    };
+  } catch (e) {
+    return { ...PAY_PROFILE_DEFAULTS };
+  }
+}
+
+function savePayProfile(profile) {
+  try {
+    localStorage.setItem(`${STORAGE_KEY}_PAY_PROFILE`, JSON.stringify({
+      grade: profile.grade || PAY_PROFILE_DEFAULTS.grade,
+      yosKey: profile.yosKey || PAY_PROFILE_DEFAULTS.yosKey,
+      zipCode: normalizeZip5(profile.zipCode),
+      depStatus: profile.depStatus === "withDep" ? "withDep" : "withoutDep",
+      bahEntitled: normalizeBooleanFlag(profile.bahEntitled, PAY_PROFILE_DEFAULTS.bahEntitled),
+      basEntitled: normalizeBooleanFlag(profile.basEntitled, PAY_PROFILE_DEFAULTS.basEntitled),
+      roleName: normalizeRoleName(profile.roleName, profile.roleTier)
+    }));
+  } catch (e) {
+    console.warn("Pay profile save skipped:", e);
+  }
+}
+
+/* Truncates (rounds down) to 2 decimal places without floating-point drift */
+function truncateCents(amount) {
+  const val = Number(amount) || 0;
+  return Math.floor((val + 1e-9) * 100) / 100;
+}
+
+/* Converts monthly table rates into daily rates (monthly / 30), rounded down to cents */
+function convertMonthlyToDaily(monthlyAmount, daysPerMonth = PAY_DAYS_PER_MONTH, floorDaily = true) {
+  const monthly = Math.max(0, Number(monthlyAmount) || 0);
+  const divisor = daysPerMonth > 0 ? daysPerMonth : 30;
+  const rawDaily = monthly / divisor;
+  return floorDaily ? truncateCents(rawDaily) : rawDaily;
+}
+
+function getMonthlyBasForGrade(grade, basEntitled = true, includeBas = INCLUDE_BAS_BY_DEFAULT) {
+  if (!includeBas || !normalizeBooleanFlag(basEntitled, true)) return 0;
+  const g = String(grade || "").trim().toUpperCase();
+  if (g.startsWith("E-")) return BAS_MONTHLY_RATES_2026.enlisted;
+  if (g.startsWith("O-") || g.startsWith("W-")) return BAS_MONTHLY_RATES_2026.officer;
+  return 0;
+}
+
+function getPpIncentiveBonusForRole(roleName) {
+  const key = String(roleName || "").trim();
+  return Math.max(0, Number(ROLE_PP_INCENTIVE_BONUS[key]) || 0);
+}
+
+function resolveActiveRoleName(profile) {
+  if (typeof document !== "undefined") {
+    const wizBackdrop = document.getElementById("wizardBackdrop");
+    const wizRoleEl = document.getElementById("wizSmRoleInput");
+    if (wizBackdrop && wizBackdrop.classList.contains("open") && wizRoleEl && wizRoleEl.value) {
+      return normalizeRoleName(wizRoleEl.value);
+    }
+    const smRoleEl = document.getElementById("smRoleInput");
+    if (smRoleEl && smRoleEl.value) {
+      return normalizeRoleName(smRoleEl.value);
+    }
+  }
+  return normalizeRoleName(profile && profile.roleName, profile && profile.roleTier);
+}
+
+function lookupDailySadRates(profile, includeBas = INCLUDE_BAS_BY_DEFAULT) {
+  const db = getPayDatabase();
+  const grade = profile.grade || PAY_PROFILE_DEFAULTS.grade;
+  const yosKey = profile.yosKey || PAY_PROFILE_DEFAULTS.yosKey;
+  const zipCode = normalizeZip5(profile.zipCode);
+  const depStatus = profile.depStatus === "withDep" ? "withDep" : "withoutDep";
+  const bahEntitled = normalizeBooleanFlag(profile && profile.bahEntitled, PAY_PROFILE_DEFAULTS.bahEntitled);
+  const basEntitled = normalizeBooleanFlag(profile && profile.basEntitled, PAY_PROFILE_DEFAULTS.basEntitled);
+  const roleName = resolveActiveRoleName(profile);
+  const ppIncentiveBonus = getPpIncentiveBonusForRole(roleName);
+
+  const gradeBaseMap = (db.baseByGradeAndYos && db.baseByGradeAndYos[grade]) || {};
+  const monthlyBasePay = Math.max(0, Number(gradeBaseMap[yosKey]) || 0);
+  const dailyBasePay = convertMonthlyToDaily(monthlyBasePay, PAY_DAYS_PER_MONTH, true);
+  const exactDailyBasePay = convertMonthlyToDaily(monthlyBasePay, PAY_DAYS_PER_MONTH, false);
+
+  let mhaName = "";
+  let rawBahRateForMha = 0;
+
+  if (zipCode.length === 5 && db.zipToMhaIdx && db.zipToMhaIdx[zipCode] !== undefined) {
+    const mhaIdx = db.zipToMhaIdx[zipCode];
+    mhaName = (db.mhaNames && db.mhaNames[mhaIdx]) || "";
+    const mhaGrades = (db.mhaBahByIdx && db.mhaBahByIdx[String(mhaIdx)]) || {};
+    const pair = mhaGrades[grade]; // [monthlyWithDep, monthlyWithoutDep]
+    if (Array.isArray(pair)) {
+      rawBahRateForMha = Math.max(0, Number(depStatus === "withDep" ? pair[0] : pair[1]) || 0);
+    }
+  }
+
+  const monthlyBahOnlyRate = bahEntitled ? rawBahRateForMha : 0;
+  const effectiveBasIncluded = Boolean(includeBas) && basEntitled;
+  const monthlyBasRate = getMonthlyBasForGrade(grade, basEntitled, includeBas);
+  const monthlyBahRate = truncateCents(monthlyBahOnlyRate + monthlyBasRate);
+  const dailyBahRate = convertMonthlyToDaily(monthlyBahRate, PAY_DAYS_PER_MONTH, true);
+  const exactDailyBahRate = convertMonthlyToDaily(monthlyBahRate, PAY_DAYS_PER_MONTH, false);
+
+  const dailyTotalRate = truncateCents(dailyBasePay + dailyBahRate);
+
+  return {
+    grade,
+    yosKey,
+    zipCode,
+    mhaName,
+    zipMatched: Boolean(mhaName),
+    depStatus,
+    bahEntitled,
+    basEntitled,
+    roleName,
+    ppIncentiveBonus,
+    basIncluded: effectiveBasIncluded,
+    labels: PAY_LABELS,
+    monthlyBasePay,
+    monthlyBahOnlyRate,
+    monthlyBasRate,
+    monthlyBahRate,
+    dailyBasePay,
+    dailyBahRate,
+    exactDailyBasePay,
+    exactDailyBahRate,
+    dailyTotalRate
+  };
+}
+
+function computePayForPayPeriod(slotIdx, dayStatusIds) {
+  const profile = getPayProfile();
+  const rates = lookupDailySadRates(profile);
+  let paidSadDays = 0;
+  let onShiftDays = 0;
+
+  for (let d = 0; d < dayStatusIds.length; d++) {
+    const statusId = dayStatusIds[d];
+    const meta = getStatusMeta(statusId);
+    if (meta && meta.paidSad) paidSadDays++;
+    if (statusId === "shift") onShiftDays++;
+  }
+
+  const basePayTotal = truncateCents(paidSadDays * rates.dailyBasePay);
+  const bahTotal = truncateCents(paidSadDays * rates.dailyBahRate);
+  const incentiveQualified = onShiftDays >= 1;
+  const incentiveTotal = incentiveQualified ? truncateCents(rates.ppIncentiveBonus) : 0;
+  const totalPay = truncateCents(basePayTotal + bahTotal + incentiveTotal);
+
+  const incentivePart = rates.ppIncentiveBonus > 0
+    ? ` + ${PAY_LABELS.incentive} ${formatUsd(incentiveTotal)}`
+    : "";
+
+  return {
+    paidSadDays,
+    onShiftDays,
+    incentiveQualified,
+    ...rates,
+    basePayTotal,
+    bahTotal,
+    incentiveTotal,
+    totalPay,
+    summaryText: `${PAY_LABELS.base} ${formatUsd(basePayTotal)} + ${PAY_LABELS.adlCom} ${formatUsd(bahTotal)}${incentivePart} (${formatUsd(rates.dailyTotalRate)}/d · ${PAY_LABELS.estimateTag})`
+  };
+}
+
+function formatUsd(amount) {
+  return (Number(amount) || 0).toLocaleString("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+}

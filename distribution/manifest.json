@@ -1,0 +1,12 @@
+{
+  "name": "JTF Sentinel Duty & Leave Planner",
+  "short_name": "Sentinel Planner",
+  "description": "SAD DOCCS duty status, leave, deadlines, and pay estimate planner.",
+  "start_url": "./JTF_Sentinel_Planner_v1.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f1f3f4",
+  "theme_color": "#1a73e8",
+  "icons": []
+}

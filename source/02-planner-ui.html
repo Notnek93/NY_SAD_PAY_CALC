@@ -1,0 +1,664 @@
+<!-- 02-planner-ui.html -->
+
+<!-- ====================================================================================
+     [EDIT-MODALS-UI] 5-STEP WIZARD, EDIT SETTINGS, SOP MODAL, SP CONFLICT & MAIN UI
+     ==================================================================================== -->
+
+<!-- 5-Step Onboarding Wizard -->
+<div class="wizard-backdrop" id="wizardBackdrop">
+  <div class="wizard-dialog" role="dialog" aria-modal="true" aria-labelledby="wizardTitle">
+    <div class="wizard-header">
+      <h2 id="wizardTitle">🧭 JTF Sentinel Duty &amp; Leave Planner Setup</h2>
+      <p>Quick initial configuration — you can adjust everything later in Edit Settings.</p>
+    </div>
+
+    <div class="wizard-progress-wrap">
+      <div class="wizard-progress-top">
+        <span id="wizardStepLabel">Step 1 of 5</span>
+        <span id="wizardStepName">Choose View</span>
+      </div>
+      <div class="wizard-progress-track">
+        <div class="wizard-progress-fill" id="wizardProgressFill"></div>
+      </div>
+    </div>
+
+    <div class="wizard-body">
+      <!-- Step 1: Choose View -->
+      <div class="wizard-step active" id="wizardStep_1">
+        <h3 class="wizard-step-title">1. Choose Your Preferred View</h3>
+        <p class="wizard-step-desc">Select Desktop for the wide DA Form 6 matrix or Phone for a 7-column THU–WED mini-calendar.</p>
+        <div class="wizard-view-grid">
+          <div class="wizard-view-card selected" id="wizViewCard_desktop" onclick="selectWizardView('desktop')">
+            <div class="wizard-view-icon">💻</div>
+            <div class="wizard-view-name">Desktop View</div>
+            <div class="wizard-view-sub">Full 14-day DA-6 horizontal matrix &amp; wide summary</div>
+          </div>
+          <div class="wizard-view-card" id="wizViewCard_mobile" onclick="selectWizardView('mobile')">
+            <div class="wizard-view-icon">📱</div>
+            <div class="wizard-view-name">Phone View</div>
+            <div class="wizard-view-sub">Compact THU–WED weekly tiles &amp; inline status picker</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2: Schedule & RDOs -->
+      <div class="wizard-step" id="wizardStep_2">
+        <h3 class="wizard-step-title">2. Shift Schedule &amp; Regular RDOs</h3>
+        <p class="wizard-step-desc">Choose your shift cadence and regular RDO block. Holiday Special Passes on regular RDOs can auto-apply where eligible.</p>
+        <div class="wizard-form-stack">
+          <div class="field-group">
+            <label for="wizSchedSelect">Shift Schedule Type</label>
+            <select id="wizSchedSelect" class="top-select" onchange="onWizardSchedChange()">
+              <option value="alt">10–12 Hr Shift — 4/3 (6 RDOs / PP)</option>
+              <option value="std">8 Hr Shift — 5/2 (4 RDOs / PP)</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label for="wizRdoSelect">Regular RDO Preset</label>
+            <select id="wizRdoSelect" class="top-select"></select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3: SAD Pay & Leave -->
+      <div class="wizard-step" id="wizardStep_3">
+        <h3 class="wizard-step-title">3. SAD Pay Profile &amp; 18 NOV 2026 Leave Balance</h3>
+        <p class="wizard-step-desc">Enter your assignment role, grade, years of service, 5-digit ZIP for BAH/MHA lookup, BAH/BAS entitlement, and your 18 NOV 2026 SAD leave balance.</p>
+        <div class="wizard-form-stack">
+          <div class="field-group">
+            <label for="wizSmRoleInput">Assignment Role (Required for Incentive Tier)</label>
+            <select id="wizSmRoleInput" class="top-select" onchange="onWizardPayChange()">
+              <option value="">-- Select Assignment Role --</option>
+              <option value="C2">C2</option>
+              <option value="External Support">External Support</option>
+              <option value="Facility Leadership">Facility Leadership</option>
+              <option value="General Purpose">General Purpose</option>
+            </select>
+          </div>
+
+          <div class="wizard-field-grid-2">
+            <div class="field-group">
+              <label for="wizPayGradeSelect">Pay Grade</label>
+              <select id="wizPayGradeSelect" class="top-select" onchange="onWizardPayChange()">
+                <option value="E-1">E-1</option>
+                <option value="E-2">E-2</option>
+                <option value="E-3">E-3</option>
+                <option value="E-4" selected>E-4</option>
+                <option value="E-5">E-5</option>
+                <option value="E-6">E-6</option>
+                <option value="E-7">E-7</option>
+                <option value="E-8">E-8</option>
+                <option value="E-9">E-9</option>
+                <option value="W-1">W-1</option>
+                <option value="W-2">W-2</option>
+                <option value="W-3">W-3</option>
+                <option value="W-4">W-4</option>
+                <option value="W-5">W-5</option>
+                <option value="O-1">O-1</option>
+                <option value="O-2">O-2</option>
+                <option value="O-3">O-3</option>
+                <option value="O-1E">O-1E</option>
+                <option value="O-2E">O-2E</option>
+                <option value="O-3E">O-3E</option>
+                <option value="O-4">O-4</option>
+                <option value="O-5">O-5</option>
+                <option value="O-6">O-6</option>
+                <option value="O-7">O-7</option>
+                <option value="O-8">O-8</option>
+                <option value="O-9">O-9</option>
+                <option value="O-10">O-10</option>
+              </select>
+            </div>
+
+            <div class="field-group">
+              <label for="wizPayYosSelect">Years of Service</label>
+              <select id="wizPayYosSelect" class="top-select" onchange="onWizardPayChange()">
+                <option value="lt2">&lt; 2 Years</option>
+                <option value="over2">Over 2</option>
+                <option value="over3">Over 3</option>
+                <option value="over4" selected>Over 4</option>
+                <option value="over6">Over 6</option>
+                <option value="over8">Over 8</option>
+                <option value="over10">Over 10</option>
+                <option value="over12">Over 12</option>
+                <option value="over14">Over 14</option>
+                <option value="over16">Over 16</option>
+                <option value="over18">Over 18</option>
+                <option value="over20">Over 20</option>
+                <option value="over22">Over 22</option>
+                <option value="over24">Over 24</option>
+                <option value="over26">Over 26</option>
+                <option value="over28">Over 28</option>
+                <option value="over30">Over 30</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="wizard-field-grid-2">
+            <div class="field-group">
+              <label for="wizPayZipInput">Duty / Home 5-Digit ZIP</label>
+              <input type="text" id="wizPayZipInput" class="top-input" maxlength="5" inputmode="numeric" placeholder="e.g. 11201" oninput="onWizardPayChange()">
+            </div>
+
+            <div class="field-group">
+              <label for="wizPayDepSelect">Dependency Status (BAH)</label>
+              <select id="wizPayDepSelect" class="top-select" onchange="onWizardPayChange()">
+                <option value="withoutDep">Without Dependents</option>
+                <option value="withDep">With Dependents</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="wizard-field-grid-2">
+            <label class="oconus-toggle" style="background:var(--bg-light);border:1px solid var(--border);border-radius:6px;padding:8px 10px;">
+              <input type="checkbox" id="wizBahEntitledCheck" checked onchange="onWizardPayChange()">
+              <span>Entitled to BAH</span>
+            </label>
+
+            <label class="oconus-toggle" style="background:var(--bg-light);border:1px solid var(--border);border-radius:6px;padding:8px 10px;">
+              <input type="checkbox" id="wizBasEntitledCheck" checked onchange="onWizardPayChange()">
+              <span>Entitled to BAS</span>
+            </label>
+          </div>
+
+          <div id="wizPayZipMhaBadge" style="font-size:11.5px;font-weight:600;color:var(--text-sub);background:var(--bg-light);padding:7px 9px;border-radius:6px;border:1px solid var(--border);"></div>
+
+          <div class="field-group">
+            <label for="wizStartingLeave">18 NOV 2026 Leave Balance (Days)</label>
+            <input type="number" id="wizStartingLeave" class="top-input" step="0.25" min="0" placeholder="0.00">
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 4: Beginning Pay Period -->
+      <div class="wizard-step" id="wizardStep_4">
+        <h3 class="wizard-step-title">4. Beginning Pay Period</h3>
+        <p class="wizard-step-desc">Select the pay period where your plan starts (up to the current pay period). Additional pay periods can be added as you plan ahead.</p>
+        <div class="wizard-form-stack">
+          <div class="field-group">
+            <label for="wizPpSelect">Beginning Pay Period</label>
+            <select id="wizPpSelect" class="top-select"></select>
+          </div>
+          <div>
+            <button type="button" class="btn-action" onclick="setWizardToCurrentPp()">📍 Jump to Current Pay Period</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 5: How-To Offer & Finish -->
+      <div class="wizard-step" id="wizardStep_5">
+        <h3 class="wizard-step-title">5. Ready to Start Planning</h3>
+        <p class="wizard-step-desc">Would you like to review the quick How-To / SOP guide first, or jump straight into your schedule?</p>
+        <div class="wizard-offer-box">
+          <button type="button" class="wizard-offer-btn sop-cta" onclick="finishWizard(true)">📖 Open How-To / SOP Guide First</button>
+          <button type="button" class="wizard-offer-btn skip-cta" onclick="finishWizard(false)">✓ Finish &amp; Go to Schedule</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="wizard-footer">
+      <button type="button" class="wiz-btn" id="wizBackBtn" onclick="wizardStepNav(-1)" disabled>◀ Back</button>
+      <button type="button" class="wiz-btn wiz-btn-primary" id="wizNextBtn" onclick="wizardStepNav(1)">Next ▶</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Settings Modal (Includes Smart Print Guard) -->
+<div class="settings-backdrop" id="settingsBackdrop">
+  <div class="settings-dialog" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+    <div class="settings-header">
+      <div>
+        <h3 id="settingsTitle">⚙️ Planner Settings, CoC Info &amp; Pay Profile</h3>
+        <p>Changes auto-save locally to this browser.</p>
+      </div>
+      <button type="button" class="sop-close-x" onclick="closeSettingsModal()">✕ Close</button>
+    </div>
+
+    <div class="settings-body">
+      <div class="settings-guard-alert" id="settingsGuardAlert">
+        ⚠️ Complete the highlighted Chain of Command &amp; Service Member fields below before exporting or downloading your CoC report.
+      </div>
+
+      <div class="settings-section-title">Service Member &amp; Chain of Command (Required for CoC Export)</div>
+      <div class="settings-grid-2">
+        <div class="field-group" id="fg_smNameInput">
+          <label for="smNameInput">Service Member (Rank, Last, First)</label>
+          <input type="text" id="smNameInput" class="top-input" placeholder="e.g. SPC Lee, Kenton" oninput="onUserMetadataInput()">
+          <span class="field-missing-hint">Required for CoC report</span>
+        </div>
+
+        <div class="field-group" id="fg_smRoleInput">
+          <label for="smRoleInput">Assignment Role / Incentive Tier</label>
+          <select id="smRoleInput" class="top-select" onchange="onUserMetadataInput(); onPaySettingsChange();">
+            <option value="">-- Select Assignment Role --</option>
+            <option value="C2">C2</option>
+            <option value="External Support">External Support</option>
+            <option value="Facility Leadership">Facility Leadership</option>
+            <option value="General Purpose">General Purpose</option>
+          </select>
+          <span class="field-missing-hint">Required for CoC report</span>
+        </div>
+
+        <div class="field-group" id="fg_smFacilityInput">
+          <label for="smFacilityInput">AO / Facility</label>
+          <input type="text" id="smFacilityInput" class="top-input" placeholder="e.g. Cayuga CF" oninput="onUserMetadataInput()">
+          <span class="field-missing-hint">Required for CoC report</span>
+        </div>
+
+        <div class="field-group" id="fg_smLeaderInput">
+          <label for="smLeaderInput">Next in Chain of Command</label>
+          <input type="text" id="smLeaderInput" class="top-input" placeholder="e.g. SFC / OIC Name" oninput="onUserMetadataInput()">
+          <span class="field-missing-hint">Required for CoC report</span>
+        </div>
+      </div>
+
+      <hr class="settings-divider">
+
+      <div class="settings-section-title">Schedule, RDOs &amp; Leave Anchor</div>
+      <div class="settings-grid-2">
+        <div class="field-group">
+          <label for="ppSelect">Beginning Pay Period</label>
+          <select id="ppSelect" class="top-select" onchange="onStartPayPeriodChange()"></select>
+        </div>
+
+        <div class="field-group">
+          <label for="startingLeaveInput">18 NOV 2026 Leave Balance (Days)</label>
+          <input type="number" id="startingLeaveInput" class="top-input" step="0.25" min="0" placeholder="0.00" oninput="onUserMetadataInput()">
+        </div>
+
+        <div class="field-group">
+          <label for="schedSelect">Shift Schedule Type</label>
+          <select id="schedSelect" class="top-select" onchange="onScheduleTypeChange()">
+            <option value="alt">10–12 Hr Shift — 4/3 (6 RDOs / PP)</option>
+            <option value="std">8 Hr Shift — 5/2 (4 RDOs / PP)</option>
+          </select>
+        </div>
+
+        <div class="field-group">
+          <label for="rdoPresetSelect">Apply RDO Preset Across All Open PPs</label>
+          <select id="rdoPresetSelect" class="top-select" onchange="if(this.value) applyRdoPresetAll(this.value)">
+            <option value="">-- Choose RDOs --</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+        <button type="button" class="btn-action" onclick="jumpToCurrentPayPeriod(false)">📍 Jump to Current Pay Period</button>
+        <button type="button" class="btn-action" onclick="applyDefaultPatternAll()">↺ Reset RDOs to Default</button>
+      </div>
+
+      <hr class="settings-divider">
+
+      <div class="settings-section-title">SAD Pay Calculator Profile</div>
+      <div class="settings-grid-2">
+        <div class="field-group">
+          <label for="payGradeSelect">Pay Grade</label>
+          <select id="payGradeSelect" class="top-select" onchange="onPaySettingsChange()">
+            <option value="E-1">E-1</option>
+            <option value="E-2">E-2</option>
+            <option value="E-3">E-3</option>
+            <option value="E-4">E-4</option>
+            <option value="E-5">E-5</option>
+            <option value="E-6">E-6</option>
+            <option value="E-7">E-7</option>
+            <option value="E-8">E-8</option>
+            <option value="E-9">E-9</option>
+            <option value="W-1">W-1</option>
+            <option value="W-2">W-2</option>
+            <option value="W-3">W-3</option>
+            <option value="W-4">W-4</option>
+            <option value="W-5">W-5</option>
+            <option value="O-1">O-1</option>
+            <option value="O-2">O-2</option>
+            <option value="O-3">O-3</option>
+            <option value="O-1E">O-1E</option>
+            <option value="O-2E">O-2E</option>
+            <option value="O-3E">O-3E</option>
+            <option value="O-4">O-4</option>
+            <option value="O-5">O-5</option>
+            <option value="O-6">O-6</option>
+            <option value="O-7">O-7</option>
+            <option value="O-8">O-8</option>
+            <option value="O-9">O-9</option>
+            <option value="O-10">O-10</option>
+          </select>
+        </div>
+
+        <div class="field-group">
+          <label for="payYosSelect">Years of Service</label>
+          <select id="payYosSelect" class="top-select" onchange="onPaySettingsChange()">
+            <option value="lt2">&lt; 2 Years</option>
+            <option value="over2">Over 2</option>
+            <option value="over3">Over 3</option>
+            <option value="over4">Over 4</option>
+            <option value="over6">Over 6</option>
+            <option value="over8">Over 8</option>
+            <option value="over10">Over 10</option>
+            <option value="over12">Over 12</option>
+            <option value="over14">Over 14</option>
+            <option value="over16">Over 16</option>
+            <option value="over18">Over 18</option>
+            <option value="over20">Over 20</option>
+            <option value="over22">Over 22</option>
+            <option value="over24">Over 24</option>
+            <option value="over26">Over 26</option>
+            <option value="over28">Over 28</option>
+            <option value="over30">Over 30</option>
+          </select>
+        </div>
+
+        <div class="field-group">
+          <label for="payZipInput">Duty / Home 5-Digit ZIP</label>
+          <input type="text" id="payZipInput" class="top-input" maxlength="5" inputmode="numeric" placeholder="e.g. 11201" oninput="onPaySettingsChange()">
+        </div>
+
+        <div class="field-group">
+          <label for="payDepSelect">Dependency Status (BAH)</label>
+          <select id="payDepSelect" class="top-select" onchange="onPaySettingsChange()">
+            <option value="withoutDep">Without Dependents</option>
+            <option value="withDep">With Dependents</option>
+          </select>
+        </div>
+
+        <label class="oconus-toggle" style="background:var(--bg-light);border:1px solid var(--border);border-radius:6px;padding:8px 10px;">
+          <input type="checkbox" id="payBahEntitledCheck" checked onchange="onPaySettingsChange()">
+          <span>Entitled to BAH</span>
+        </label>
+
+        <label class="oconus-toggle" style="background:var(--bg-light);border:1px solid var(--border);border-radius:6px;padding:8px 10px;">
+          <input type="checkbox" id="payBasEntitledCheck" checked onchange="onPaySettingsChange()">
+          <span>Entitled to BAS</span>
+        </label>
+      </div>
+
+      <div id="payZipMhaBadge" style="font-size:11.5px;font-weight:600;color:var(--text-sub);background:var(--bg-light);padding:7px 9px;border-radius:6px;border:1px solid var(--border);"></div>
+    </div>
+
+    <div class="settings-footer">
+      <button type="button" class="btn-rerun-wizard" onclick="rerunSetupWizard()">🧭 Re-Run Setup Wizard</button>
+      <button type="button" class="settings-save-btn" id="settingsPrimaryBtn" onclick="onSettingsPrimaryAction()">✓ Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- Special Pass Conflict & Past-Date Confirmation Modal -->
+<div class="sp-conflict-backdrop" id="spConflictBackdrop">
+  <div class="sp-conflict-dialog" role="dialog" aria-modal="true" aria-labelledby="spConflictTitle">
+    <div class="sp-conflict-header" id="spConflictHeader">
+      <h3 id="spConflictTitle">⚠️ Special Pass Conflict</h3>
+      <button type="button" class="sop-close-x" onclick="closeSpConflictModal()">✕</button>
+    </div>
+    <div class="sp-conflict-body" id="spConflictBody"></div>
+  </div>
+</div>
+
+<!-- How-To / SOP Modal -->
+<div class="sop-modal-backdrop" id="sopModalBackdrop">
+  <div class="sop-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="sopModalTitle">
+    <div class="sop-modal-header">
+      <div>
+        <h3 id="sopModalTitle">📖 JTF Sentinel Duty &amp; Leave Planner — How-To &amp; SOP Guide</h3>
+        <p>Quick instructions for Phone &amp; Desktop planning, policy rules, and CoC export.</p>
+      </div>
+      <button type="button" class="sop-close-x" onclick="closeSopModal()">✕ Close</button>
+    </div>
+
+    <div class="sop-tabs-bar">
+      <button type="button" class="sop-tab-btn active" id="sopTabBtn_phone" onclick="switchSopTab('phone')">📱 Phone Guide</button>
+      <button type="button" class="sop-tab-btn" id="sopTabBtn_desktop" onclick="switchSopTab('desktop')">💻 Desktop Guide</button>
+      <button type="button" class="sop-tab-btn" id="sopTabBtn_rules" onclick="switchSopTab('rules')">📋 Policy Rules</button>
+      <button type="button" class="sop-tab-btn" id="sopTabBtn_export" onclick="switchSopTab('export')">🖨️ CoC Export</button>
+    </div>
+
+    <div class="sop-modal-body">
+      <div class="alert alert-success" id="sopUpgradeBanner" style="display:none;margin-bottom:10px;">
+        <strong>✓ Upgraded to v1:</strong> Your previous saved planner data was automatically migrated and saved.
+      </div>
+
+      <div class="sop-panel active" id="sopPanel_phone">
+        <div class="sop-live-block">
+          <div class="sop-step-title"><span class="sop-pointer">1</span> Tap a Date Tile &amp; Pick a Duty Status</div>
+          <div class="sop-live-ui">
+            <div class="sop-demo-phone">
+              <div class="sop-demo-7col">
+                <div class="sop-demo-7hdr">THU</div>
+                <div class="sop-demo-7hdr">FRI</div>
+                <div class="sop-demo-7hdr">SAT</div>
+                <div class="sop-demo-7hdr">SUN</div>
+                <div class="sop-demo-7hdr">MON</div>
+                <div class="sop-demo-7hdr">TUE</div>
+                <div class="sop-demo-7hdr">WED</div>
+                <div class="sop-demo-tile"><span class="sop-pointer-sm">1</span><span>11/19</span><span>SHFT</span></div>
+                <div class="sop-demo-tile" style="background:var(--success-bg);color:var(--success);"><span>11/20</span><span>RDO</span></div>
+                <div class="sop-demo-tile" style="background:var(--success-bg);color:var(--success);"><span>11/21</span><span>RDO</span></div>
+                <div class="sop-demo-tile" style="background:var(--success-bg);color:var(--success);"><span>11/22</span><span>RDO</span></div>
+                <div class="sop-demo-tile"><span>11/23</span><span>SHFT</span></div>
+                <div class="sop-demo-tile"><span>11/24</span><span>SHFT</span></div>
+                <div class="sop-demo-tile"><span>11/25</span><span>SHFT</span></div>
+              </div>
+              <div class="sop-demo-picker">
+                <div class="sop-demo-chip" style="background:#fff;">Present (On Shift)</div>
+                <div class="sop-demo-chip" style="background:var(--success-bg);color:var(--success);">Pass (RDO)</div>
+                <div class="sop-demo-chip" style="background:var(--primary-bg);color:var(--primary);">SAD Leave</div>
+                <div class="sop-demo-chip" style="background:#fffde7;color:#f57f17;">TDY (Drill)</div>
+              </div>
+              <div class="sop-demo-picker-4">
+                <div class="sop-demo-chip" style="background:#ede7f6;color:#4527a0;">RFRD</div>
+                <div class="sop-demo-chip" style="background:#e1f5fe;color:#0277bd;">TRV</div>
+                <div class="sop-demo-chip" style="background:#fce8e6;color:#c5221f;">INCP</div>
+                <div class="sop-demo-chip" style="background:#f3e5f5;color:#7b1fa2;">SP</div>
+              </div>
+            </div>
+          </div>
+          <div class="sop-short-line">Tap any date tile on the THU–WED mini-calendar, then tap its new status in the inline picker.</div>
+        </div>
+
+        <div class="sop-step-card">
+          <div class="sop-step-title">Multi-Day Ranges &amp; Extra Pay Periods</div>
+          <ul class="sop-list">
+            <li>Use <strong>📅 Plan Range</strong> at the top or on any pay period header to fill a start-to-end date range with SAD Leave, TDY (with the 120-mile In-Transit check), RDO, or On Shift.</li>
+            <li>Tap <strong>➕ Add Pay Period</strong> at the bottom of the last pay period to extend your plan.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="sop-panel" id="sopPanel_desktop">
+        <div class="sop-live-block">
+          <div class="sop-step-title"><span class="sop-pointer">1</span> Click Any Cell in the DA-6 Matrix</div>
+          <div class="sop-live-ui">
+            <table class="sop-demo-grid14">
+              <thead>
+                <tr>
+                  <th>DATE</th>
+                  <th>11/19</th>
+                  <th>11/20</th>
+                  <th>11/21</th>
+                  <th>11/22</th>
+                  <th>11/23</th>
+                  <th>11/24</th>
+                  <th>11/25</th>
+                </tr>
+                <tr>
+                  <th>DAY</th>
+                  <th>THU</th>
+                  <th>FRI</th>
+                  <th>SAT</th>
+                  <th>SUN</th>
+                  <th>MON</th>
+                  <th>TUE</th>
+                  <th>WED</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style="background:#3c4043;color:#fff;">STATUS</td>
+                  <td><span class="sop-pointer-sm">1</span> SHFT</td>
+                  <td style="background:var(--success-bg);color:var(--success);">RDO</td>
+                  <td style="background:var(--success-bg);color:var(--success);">RDO</td>
+                  <td style="background:var(--success-bg);color:var(--success);">RDO</td>
+                  <td>SHFT</td>
+                  <td>SHFT</td>
+                  <td>SHFT</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="sop-short-line">Click any day cell in the DA-6 matrix to open the inline status selector right above the grid.</div>
+        </div>
+
+        <div class="sop-step-card">
+          <div class="sop-step-title">Live Metrics, Pay Estimates &amp; Error Jump Banner</div>
+          <ul class="sop-list">
+            <li>Each pay period updates RDO authorization vs. usage, SAD leave accrual/ending balance, estimated SAD pay, and 30-day / 60-day OCONUS deadlines automatically.</li>
+            <li>If a policy rule is violated, click the red banner at the top to jump straight to the first error.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="sop-panel" id="sopPanel_rules">
+        <div class="sop-step-card warn-card">
+          <div class="sop-step-title">Key Policy &amp; Leave Rules Built Into v1</div>
+          <ul class="sop-list">
+            <li><strong>Leave Accrual &amp; 49-Day Cap:</strong> 8+ qualifying days = +1.25d/PP; 5–7 qualifying days = +0.75d/PP. Capped at 49.00 days effective 03 DEC 2026 (resumes below 47.00d).</li>
+            <li><strong>Special Holiday Passes (02 OCT 2026 Memo):</strong> Each holiday Special Pass may be used once, on or after the holiday date, within the 3-pay-period window, and cannot be paired as RDO + RDO or Shift + RDO on weekend holidays.</li>
+            <li><strong>In-Transit (01 APR 2026 Change 2):</strong> Bridges On Shift and TDY; cannot sit directly adjacent to RDO, SAD Leave, Terminal Leave, or Special Pass days.</li>
+            <li><strong>REFRAD Report Date:</strong> Automatically projects remaining leave as Terminal Leave or post-REFRAD off days.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="sop-panel" id="sopPanel_export">
+        <div class="sop-step-card success-card">
+          <div class="sop-step-title">Exporting for Your Chain of Command</div>
+          <ul class="sop-list">
+            <li>Fill out <strong>Service Member</strong>, <strong>Assignment Role</strong>, <strong>AO / Facility</strong>, and <strong>Next in Chain of Command</strong> in <strong>⚙️ Edit Settings</strong> first.</li>
+            <li>Use <strong>🖨️ Export / Print DA-6 PDF</strong> for a landscape report (up to 5 pay periods per sheet) or <strong>💾 Download CoC Report</strong> to save a standalone HTML copy.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="sop-modal-footer">
+      <span>JTF Sentinel SAD DOCCS Planner (v1)</span>
+      <button type="button" class="status-sheet-close" onclick="closeSopModal()">Done</button>
+    </div>
+  </div>
+</div>
+
+<div class="calc-card">
+  <!-- ====================================================================================
+       [EDIT-HEADER-HTML] HEADER, QUICK PROFILE STRIP & STICKY ERROR JUMP BANNER
+       ==================================================================================== -->
+  <div class="header-top">
+    <div>
+      <div class="calc-title">JTF Sentinel SAD DOCCS Duty Status &amp; Leave Planner (v1)</div>
+      <div class="calc-sub">DA6 Matrix &amp; Mobile Mini-Calendar | 01 APR 2026 Policy | 49-Day Cap Eff. 03 DEC 2026 | Auto-Save</div>
+    </div>
+
+    <div class="header-right-actions">
+      <span class="save-badge" id="saveStatusBadge">✓ Auto-Saved</span>
+      <button type="button" class="header-settings-btn" onclick="openSettingsModal()">⚙️ Edit Settings</button>
+      <button type="button" class="header-sop-btn" onclick="openSopModal()">📖 How-To / SOP</button>
+      <button type="button" class="header-range-btn" onclick="openRangeBuilderModal()">📅 Plan Range</button>
+      <div class="view-toggle-bar">
+        <button type="button" id="modeDesktopBtn" class="view-toggle-btn active" onclick="setViewMode('desktop')">💻 Desktop</button>
+        <button type="button" id="modeMobileBtn" class="view-toggle-btn" onclick="setViewMode('mobile')">📱 Phone</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Compact Profile & Schedule Summary Bar -->
+  <div class="quick-profile-strip" id="quickProfileStrip">
+    <div class="quick-profile-chips" id="quickProfileChips">
+      <span class="qp-chip"><span class="qp-label">SM:</span> <strong id="qpName">Not Set</strong></span>
+      <span class="qp-chip"><span class="qp-label">Sched:</span> <strong id="qpSched">4/3 (6 RDOs)</strong></span>
+      <span class="qp-chip"><span class="qp-label">RDOs:</span> <strong id="qpRdo">Fri – Sat – Sun</strong></span>
+      <span class="qp-chip"><span class="qp-label">18NOv16 Leave Bal:</span> <strong id="qpLeave">0.00d</strong></span>
+    </div>
+    <button type="button" class="qp-edit-link" onclick="openSettingsModal()">⚙️ Edit Settings</button>
+  </div>
+
+  <!-- Sticky One-Tap Error Jump Banner -->
+  <div class="error-jump-banner" id="errorJumpBanner" onclick="jumpToFirstPolicyError()">
+    <div class="error-jump-text" id="errorJumpText">❌ Policy error detected in your schedule.</div>
+    <button type="button" class="error-jump-btn">Jump to First Error ↓</button>
+  </div>
+
+  <!-- Inline Plan Range Modal Card (With 120-Mile In-Transit Qualification Question) -->
+  <div class="range-builder-card" id="rangeBuilderCard">
+    <div class="range-builder-hdr">
+      <div class="range-builder-title">📅 Plan Multi-Day Leave / TDY Range</div>
+      <button type="button" class="status-sheet-close" onclick="closeRangeBuilderModal()">✕ Close</button>
+    </div>
+    <div class="range-builder-grid">
+      <div class="range-field range-field-full">
+        <label for="rangeStatusSelect">Duty Status / Trip Type</label>
+        <select id="rangeStatusSelect" class="range-input" onchange="onRangeStatusChange()">
+          <option value="lv">SAD Leave</option>
+          <option value="tdy">TDY</option>
+          <option value="shift">On Shift (Reset Range)</option>
+          <option value="rdo">RDO</option>
+        </select>
+      </div>
+
+      <!-- 120-Mile Radius In-Transit Qualification Prompt (Shown Only When TDY is Selected) -->
+      <div class="tdy-qual-box" id="tdyQualBox">
+        <div class="tdy-qual-question">
+          🚗 Do you qualify for In-Transit? Is your home unit outside the 120-mile radius of your assigned facility?
+        </div>
+        <div class="tdy-qual-options">
+          <label class="tdy-qual-radio-card" id="tdyQualCard_yes">
+            <input type="radio" name="tdyInTransitQual" id="tdyQualRadio_yes" value="yes" onchange="onTdyQualRadioChange()">
+            <span><strong>Yes — Outside 120 Miles</strong><br><span style="color:var(--text-sub);font-size:10.5px;">Auto-fill Start &amp; End days as In-Transit (Travel)</span></span>
+          </label>
+          <label class="tdy-qual-radio-card selected" id="tdyQualCard_no">
+            <input type="radio" name="tdyInTransitQual" id="tdyQualRadio_no" value="no" checked onchange="onTdyQualRadioChange()">
+            <span><strong>No — Within 120 Miles</strong><br><span style="color:var(--text-sub);font-size:10.5px;">Fill entire range as TDY Only (no In-Transit days)</span></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="range-field">
+        <label for="rangeStartDate">Start Date</label>
+        <input type="date" id="rangeStartDate" class="range-input">
+      </div>
+      <div class="range-field">
+        <label for="rangeEndDate">End Date</label>
+        <input type="date" id="rangeEndDate" class="range-input">
+      </div>
+    </div>
+    <div class="range-helper-note" id="rangeHelperNote">
+      Fills all dates from Start Date through End Date with <strong>SAD Leave</strong> and automatically adds future pay periods if needed.
+    </div>
+    <div class="range-btn-row">
+      <button type="button" class="range-apply-btn" onclick="applyPlannedDateRange()">✓ Apply Range to Schedule</button>
+      <button type="button" class="range-cancel-btn" onclick="closeRangeBuilderModal()">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Vertically Stacked Pay Periods (Both Desktop & Phone) -->
+  <div id="multiPpContainer"></div>
+
+  <div class="btn-row">
+    <button type="button" class="btn btn-pdf" onclick="exportToPdfForCoC()">🖨️ Export / Print DA-6 PDF</button>
+    <button type="button" class="btn btn-download" onclick="downloadStandaloneReport()">💾 Download CoC Report</button>
+    <button type="button" class="btn" onclick="applyDefaultPatternAll()">Reset Schedule to Default</button>
+    <button type="button" class="btn" onclick="clearRefradOnly()">Clear REFRAD</button>
+    <button type="button" class="btn btn-danger-outline" onclick="clearSavedLocalStorage()">🗑️ Wipe Saved Data</button>
+  </div>
+
+  <!-- ====================================================================================
+       [EDIT-FEEDBACK-HTML] BOTTOM COMMENTS, SUGGESTIONS & IMPROVEMENTS BAR
+       ==================================================================================== -->
+  <div class="feedback-footer-card" id="feedbackFooterCard">
+    <div class="feedback-footer-text">
+      <strong>💬 Comments, Suggestions &amp; Improvements:</strong>
+      Have feedback on policy rules, pay estimates, or usability for v1? Email
+      <a href="mailto:kenton.lee4.mil@army.mil?subject=JTF%20Sentinel%20Planner%20v1%20Feedback">kenton.lee4.mil@army.mil</a>.
+    </div>
+    <div class="feedback-footer-actions">
+      <a class="feedback-email-btn" href="mailto:kenton.lee4.mil@army.mil?subject=JTF%20Sentinel%20Planner%20v1%20Feedback">✉️ Email Feedback</a>
+      <button type="button" class="feedback-copy-btn" id="copyFeedbackEmailBtn" onclick="copyFeedbackEmail()">📋 Copy Address</button>
+    </div>
+  </div>
+</div>
