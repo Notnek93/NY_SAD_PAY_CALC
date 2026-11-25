@@ -1,5 +1,7 @@
 const CACHE_NAME = "sentinel-planner-v1-20261125";
 const CORE_ASSETS = [
+  "./",
+  "./index.html",
   "./JTF_Sentinel_Planner_v1.html",
   "./manifest.json",
   "./sw.js"
