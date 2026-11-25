@@ -157,14 +157,16 @@ if ($baseCsvPath -and $bahRawFile -and $zipRawFile) {
 }
 
 # ------------------------------------------------------------------
-# 2. ASSEMBLE STANDALONE HTML + PWA FILES
+# 2. ASSEMBLE STANDALONE HTML + INDEX.HTML + PWA FILES
 # ------------------------------------------------------------------
 if (-not (Test-Path -LiteralPath $DistDir)) {
   New-Item -ItemType Directory -Path $DistDir -Force | Out-Null
 }
 
-$outFile  = Join-Path $DistDir "JTF_Sentinel_Planner_v1.html"
-$tempFile = Join-Path $env:TEMP "JTF_Sentinel_Planner_v1.tmp.html"
+$outFile      = Join-Path $DistDir "JTF_Sentinel_Planner_v1.html"
+$distIndex    = Join-Path $DistDir "index.html"
+$rootIndex    = Join-Path $rootDir "index.html"
+$tempFile     = Join-Path $env:TEMP "JTF_Sentinel_Planner_v1.tmp.html"
 
 $css     = Read-RequiredFile (Join-Path $SrcDir "01-theme-and-layout.css")
 $html    = Read-RequiredFile (Join-Path $SrcDir "02-planner-ui.html")
@@ -207,16 +209,20 @@ $doc = "<!DOCTYPE html>" + $nl +
 
 Set-Content -LiteralPath $tempFile -Value $doc -Encoding UTF8
 Move-Item -LiteralPath $tempFile -Destination $outFile -Force
-Write-Host "[OK] Built standalone HTML -> $outFile" -ForegroundColor Green
+Copy-Item -LiteralPath $outFile -Destination $distIndex -Force
+Copy-Item -LiteralPath $outFile -Destination $rootIndex -Force
+Write-Host "[OK] Built HTML -> $outFile, $distIndex, and $rootIndex" -ForegroundColor Green
 
 if ($hasManifest) {
   Copy-Item -LiteralPath $manifestSrc -Destination (Join-Path $DistDir "manifest.json") -Force
-  Write-Host "[OK] Copied manifest.json -> $DistDir" -ForegroundColor Green
+  Copy-Item -LiteralPath $manifestSrc -Destination (Join-Path $rootDir "manifest.json") -Force
+  Write-Host "[OK] Copied manifest.json -> $DistDir and $rootDir" -ForegroundColor Green
 }
 
 if ($hasSw) {
   $buildStamp = (Get-Date).ToString("yyyyMMdd-HHmmss")
   $swContent  = (Get-Content -LiteralPath $swSrc -Raw -Encoding UTF8) -replace 'const CACHE_NAME\s*=\s*"[^"]+";', "const CACHE_NAME = `"sentinel-planner-v1-$buildStamp`";"
   Set-Content -LiteralPath (Join-Path $DistDir "sw.js") -Value $swContent -Encoding UTF8
-  Write-Host "[OK] Copied sw.js (cache: sentinel-planner-v1-$buildStamp) -> $DistDir" -ForegroundColor Green
+  Set-Content -LiteralPath (Join-Path $rootDir "sw.js") -Value $swContent -Encoding UTF8
+  Write-Host "[OK] Copied sw.js (cache: sentinel-planner-v1-$buildStamp) -> $DistDir and $rootDir" -ForegroundColor Green
 }
