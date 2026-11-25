@@ -165,7 +165,7 @@ function buildStandaloneReportHtml(autoTriggerPrint) {
     <div><strong>Service Member:</strong> ${smName}<br><strong>Role:</strong> ${smRole}</div>
     <div><strong>AO / Facility:</strong> ${smFac}<br><strong>Next in CoC:</strong> ${smLeader}</div>
     <div><strong>Plan Window:</strong> ${activePayPeriodCount} PP<br>${planWindowText}</div>
-    <div><strong>Schedule:</strong> ${schedLabel}<br><strong>18NOv16 Leave:</strong> ${startingLeave} days</div>
+    <div><strong>Schedule:</strong> ${schedLabel}<br><strong>18NOV26 Leave:</strong> ${startingLeave} days</div>
   </div>
   <div>${sectionsHtml}</div>
   <div class="sig-grid">
