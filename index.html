@@ -7230,6 +7230,43 @@ function formatUsd(amount) {
 /* ====================================================================================
    [EDIT-PDF-REPORT] DA-6 LANDSCAPE REPORT (5 PPs PER SHEET) & SMART PRINT GUARD
    ==================================================================================== */
+function escapeReportHtml(value) {
+  const container = document.createElement('div');
+  container.textContent = String(value ?? '');
+  return container.innerHTML;
+}
+
+function buildReportAlertsHtml(alertsEl) {
+  if (!alertsEl) return '';
+  return [...alertsEl.children].map(alert => {
+    const alertType = alert.classList.contains('alert-error')
+      ? 'alert-error'
+      : alert.classList.contains('alert-warn') ? 'alert-warn' : '';
+    const alertClass = alertType ? `alert ${alertType}` : 'alert';
+    const content = alert.textContent || '';
+    const citation = alert.querySelector('a.policy-cite');
+    const citationText = citation?.textContent || '';
+    const citationHref = citation?.getAttribute('href') || '';
+    const pageAnchor = citationHref.startsWith(LEAVE_POLICY_PDF_URL)
+      ? citationHref.slice(LEAVE_POLICY_PDF_URL.length)
+      : null;
+    const allowedPageAnchors = ['', '#page=1', '#page=2', '#page=3', '#page=4'];
+
+    if (!citation || !allowedPageAnchors.includes(pageAnchor)) {
+      return `<div class="${alertClass}">${escapeReportHtml(content)}</div>`;
+    }
+
+    const citationIndex = content.indexOf(citationText);
+    if (citationIndex < 0) {
+      return `<div class="${alertClass}">${escapeReportHtml(content)}</div>`;
+    }
+
+    const beforeCitation = content.slice(0, citationIndex);
+    const afterCitation = content.slice(citationIndex + citationText.length);
+    return `<div class="${alertClass}">${escapeReportHtml(beforeCitation)}<a class="policy-cite" href="${LEAVE_POLICY_PDF_URL}${pageAnchor}" target="_blank" rel="noopener">${escapeReportHtml(citationText)}</a>${escapeReportHtml(afterCitation)}</div>`;
+  }).join('');
+}
+
 function buildStandaloneReportHtml(autoTriggerPrint) {
   const startPpIdx = parseInt(document.getElementById('ppSelect')?.value, 10) || 0;
   const firstPp = payPeriods[startPpIdx] || payPeriods[0];
@@ -7312,22 +7349,22 @@ function buildStandaloneReportHtml(autoTriggerPrint) {
       </div>
     `;
 
-    const rdoAuth = document.getElementById(`rdoAuth_${s}`)?.textContent ?? '0';
-    const rdoQual = document.getElementById(`rdoQual_${s}`)?.textContent ?? '';
-    const rdoUsed = document.getElementById(`rdoUsed_${s}`)?.textContent ?? '0';
-    const rdoDiff = document.getElementById(`rdoDiff_${s}`)?.textContent ?? '';
-    const lvTotal = document.getElementById(`lvTotal_${s}`)?.textContent ?? '0.00';
-    const lvTotalSub = document.getElementById(`lvTotalSub_${s}`)?.textContent ?? '';
+    const rdoAuth = escapeReportHtml(document.getElementById(`rdoAuth_${s}`)?.textContent ?? '0');
+    const rdoQual = escapeReportHtml(document.getElementById(`rdoQual_${s}`)?.textContent ?? '');
+    const rdoUsed = escapeReportHtml(document.getElementById(`rdoUsed_${s}`)?.textContent ?? '0');
+    const rdoDiff = escapeReportHtml(document.getElementById(`rdoDiff_${s}`)?.textContent ?? '');
+    const lvTotal = escapeReportHtml(document.getElementById(`lvTotal_${s}`)?.textContent ?? '0.00');
+    const lvTotalSub = escapeReportHtml(document.getElementById(`lvTotalSub_${s}`)?.textContent ?? '');
 
-    const cShift = document.getElementById(`countShift_${s}`)?.textContent ?? '0';
-    const cRdo = document.getElementById(`countRdo_${s}`)?.textContent ?? '0';
-    const cLeave = document.getElementById(`countLeave_${s}`)?.textContent ?? '0';
-    const cSpTrv = document.getElementById(`countSpTrv_${s}`)?.textContent ?? '0';
-    const cNonSad = document.getElementById(`countNonSad_${s}`)?.textContent ?? '0';
-    const cTotal = document.getElementById(`totalAssignedOut_${s}`)?.textContent ?? '14 / 14';
+    const cShift = escapeReportHtml(document.getElementById(`countShift_${s}`)?.textContent ?? '0');
+    const cRdo = escapeReportHtml(document.getElementById(`countRdo_${s}`)?.textContent ?? '0');
+    const cLeave = escapeReportHtml(document.getElementById(`countLeave_${s}`)?.textContent ?? '0');
+    const cSpTrv = escapeReportHtml(document.getElementById(`countSpTrv_${s}`)?.textContent ?? '0');
+    const cNonSad = escapeReportHtml(document.getElementById(`countNonSad_${s}`)?.textContent ?? '0');
+    const cTotal = escapeReportHtml(document.getElementById(`totalAssignedOut_${s}`)?.textContent ?? '14 / 14');
 
-    const alertsHtml = document.getElementById(`alerts_${s}`)?.innerHTML ?? '';
-    const deadlineListHtml = document.getElementById(`deadlineList_${s}`)?.innerHTML ?? '';
+    const alertsHtml = buildReportAlertsHtml(document.getElementById(`alerts_${s}`));
+    const deadlineListHtml = escapeReportHtml(document.getElementById(`deadlineList_${s}`)?.textContent ?? '');
     const pageBreakStyle = ((s + 1) % 5 === 0 && s < activePayPeriodCount - 1) ? 'page-break-after:always;' : '';
 
     sectionsHtml += `
@@ -7358,7 +7395,7 @@ function buildStandaloneReportHtml(autoTriggerPrint) {
 <html>
 <head>
 <meta charset="UTF-8">
-<title>NY SAD Duty, Leave &amp; Pay Plan - ${smName}</title>
+<title>NY SAD Duty, Leave &amp; Pay Plan - ${escapeReportHtml(smName)}</title>
 <style>
   * { box-sizing: border-box; }
   body { font-family: 'Segoe UI', Roboto, Arial, sans-serif; color: #202124; margin: 0; padding: 6px; background: #fff; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
@@ -7400,10 +7437,10 @@ function buildStandaloneReportHtml(autoTriggerPrint) {
     <div style="font-size:9px; color:#5f6368; text-align:right;">Generated: ${nowStr}</div>
   </div>
   <div class="meta-grid">
-    <div><strong>Service member:</strong> ${smName}<br><strong>Assignment role:</strong> ${smRole}</div>
-    <div><strong>Facility or assignment:</strong> ${smFac}<br><strong>Chain of command contact:</strong> ${smLeader}</div>
+    <div><strong>Service member:</strong> ${escapeReportHtml(smName)}<br><strong>Assignment role:</strong> ${escapeReportHtml(smRole)}</div>
+    <div><strong>Facility or assignment:</strong> ${escapeReportHtml(smFac)}<br><strong>Chain of command contact:</strong> ${escapeReportHtml(smLeader)}</div>
     <div><strong>Pay periods covered:</strong> ${activePayPeriodCount}<br>${planWindowText}</div>
-    <div><strong>Shift schedule:</strong> ${schedLabel}<br><strong>Leave balance as of 18 Nov 2026:</strong> ${startingLeave} days</div>
+    <div><strong>Shift schedule:</strong> ${escapeReportHtml(schedLabel)}<br><strong>Leave balance as of 18 Nov 2026:</strong> ${escapeReportHtml(startingLeave)} days</div>
   </div>
   <div>${sectionsHtml}</div>
   <div class="sig-grid">

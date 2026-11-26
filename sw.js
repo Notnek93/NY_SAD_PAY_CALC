@@ -1,6 +1,6 @@
 // Maintainer map: update CORE_ASSETS when a new file must be available offline.
 // build.ps1 replaces CACHE_NAME with a fresh build timestamp on each build.
-const CACHE_NAME = "ny-sad-planner-v1-20261126-185241";
+const CACHE_NAME = "ny-sad-planner-v1-20261126-185741";
 const CORE_ASSETS = [
   "./",
   "./index.html",
