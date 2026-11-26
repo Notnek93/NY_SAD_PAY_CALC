@@ -393,6 +393,8 @@ body {
 .phone-tools-button:hover,
 .phone-tools-button:focus-visible { border-color: var(--primary); color: var(--primary); }
 .phone-tools-button[hidden] { display: none; }
+.phone-tools-button[href],
+.more-tools-button[href] { display: block; text-decoration: none; }
 
 .header-more-tools > summary,
 .pp-more-tools > summary {
@@ -1047,6 +1049,8 @@ body {
   gap: 4px;
   min-width: 0;
 }
+
+.field-group[hidden] { display: none !important; }
 
 .field-group label {
   font-size: 10.5px;
@@ -1962,6 +1966,8 @@ body {
 .alert-warn { background: var(--warning-bg); color: var(--warning); border: 1px solid #fde293; }
 .alert-success { background: var(--success-bg); color: var(--success); border: 1px solid #ceead6; }
 .policy-cite { font-weight: 700; text-decoration: underline; }
+a.policy-cite { color: var(--primary); }
+a.policy-cite:hover { text-decoration-thickness: 2px; }
 
 .pp-action-row {
   display: flex;

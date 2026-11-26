@@ -1,6 +1,6 @@
-# JTF Sentinel SAD Duty, Leave, and Pay Planner
+# NY SAD Duty, Leave & Pay Planner
 
-The Sentinel Planner is a browser-based planning aid for service members and staff supporting New York Joint Task Force Sentinel on State Active Duty (SAD). It brings a duty schedule, leave and REFRAD planning, and an estimated SAD pay calculation into one place.
+The NY SAD Planner is a browser-based planning aid for the New York State Active Duty mission. It brings a duty schedule, leave and REFRAD planning, and an estimated SAD pay calculation into one place.
 
 The goal is straightforward: make it easier to see how a planned schedule fits together, catch dates and assumptions that need attention, and prepare information for the normal unit process. The planner does not approve leave, issue orders, determine eligibility, or replace official personnel, finance, or command records.
 
@@ -8,7 +8,7 @@ The goal is straightforward: make it easier to see how a planned schedule fits t
 
 | SOP item | Detail |
 | --- | --- |
-| Title | Use of the JTF Sentinel SAD Duty, Leave, and Pay Planner |
+| Title | Use of the NY SAD Duty, Leave & Pay Planner |
 | Proponent | Local planner maintainer |
 | Effective date | Upon local adoption |
 | Status | Unofficial user-level procedure; not an approved Army, New York National Guard, or JTF directive |
@@ -35,7 +35,7 @@ This procedure applies to people using the planner for planning or administrativ
 
 1. Open the planner in a supported browser. Choose Desktop for the full schedule view or Phone for the touch-friendly calendar.
 2. In **Profile & Settings**, enter the leave balance requested by the planner. The current build labels this balance as of **18 Nov 2026**; enter `0` if the balance is zero. Confirm the date and balance against your records before relying on a plan.
-3. If you want a pay estimate, enter the applicable pay grade, years of service, ZIP code, dependency status, BAH/BAS eligibility, and assignment role. Use information you can verify. The ZIP code identifies a BAH rate area; it does not establish entitlement.
+3. If you want a pay estimate, enter the applicable pay grade, years of service, and either a ZIP code or a selected Military Housing Area (MHA), plus dependency status, BAH/BAS eligibility, and assignment role. The app searches the bundled MHA list by city, state, or MHA code. Use information you can verify; a location does not establish entitlement.
 4. Confirm the selected pay period and shift pattern. Review the schedule before changing dates.
 
 Saved information stays in the browser storage on that device. It does not automatically sync to another phone or computer. Avoid using a shared device for personal information, and do not assume that browser data is backed up.
@@ -62,7 +62,7 @@ Use **Undo last date change** when available to reverse an unintended single-dat
 
 #### C. Plan leave
 
-1. For a single date, select the date and choose **SAD Leave**. For a range, open **Tools** and choose **Plan Leave**.
+1. For a single date, select the date and choose **SAD Leave**. For a range, open **Tools** → **Plan a date range**, then choose **SAD Leave**.
 2. Enter the first and last dates. Both dates are included. Review the affected pay periods and the leave deadlines shown by the planner.
 3. Download the SAD Leave Request Form if needed, complete it, and submit it through the unit's established approval process. A date shown as leave in the planner is not evidence that leave was requested or approved.
 
@@ -70,8 +70,8 @@ Deadlines and leave calculations are planning estimates. Confirm current submiss
 
 #### D. Plan TDY and travel
 
-1. Open **Tools** and choose **Plan TDY / Travel**. Enter the full date range and review the preview before applying it.
-2. The current planner asks whether the assigned facility is **more than 120 miles** from the home station. For a distance greater than 120 miles, the range must be at least three days: the first and last dates become TRV, with TDY between them. At 120 miles or less, all dates in the range become TDY.
+1. Open **Tools** and choose **Plan a date range**, then select **AT / Drill / TDY**. Enter the full date range and review the preview before applying it.
+2. The planner asks whether the assigned facility is **more than 120 miles** from the home station. For a distance greater than 120 miles, the range must be at least three days: the first and last dates become TRV, with AT / Drill / TDY between them. Each In-Transit day must connect On Shift with AT / Drill / TDY. At 120 miles or less, all dates in the range become AT / Drill / TDY.
 3. If selecting TRV for an individual date, answer the in-app confirmation prompt. Choose **No** to leave that date unchanged.
 
 The prompt records the user's answer; it does not verify distance, orders, travel authorization, or eligibility. Use current orders and unit guidance for those determinations.
@@ -110,7 +110,17 @@ Pay, leave, holiday, travel, and policy logic are modeled for planning and may b
 
 Pay estimates depend on the profile entered and the rate data included with the application. They are not a pay statement or promise of payment. ZIP-to-rate-area lookup, BAH/BAS assumptions, incentives, leave accrual, and displayed deadlines should all be checked against authoritative records and guidance.
 
-### 6. Records and information handling
+### 6. Reference PDFs
+
+The same reference documents are available from **Tools → References** in Desktop and Phone views:
+
+- [RDO and leave policy (01 Apr 2026)](<assets/Pass Leave Policy 01APR2026 - Encl 255 NYS Letterhead - JTF Sentinel RDO and Leave Policy 1APR26.pdf>)
+- [CY 2026 SAD pay rates workbook](<assets/2026 SAD Pay Rates Workbook.pdf>) — includes base pay (PDF pp. 1–3), BAS and special pay (p. 4), BAH Type 2 (p. 5), and ZIP/MHA-specific BAH tables (pp. 6–21). The maintainer reports verifying the pay data in October 2026; this is not an independent audit or a guarantee of current rates.
+- [Requesting W-2s and paystubs guidance](<assets/Requesting W2s and Paystubs Guidance.pdf>)
+
+Policy warnings link to the cited paragraph and PDF page when the uploaded policy supports the reference. For example, Para 9.b (PDF p. 3) addresses In-Transit days next to RDO, leave, or Special Pass; Para 4.e (PDF p. 2) addresses the 120-mile travel authorization; and Para 9.e (PDF p. 4) covers movement and reporting when returning to the facility. The planner's On Shift/TDY status bridge and pay-period boundary checks are modeled checks; they are not presented as verbatim requirements from Para 4.e. Confirm travel coding and orders with the applicable unit.
+
+### 7. Records and information handling
 
 The planner saves its working data in browser storage on the current device; it is not an official system of record and does not provide automatic cross-device synchronization. Keep official records and submit requests through approved channels. Handle exports and screen captures as you would other documents containing personal or pay-related information.
 
@@ -142,3 +152,5 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\build.ps1 -SrcDir .\so
 ```
 
 The build refreshes the generated root `index.html`, `pay-data.js`, and `sw.js`, plus the matching files under `distribution\`. `build.bat` is a convenience wrapper that also cleans the distribution folder before rebuilding.
+
+Run the automated regression tests with `node --test tests/*.test.js`.

@@ -1,7 +1,7 @@
 {
-  "name": "New York Joint Task Force Pay Calculator",
-  "short_name": "NY JTF Pay",
-  "description": "New York Joint Task Force pay calculator and duty and leave planner.",
+  "name": "NY SAD Duty, Leave & Pay Planner",
+  "short_name": "NY SAD Planner",
+  "description": "New York State Active Duty schedule, leave, and pay planning aid.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

@@ -32,8 +32,8 @@ if not exist "%DIST_DIR%" (
   for /d %%D in ("%DIST_DIR%\*") do rmdir /s /q "%%D" >nul 2>&1
 )
 
-if exist "%DIST_DIR%\JTF_Sentinel_Planner_v1.html" (
-  echo [!] Warning: Could not remove locked file "%DIST_DIR%\JTF_Sentinel_Planner_v1.html". Close any open tab/editor using it if the build cannot overwrite it.
+if exist "%DIST_DIR%\NY_SAD_Duty_Leave_Pay_Planner.html" (
+  echo [!] Warning: Could not remove locked file "%DIST_DIR%\NY_SAD_Duty_Leave_Pay_Planner.html". Close any open tab/editor using it if the build cannot overwrite it.
 )
 
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%PS_SCRIPT%" -SrcDir "%SRC_DIR%" -DistDir "%DIST_DIR%"

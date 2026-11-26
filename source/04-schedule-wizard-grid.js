@@ -170,26 +170,18 @@ function openTransferPlannerFromMenu() {
 /* ====================================================================================
    TASK FORCE ONBOARDING WIZARD (FIRST-TIME USERS & RE-RUN OPTION)
    ==================================================================================== */
-const TASK_FORCE_STORAGE_KEY = 'JTF_SENTINEL_DOCCS_TASK_FORCE';
-const WIZARD_SENTINEL_STEP_NAMES = [
+const WIZARD_STEP_NAMES = [
   'Welcome',
   'Choose View',
-  'Task Force',
+  'New York Mission',
   'Schedule & RDOs',
   'SAD Pay & Leave',
   'Pay Period',
   'How-To Offer'
 ];
-const WIZARD_EMPIRE_STEP_NAMES = [
-  'Welcome',
-  'Choose View',
-  'Task Force',
-  'Work in Progress'
-];
 let wizardCurrentStep = 1;
 let wizardSelectedView = currentViewMode;
 let wizardSelectedTheme = colorThemePreference;
-let wizardSelectedTaskForce = 'sentinel';
 let wizardIsRerun = false;
 let wizardInitialSnapshot = null;
 
@@ -226,10 +218,16 @@ function updateWizardPayZipMhaBadge(prof) {
   if (!info.bahEntitled) {
     badge.style.color = 'var(--text-main)';
     badge.textContent = `${labels.base} ${formatUsd(info.dailyBasePay)}/d + ${labels.adlCom} ${formatUsd(info.dailyBahRate)}/d${incText} (${formatUsd(info.dailyTotalRate)}/d · ${labels.estimateTag})${entNote}`;
-  } else if (!info.zipCode) {
+  } else if (info.locationType === 'mha' && !info.zipMatched && !info.selectedMhaName) {
+    badge.style.color = 'var(--text-sub)';
+    badge.textContent = `${labels.base}: ${formatUsd(info.dailyBasePay)}/d + ${labels.adlCom}: ${formatUsd(info.dailyBahRate)}/d${incText} — Choose an MHA for BAH (${labels.estimateTag})${entNote}`;
+  } else if (info.locationType === 'mha' && !info.zipMatched) {
+    badge.style.color = 'var(--danger)';
+    badge.textContent = `⚠️ MHA "${info.selectedMhaName}" unavailable in the BAH table (${labels.base} ${formatUsd(info.dailyBasePay)}/d + ${labels.adlCom} ${formatUsd(info.dailyBahRate)}/d${incText} · ${labels.estimateTag})${entNote}`;
+  } else if (info.locationType !== 'mha' && !info.zipCode) {
     badge.style.color = 'var(--text-sub)';
     badge.textContent = `${labels.base}: ${formatUsd(info.dailyBasePay)}/d + ${labels.adlCom}: ${formatUsd(info.dailyBahRate)}/d${incText} — Enter 5-digit ZIP for BAH (${labels.estimateTag})${entNote}`;
-  } else if (info.zipCode.length < 5) {
+  } else if (info.locationType !== 'mha' && info.zipCode.length < 5) {
     badge.style.color = 'var(--text-sub)';
     badge.textContent = `${info.zipCode.length}/5 digits...${entNote}`;
   } else if (info.zipMatched) {
@@ -254,7 +252,9 @@ function onWizardPayChange() {
   const prof = {
     grade: document.getElementById('wizPayGradeSelect')?.value || 'E-4',
     yosKey: document.getElementById('wizPayYosSelect')?.value || 'over6',
+    locationType: document.getElementById('wizPayLocationTypeSelect')?.value || 'zip',
     zipCode: document.getElementById('wizPayZipInput')?.value || '',
+    mhaName: document.getElementById('wizPayMhaSelect')?.value || '',
     depStatus: document.getElementById('wizPayDepSelect')?.value || 'withoutDep',
     bahEntitled: bahCheck ? bahCheck.checked : true,
     basEntitled: basCheck ? basCheck.checked : true,
@@ -269,14 +269,6 @@ function openSetupWizard(isRerun) {
   wizardCurrentStep = 1;
   wizardSelectedView = currentViewMode;
   wizardSelectedTheme = colorThemePreference;
-  try {
-    const savedTaskForce = localStorage.getItem(TASK_FORCE_STORAGE_KEY);
-    wizardSelectedTaskForce = savedTaskForce === 'empire-shield' ? savedTaskForce : 'sentinel';
-  } catch (e) {
-    console.warn('Task force preference load skipped:', e);
-    wizardSelectedTaskForce = 'sentinel';
-  }
-
   const schedType = document.getElementById('schedSelect').value || 'alt';
   const latestAllowedIdx = typeof getLatestAllowedPayPeriodIndex === 'function'
     ? getLatestAllowedPayPeriodIndex()
@@ -296,10 +288,9 @@ function openSetupWizard(isRerun) {
 
   const payProf = typeof getPayProfile === 'function'
     ? getPayProfile()
-    : { grade: 'E-4', yosKey: 'over6', zipCode: '', depStatus: 'withoutDep', bahEntitled: true, basEntitled: true, roleTier: 'none' };
+    : { grade: 'E-4', yosKey: 'over6', locationType: 'zip', zipCode: '', mhaName: '', depStatus: 'withoutDep', bahEntitled: true, basEntitled: true, roleTier: 'none' };
   const wGrade = document.getElementById('wizPayGradeSelect');
   const wYos = document.getElementById('wizPayYosSelect');
-  const wZip = document.getElementById('wizPayZipInput');
   const wDep = document.getElementById('wizPayDepSelect');
   const wBah = document.getElementById('wizBahEntitledCheck');
   const wBas = document.getElementById('wizBasEntitledCheck');
@@ -307,7 +298,7 @@ function openSetupWizard(isRerun) {
 
   if (wGrade) wGrade.value = payProf.grade;
   if (wYos) wYos.value = payProf.yosKey;
-  if (wZip) wZip.value = payProf.zipCode;
+  syncPayLocationInputs('wizPay', payProf);
   if (wDep) wDep.value = payProf.depStatus;
   if (wBah) wBah.checked = payProf.bahEntitled !== false;
   if (wBas) wBas.checked = payProf.basEntitled !== false;
@@ -326,7 +317,6 @@ function openSetupWizard(isRerun) {
   const themeSelect = document.getElementById('wizThemeSelect');
   if (themeSelect) themeSelect.value = wizardSelectedTheme;
   selectWizardView(wizardSelectedView);
-  selectWizardTaskForce(wizardSelectedTaskForce);
   renderWizardStep();
 
   const backdrop = document.getElementById('wizardBackdrop');
@@ -348,28 +338,6 @@ function selectWizardView(mode) {
 
 function selectWizardTheme(preference) {
   if (['system', 'light', 'dark'].includes(preference)) wizardSelectedTheme = preference;
-}
-
-function selectWizardTaskForce(taskForce) {
-  wizardSelectedTaskForce = taskForce === 'empire-shield' ? 'empire-shield' : 'sentinel';
-  const sentinelCard = document.getElementById('wizTaskForceCard_sentinel');
-  const empireCard = document.getElementById('wizTaskForceCard_empire');
-  if (sentinelCard) {
-    const selected = wizardSelectedTaskForce === 'sentinel';
-    sentinelCard.classList.toggle('selected', selected);
-    sentinelCard.setAttribute('aria-pressed', String(selected));
-  }
-  if (empireCard) {
-    const selected = wizardSelectedTaskForce === 'empire-shield';
-    empireCard.classList.toggle('selected', selected);
-    empireCard.setAttribute('aria-pressed', String(selected));
-  }
-  try {
-    localStorage.setItem(TASK_FORCE_STORAGE_KEY, wizardSelectedTaskForce);
-  } catch (e) {
-    console.warn('Task force preference save skipped:', e);
-  }
-  if (wizardCurrentStep === 3) renderWizardStep();
 }
 
 function populateWizardRdoOptions(schedType, preferredPreset) {
@@ -593,19 +561,16 @@ function renderWizardStep() {
   const backBtn = document.getElementById('wizBackBtn');
   const nextBtn = document.getElementById('wizNextBtn');
 
-  const isEmpireShield = wizardSelectedTaskForce === 'empire-shield';
-  const displayStep = isEmpireShield || wizardCurrentStep <= 3 ? wizardCurrentStep : wizardCurrentStep - 1;
-  const totalSteps = isEmpireShield ? 4 : 7;
-  const stepName = isEmpireShield
-    ? WIZARD_EMPIRE_STEP_NAMES[wizardCurrentStep - 1]
-    : WIZARD_SENTINEL_STEP_NAMES[displayStep - 1];
+  const displayStep = wizardCurrentStep <= 3 ? wizardCurrentStep : wizardCurrentStep - 1;
+  const totalSteps = 7;
+  const stepName = WIZARD_STEP_NAMES[displayStep - 1];
 
   if (labelEl) labelEl.textContent = `Step ${displayStep} of ${totalSteps}`;
   if (nameEl) nameEl.textContent = stepName || '';
   if (fillEl) fillEl.style.width = `${(displayStep / totalSteps) * 100}%`;
   if (backBtn) backBtn.disabled = wizardCurrentStep <= 1;
   if (nextBtn) {
-    nextBtn.style.display = (isEmpireShield && wizardCurrentStep === 4) || (!isEmpireShield && wizardCurrentStep === 8)
+    nextBtn.style.display = wizardCurrentStep === 8
       ? 'none'
       : 'inline-block';
     nextBtn.textContent = wizardCurrentStep === 1 ? 'Get Started ▶' : 'Next ▶';
@@ -614,11 +579,11 @@ function renderWizardStep() {
 
 function wizardStepNav(delta) {
   if (delta > 0 && wizardCurrentStep === 3) {
-    wizardCurrentStep = wizardSelectedTaskForce === 'empire-shield' ? 4 : 5;
+    wizardCurrentStep = 5;
     renderWizardStep();
     return;
   }
-  if (delta < 0 && wizardSelectedTaskForce === 'sentinel' && wizardCurrentStep === 5) {
+  if (delta < 0 && wizardCurrentStep === 5) {
     wizardCurrentStep = 3;
     renderWizardStep();
     return;
@@ -636,17 +601,14 @@ function wizardStepNav(delta) {
   }
   const nextStep = wizardCurrentStep + delta;
   if (nextStep < 1 || nextStep > 8) return;
-  if (wizardSelectedTaskForce === 'empire-shield' && nextStep > 4) return;
-  if (wizardSelectedTaskForce === 'sentinel' && nextStep === 4) return;
+  if (nextStep === 4) return;
   wizardCurrentStep = nextStep;
   renderWizardStep();
 }
 
 function finishWizard(openSopAfter) {
-  if (wizardSelectedTaskForce === 'sentinel') {
-    const leaveBalanceEl = document.getElementById('wizStartingLeave');
-    if (leaveBalanceEl && !leaveBalanceEl.reportValidity()) return;
-  }
+  const leaveBalanceEl = document.getElementById('wizStartingLeave');
+  if (leaveBalanceEl && !leaveBalanceEl.reportValidity()) return;
 
   const chosenView = wizardSelectedView || currentViewMode;
   const chosenSched = document.getElementById('wizSchedSelect').value || 'alt';
@@ -669,7 +631,9 @@ function finishWizard(openSopAfter) {
   const chosenPayProf = {
     grade: document.getElementById('wizPayGradeSelect')?.value || 'E-4',
     yosKey: document.getElementById('wizPayYosSelect')?.value || 'over6',
+    locationType: document.getElementById('wizPayLocationTypeSelect')?.value || 'zip',
     zipCode: document.getElementById('wizPayZipInput')?.value || '',
+    mhaName: document.getElementById('wizPayMhaSelect')?.value || '',
     depStatus: document.getElementById('wizPayDepSelect')?.value || 'withoutDep',
     bahEntitled: bahCheck ? bahCheck.checked : true,
     basEntitled: basCheck ? basCheck.checked : true,
@@ -906,9 +870,9 @@ function updateRangeHelperNote() {
     const yesRadio = document.getElementById('tdyQualRadio_yes');
     const qualifiesInTransit = Boolean(yesRadio && yesRadio.checked);
     if (qualifiesInTransit) {
-      noteEl.innerHTML = 'More than 120 miles: Sets the first and last dates to <strong>In-Transit (Travel)</strong> and fills the dates in between as <strong>TDY</strong>. Automatically adds pay periods if needed.';
+      noteEl.innerHTML = 'For AT / Drill / TDY more than 120 miles away: Sets the first and last dates to <strong>In-Transit (Travel)</strong> and fills the dates in between as <strong>AT / Drill / TDY</strong>. Automatically adds pay periods if needed.';
     } else {
-      noteEl.innerHTML = '120 miles or less: Sets every date from start through end to <strong>TDY</strong>, with no In-Transit dates.';
+      noteEl.innerHTML = 'For AT / Drill / TDY 120 miles or less: Sets every date from start through end to <strong>AT / Drill / TDY</strong>, with no In-Transit dates.';
     }
   } else if (mode === 'lv') {
     noteEl.innerHTML = 'Applies <strong>SAD Leave</strong> to every date from start through end, including both dates, and calculates the 30-day / 60-day OCONUS deadline.';

@@ -68,7 +68,9 @@ const USD_FORMATTER = new Intl.NumberFormat("en-US", {
 const PAY_PROFILE_DEFAULTS = {
   grade: "E-4",
   yosKey: "over6",
+  locationType: "zip",
   zipCode: "",
+  mhaName: "",
   depStatus: "withoutDep", // "withDep" | "withoutDep"
   bahEntitled: true,
   basEntitled: true,
@@ -90,6 +92,95 @@ function normalizeZip5(rawZip) {
   return digits.length >= 5 ? digits.slice(0, 5) : digits;
 }
 
+function getMhaNames() {
+  const names = getPayDatabase().mhaNames;
+  return Array.isArray(names)
+    ? [...new Set(names.filter(name => typeof name === "string" && name.trim()))]
+      .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }))
+    : [];
+}
+
+function filterMhaOptions(prefix) {
+  const search = document.getElementById(`${prefix}MhaSearch`);
+  const select = document.getElementById(`${prefix}MhaSelect`);
+  const status = document.getElementById(`${prefix}MhaSearchStatus`);
+  if (!search || !select) return;
+
+  const names = getMhaNames();
+  const query = search.value.trim().toLocaleLowerCase();
+  const matchingNames = query
+    ? names.filter(name => name.toLocaleLowerCase().includes(query))
+    : names;
+  const selectedName = select.value;
+  const visibleNames = selectedName && !matchingNames.includes(selectedName)
+    ? [selectedName, ...matchingNames]
+    : matchingNames;
+
+  select.replaceChildren();
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = names.length ? "Choose an MHA" : "MHA data unavailable";
+  select.appendChild(placeholder);
+
+  visibleNames.forEach(name => {
+    const option = document.createElement("option");
+    option.value = name;
+    option.textContent = name;
+    select.appendChild(option);
+  });
+  select.value = selectedName;
+
+  if (status) {
+    status.textContent = query
+      ? `${matchingNames.length} matching ${matchingNames.length === 1 ? "area" : "areas"}`
+      : `${names.length} ${names.length === 1 ? "area" : "areas"} available`;
+  }
+}
+
+function syncPayLocationInputs(prefix, profile) {
+  const locationType = profile.locationType === "mha" ? "mha" : "zip";
+  const typeSelect = document.getElementById(`${prefix}LocationTypeSelect`);
+  const zipField = document.getElementById(`${prefix}ZipField`);
+  const mhaField = document.getElementById(`${prefix}MhaField`);
+  const zipInput = document.getElementById(`${prefix}ZipInput`);
+  const mhaSelect = document.getElementById(`${prefix}MhaSelect`);
+  const mhaSearch = document.getElementById(`${prefix}MhaSearch`);
+
+  if (typeSelect) typeSelect.value = locationType;
+  if (zipField) zipField.hidden = locationType === "mha";
+  if (mhaField) mhaField.hidden = locationType !== "mha";
+  if (zipInput) zipInput.value = normalizeZip5(profile.zipCode);
+  if (mhaSearch) mhaSearch.value = profile.mhaName || "";
+  filterMhaOptions(prefix);
+  if (mhaSelect) mhaSelect.value = profile.mhaName || "";
+}
+
+function onPayLocationTypeChange() {
+  const locationType = document.getElementById("payLocationTypeSelect")?.value;
+  const zipField = document.getElementById("payZipField");
+  const mhaField = document.getElementById("payMhaField");
+  if (zipField) zipField.hidden = locationType === "mha";
+  if (mhaField) mhaField.hidden = locationType !== "mha";
+  onPaySettingsChange();
+}
+
+function onWizardPayLocationTypeChange() {
+  const locationType = document.getElementById("wizPayLocationTypeSelect")?.value;
+  const zipField = document.getElementById("wizPayZipField");
+  const mhaField = document.getElementById("wizPayMhaField");
+  if (zipField) zipField.hidden = locationType === "mha";
+  if (mhaField) mhaField.hidden = locationType !== "mha";
+  onWizardPayChange();
+}
+
+function onMhaSelectChange(prefix) {
+  const select = document.getElementById(`${prefix}MhaSelect`);
+  const search = document.getElementById(`${prefix}MhaSearch`);
+  if (search && select) search.value = select.value;
+  if (prefix === "wizPay") onWizardPayChange();
+  else onPaySettingsChange();
+}
+
 function normalizeRoleName(rawRole, legacyRoleTier) {
   const role = String(rawRole || "").trim();
   if (ROLE_PP_INCENTIVE_BONUS[role] !== undefined) return role;
@@ -106,7 +197,9 @@ function getPayProfile() {
     return {
       grade: parsed.grade || PAY_PROFILE_DEFAULTS.grade,
       yosKey: parsed.yosKey || PAY_PROFILE_DEFAULTS.yosKey,
+      locationType: parsed.locationType === "mha" ? "mha" : "zip",
       zipCode: normalizeZip5(parsed.zipCode),
+      mhaName: typeof parsed.mhaName === "string" ? parsed.mhaName.trim() : "",
       depStatus: parsed.depStatus === "withDep" ? "withDep" : "withoutDep",
       bahEntitled: normalizeBooleanFlag(parsed.bahEntitled, PAY_PROFILE_DEFAULTS.bahEntitled),
       basEntitled: normalizeBooleanFlag(parsed.basEntitled, PAY_PROFILE_DEFAULTS.basEntitled),
@@ -124,7 +217,9 @@ function savePayProfile(profile) {
     localStorage.setItem(`${STORAGE_KEY}_PAY_PROFILE`, JSON.stringify({
       grade: profile.grade || PAY_PROFILE_DEFAULTS.grade,
       yosKey: profile.yosKey || PAY_PROFILE_DEFAULTS.yosKey,
+      locationType: profile.locationType === "mha" ? "mha" : "zip",
       zipCode: normalizeZip5(profile.zipCode),
+      mhaName: typeof profile.mhaName === "string" ? profile.mhaName.trim() : "",
       depStatus: profile.depStatus === "withDep" ? "withDep" : "withoutDep",
       bahEntitled: normalizeBooleanFlag(profile.bahEntitled, PAY_PROFILE_DEFAULTS.bahEntitled),
       basEntitled: normalizeBooleanFlag(profile.basEntitled, PAY_PROFILE_DEFAULTS.basEntitled),
@@ -203,7 +298,9 @@ function lookupDailySadRates(profile, includeBas = INCLUDE_BAS_BY_DEFAULT) {
   const cacheKey = JSON.stringify({
     grade: profile.grade,
     yosKey: profile.yosKey,
+    locationType: profile.locationType === "mha" ? "mha" : "zip",
     zipCode: normalizeZip5(profile.zipCode),
+    mhaName: typeof profile.mhaName === "string" ? profile.mhaName.trim() : "",
     depStatus: profile.depStatus,
     bahEntitled: normalizeBooleanFlag(profile.bahEntitled, true),
     basEntitled: normalizeBooleanFlag(profile.basEntitled, true),
@@ -217,7 +314,9 @@ function lookupDailySadRates(profile, includeBas = INCLUDE_BAS_BY_DEFAULT) {
   const db = getPayDatabase();
   const grade = profile.grade || PAY_PROFILE_DEFAULTS.grade;
   const yosKey = profile.yosKey || PAY_PROFILE_DEFAULTS.yosKey;
+  const locationType = profile.locationType === "mha" ? "mha" : "zip";
   const zipCode = normalizeZip5(profile.zipCode);
+  const selectedMhaName = typeof profile.mhaName === "string" ? profile.mhaName.trim() : "";
   const depStatus = profile.depStatus === "withDep" ? "withDep" : "withoutDep";
   const bahEntitled = normalizeBooleanFlag(profile && profile.bahEntitled, PAY_PROFILE_DEFAULTS.bahEntitled);
   const basEntitled = normalizeBooleanFlag(profile && profile.basEntitled, PAY_PROFILE_DEFAULTS.basEntitled);
@@ -231,8 +330,15 @@ function lookupDailySadRates(profile, includeBas = INCLUDE_BAS_BY_DEFAULT) {
   let mhaName = "";
   let rawBahRateForMha = 0;
 
-  if (zipCode.length === 5 && db.zipToMhaIdx && db.zipToMhaIdx[zipCode] !== undefined) {
-    const mhaIdx = db.zipToMhaIdx[zipCode];
+  let mhaIdx;
+  if (locationType === "mha") {
+    mhaIdx = Array.isArray(db.mhaNames) ? db.mhaNames.indexOf(selectedMhaName) : -1;
+    if (mhaIdx < 0) mhaIdx = undefined;
+  } else if (zipCode.length === 5 && db.zipToMhaIdx && db.zipToMhaIdx[zipCode] !== undefined) {
+    mhaIdx = db.zipToMhaIdx[zipCode];
+  }
+
+  if (mhaIdx !== undefined) {
     mhaName = (db.mhaNames && db.mhaNames[mhaIdx]) || "";
     const mhaGrades = (db.mhaBahByIdx && db.mhaBahByIdx[String(mhaIdx)]) || {};
     const pair = mhaGrades[grade]; // [monthlyWithDep, monthlyWithoutDep]
@@ -253,7 +359,9 @@ function lookupDailySadRates(profile, includeBas = INCLUDE_BAS_BY_DEFAULT) {
   const result = {
     grade,
     yosKey,
+    locationType,
     zipCode,
+    selectedMhaName,
     mhaName,
     zipMatched: Boolean(mhaName),
     depStatus,
@@ -287,7 +395,9 @@ function computePayForPayPeriod(slotIdx, dayStatusIds) {
     payPeriodStart: payPeriodStart ? toIsoDate(payPeriodStart) : "",
     grade: profile.grade,
     yosKey: profile.yosKey,
+    locationType: profile.locationType === "mha" ? "mha" : "zip",
     zipCode: normalizeZip5(profile.zipCode),
+    mhaName: typeof profile.mhaName === "string" ? profile.mhaName.trim() : "",
     depStatus: profile.depStatus,
     bahEntitled: normalizeBooleanFlag(profile.bahEntitled, true),
     basEntitled: normalizeBooleanFlag(profile.basEntitled, true),

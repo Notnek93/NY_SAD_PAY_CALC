@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <link rel="manifest" href="./manifest.json">
   <meta name="theme-color" content="#1a73e8">
-  <title>New York Joint Task Force Pay Calculator</title>
+  <title>NY SAD Duty, Leave &amp; Pay Planner</title>
   <style>
 <!-- 01-theme-and-layout.css -->
 
@@ -402,6 +402,8 @@ body {
 .phone-tools-button:hover,
 .phone-tools-button:focus-visible { border-color: var(--primary); color: var(--primary); }
 .phone-tools-button[hidden] { display: none; }
+.phone-tools-button[href],
+.more-tools-button[href] { display: block; text-decoration: none; }
 
 .header-more-tools > summary,
 .pp-more-tools > summary {
@@ -1056,6 +1058,8 @@ body {
   gap: 4px;
   min-width: 0;
 }
+
+.field-group[hidden] { display: none !important; }
 
 .field-group label {
   font-size: 10.5px;
@@ -1971,6 +1975,8 @@ body {
 .alert-warn { background: var(--warning-bg); color: var(--warning); border: 1px solid #fde293; }
 .alert-success { background: var(--success-bg); color: var(--success); border: 1px solid #ceead6; }
 .policy-cite { font-weight: 700; text-decoration: underline; }
+a.policy-cite { color: var(--primary); }
+a.policy-cite:hover { text-decoration-thickness: 2px; }
 
 .pp-action-row {
   display: flex;
@@ -2108,7 +2114,7 @@ body {
 <div class="wizard-backdrop" id="wizardBackdrop">
   <div class="wizard-dialog" role="dialog" aria-modal="true" aria-labelledby="wizardTitle">
     <div class="wizard-header">
-      <h2 id="wizardTitle">New York Joint Task Force Pay Calculator</h2>
+      <h2 id="wizardTitle">NY SAD Duty, Leave &amp; Pay Planner</h2>
       <p>Setup and personalize your duty, leave, and pay planning.</p>
     </div>
 
@@ -2126,9 +2132,9 @@ body {
       <!-- Welcome -->
       <div class="wizard-step active" id="wizardStep_1">
         <h3 class="wizard-step-title">Welcome</h3>
-        <p class="wizard-step-desc">A pay and duty-planning tool for New York Joint Task Force service members.</p>
+        <p class="wizard-step-desc">A duty, leave, and pay-planning aid for the New York State Active Duty mission.</p>
         <p class="wizard-step-desc"><strong>By SPC Lee, Kenton</strong></p>
-        <p class="wizard-step-desc">Get started by choosing your preferred view and task force.</p>
+        <p class="wizard-step-desc">Get started by choosing your preferred view and confirming the mission.</p>
         <div class="welcome-disclaimer" role="note" aria-label="Important disclaimer">
           <p><strong>Unofficial planning aid.</strong> This tool is independently created and is not an official or endorsed product of the State of New York, New York Joint Task Force, the Department of Defense, or any military service.</p>
           <p>It is for general planning only—to help service members explore leave and leave accrual, plan REFRAD and drill timing, and estimate pay. It does not provide official policy guidance, approvals, or pay or leave determinations; estimates may be incomplete or inaccurate.</p>
@@ -2163,24 +2169,14 @@ body {
 
       <!-- Step 2: Choose task force -->
       <div class="wizard-step" id="wizardStep_3">
-        <h3 class="wizard-step-title">2. Choose Your Task Force</h3>
-        <p class="wizard-step-desc">Choose the task force you support. Empire Shield planning is not available yet.</p>
+        <h3 class="wizard-step-title">2. New York Mission</h3>
+        <p class="wizard-step-desc">This planner is currently limited to New York State Active Duty (NY SAD).</p>
         <div class="wizard-view-grid">
-          <div class="wizard-view-card selected" id="wizTaskForceCard_sentinel" role="button" aria-pressed="true" tabindex="0" onclick="selectWizardTaskForce('sentinel')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectWizardTaskForce('sentinel')}">
-            <div class="wizard-view-name">JTF Sentinel</div>
-            <div class="wizard-view-sub">Open the duty, leave, and SAD pay planner</div>
-          </div>
-          <div class="wizard-view-card" id="wizTaskForceCard_empire" role="button" aria-pressed="false" tabindex="0" onclick="selectWizardTaskForce('empire-shield')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectWizardTaskForce('empire-shield')}">
-            <div class="wizard-view-name">JTF Empire Shield</div>
-            <div class="wizard-view-sub">Work in progress</div>
+          <div class="wizard-view-card selected" aria-current="true">
+            <div class="wizard-view-name">NY SAD</div>
+            <div class="wizard-view-sub">New York State Active Duty</div>
           </div>
         </div>
-      </div>
-
-      <!-- Empire Shield placeholder -->
-      <div class="wizard-step" id="wizardStep_4">
-        <h3 class="wizard-step-title">JTF Empire Shield — Work in Progress</h3>
-        <p class="wizard-step-desc">The Empire Shield pay planner is not available yet. The planned tool will estimate pay from the number of drill days in a pay period. Pay rates and incentive details are still being defined.</p>
       </div>
 
       <!-- Step 3: Schedule & RDOs -->
@@ -2205,7 +2201,7 @@ body {
       <!-- Step 4: SAD Pay & Leave -->
       <div class="wizard-step" id="wizardStep_6">
         <h3 class="wizard-step-title">4. SAD Pay Profile &amp; 18 NOV 2026 Leave Balance</h3>
-        <p class="wizard-step-desc">Enter your assignment role, pay grade, years of service, ZIP code for the BAH rate area, BAH/BAS eligibility, and your leave balance as of 18 Nov 2026.</p>
+        <p class="wizard-step-desc">Enter your assignment role, pay grade, years of service, ZIP code or MHA for the BAH rate area, BAH/BAS eligibility, and your leave balance as of 18 Nov 2026.</p>
         <div class="wizard-form-stack">
           <div class="field-group">
             <label for="wizSmRoleInput">Assignment Role</label>
@@ -2281,9 +2277,12 @@ body {
 
           <div class="wizard-field-grid-2">
             <div class="field-group">
-              <label for="wizPayZipInput">Duty or Home ZIP Code</label>
-              <input type="text" id="wizPayZipInput" class="top-input" maxlength="5" inputmode="numeric" placeholder="e.g. 11228" oninput="onWizardPayChange()">
-              <span class="field-helper">Enter 5 digits to look up the BAH rate area.</span>
+              <label for="wizPayLocationTypeSelect">BAH Rate Location</label>
+              <select id="wizPayLocationTypeSelect" class="top-select" onchange="onWizardPayLocationTypeChange()">
+                <option value="zip">Enter ZIP Code</option>
+                <option value="mha">Choose MHA</option>
+              </select>
+              <span class="field-helper">Use either a ZIP Code or select a Military Housing Area.</span>
             </div>
 
             <div class="field-group">
@@ -2293,6 +2292,22 @@ body {
                 <option value="withDep">With Dependents</option>
               </select>
               <span class="field-helper">Choose the status used by the BAH rate table.</span>
+            </div>
+          </div>
+
+          <div class="wizard-field-grid-2">
+            <div class="field-group" id="wizPayZipField">
+              <label for="wizPayZipInput">Duty or Home ZIP Code</label>
+              <input type="text" id="wizPayZipInput" class="top-input" maxlength="5" inputmode="numeric" placeholder="e.g. 11228" oninput="onWizardPayChange()">
+              <span class="field-helper">Enter 5 digits to look up the BAH rate area.</span>
+            </div>
+            <div class="field-group" id="wizPayMhaField" hidden>
+              <label for="wizPayMhaSearch">Search Military Housing Areas</label>
+              <input type="search" id="wizPayMhaSearch" class="top-input" placeholder="Type a city, state, or MHA code" oninput="filterMhaOptions('wizPay');onWizardPayChange()">
+              <select id="wizPayMhaSelect" class="top-select" onchange="onMhaSelectChange('wizPay')">
+                <option value="">Choose an MHA</option>
+              </select>
+              <span class="field-helper" id="wizPayMhaSearchStatus" aria-live="polite"></span>
             </div>
           </div>
 
@@ -2522,9 +2537,27 @@ body {
         </div>
 
         <div class="field-group">
+          <label for="payLocationTypeSelect">BAH Rate Location</label>
+          <select id="payLocationTypeSelect" class="top-select" onchange="onPayLocationTypeChange()">
+            <option value="zip">Enter ZIP Code</option>
+            <option value="mha">Choose MHA</option>
+          </select>
+          <span class="field-helper">Use either a ZIP Code or select a Military Housing Area.</span>
+        </div>
+
+        <div class="field-group" id="payZipField">
           <label for="payZipInput">Duty or Home ZIP Code</label>
           <input type="text" id="payZipInput" class="top-input" maxlength="5" inputmode="numeric" placeholder="e.g. 11228" oninput="onPaySettingsChange()">
           <span class="field-helper">Enter 5 digits to look up the BAH rate area.</span>
+        </div>
+
+        <div class="field-group" id="payMhaField" hidden>
+          <label for="payMhaSearch">Search Military Housing Areas</label>
+          <input type="search" id="payMhaSearch" class="top-input" placeholder="Type a city, state, or MHA code" oninput="filterMhaOptions('pay');onPaySettingsChange()">
+          <select id="payMhaSelect" class="top-select" onchange="onMhaSelectChange('pay')">
+            <option value="">Choose an MHA</option>
+          </select>
+          <span class="field-helper" id="payMhaSearchStatus" aria-live="polite"></span>
         </div>
 
         <div class="field-group">
@@ -2629,9 +2662,9 @@ body {
           <div class="sop-step-title">Plan a day or a date range</div>
           <ul class="sop-list">
             <li>For one day, select the date and choose <strong>SAD Leave</strong> in the status picker.</li>
-            <li>For several days, open <strong>Tools</strong> and choose <strong>Plan Leave</strong> or <strong>Plan TDY / Travel</strong>. Select the start and end dates; both dates are included. The planner adds pay periods when needed.</li>
+            <li>For several days, open <strong>Tools</strong> and choose <strong>Plan a date range</strong>. Select SAD Leave or AT / Drill / TDY, then enter the start and end dates; both dates are included. The planner adds pay periods when needed.</li>
             <li>For a transfer, open <strong>Tools</strong> → <strong>Plan Transfer</strong>, choose the transfer date and destination role, then apply. The date counts as paid On Shift time and accrues leave. Incentive Pay uses the highest assignment role held during a pay period, so a higher-role incentive remains for a transition pay period.</li>
-            <li>For a multi-day TDY plan, answer whether your assigned facility is more than 120 miles from your home station. If it is, the first and last dates are In-Transit with TDY in between; the range must be at least 3 days. If not, every date is TDY. Choosing In-Transit for one date opens a confirmation; choosing No leaves that date unchanged.</li>
+            <li>For a multi-day AT / Drill / TDY plan, answer whether your assigned facility is more than 120 miles from your home station. If it is, the first and last dates are In-Transit with AT / Drill / TDY in between; the range must be at least 3 days. In-Transit must connect On Shift with AT / Drill / TDY. If the distance is 120 miles or less, every date is AT / Drill / TDY. Choosing In-Transit for one date opens a confirmation; choosing No leaves that date unchanged.</li>
           </ul>
         </div>
         <div class="sop-step-card">
@@ -2701,8 +2734,8 @@ body {
        ==================================================================================== -->
   <div class="header-top">
     <div>
-      <div class="calc-title">JTF Sentinel SAD DOCCS Duty Status &amp; Leave Planner (v1)</div>
-      <div class="calc-sub">DA Form 6 desktop view | Phone calendar | 01 Apr 2026 policy | 49-day limit effective 03 Dec 2026 | Saves on this device</div>
+      <div class="calc-title">NY SAD Duty, Leave &amp; Pay Planner</div>
+      <div class="calc-sub">New York State Active Duty | Desktop schedule | Phone calendar | Saves on this device</div>
     </div>
 
     <div class="header-right-actions">
@@ -2718,22 +2751,28 @@ body {
           <button type="button" class="more-tools-button" onclick="openTransferPlannerFromMenu()">Plan Transfer</button>
           <button type="button" class="more-tools-button" onclick="confirmApplyDefaultPatternAll()">↺ Reset day-off pattern</button>
           <button type="button" class="more-tools-button" id="clearRefradPlanButton" onclick="clearRefradOnly()" hidden>Clear REFRAD plan</button>
+          <div class="phone-tools-group-title">References</div>
+          <a class="more-tools-button" href="./assets/Pass%20Leave%20Policy%2001APR2026%20-%20Encl%20255%20NYS%20Letterhead%20-%20JTF%20Sentinel%20RDO%20and%20Leave%20Policy%201APR26.pdf" target="_blank" rel="noopener">RDO &amp; Leave Policy (01 Apr 2026)</a>
+          <a class="more-tools-button" href="./assets/2026%20SAD%20Pay%20Rates%20Workbook.pdf#page=1" target="_blank" rel="noopener">CY 2026 Pay Rates (verified Oct 2026)</a>
+          <a class="more-tools-button" href="./assets/Requesting%20W2s%20and%20Paystubs%20Guidance.pdf" target="_blank" rel="noopener">W-2 &amp; Paystub Guidance</a>
         </div>
       </details>
       <details class="phone-tools" id="phoneTools">
         <summary>Tools</summary>
         <div class="phone-tools-menu">
           <div class="phone-tools-group-title">Plan</div>
-          <button type="button" class="phone-tools-button" onclick="openPhoneRangePlanner('lv')">Plan Leave</button>
-          <button type="button" class="phone-tools-button" onclick="openPhoneRangePlanner('tdy')">Plan TDY / Travel</button>
+          <button type="button" class="phone-tools-button" onclick="openPhoneRangePlanner()">Plan a date range</button>
           <button type="button" class="phone-tools-button" onclick="openPhoneRangePlanner('transfer')">Plan Transfer</button>
           <button type="button" class="phone-tools-button" onclick="closePhoneToolsMenu();openRefradPlanner()">Plan REFRAD</button>
-          <button type="button" class="phone-tools-button" onclick="openPhoneRangePlanner()">Plan a date range</button>
           <div class="phone-tools-group-title">Schedule</div>
           <button type="button" class="phone-tools-button" onclick="addPayPeriodFromPhoneTools()">Add pay period</button>
           <button type="button" class="phone-tools-button" onclick="confirmApplyDefaultPatternAll()">Reset day-off pattern</button>
           <button type="button" class="phone-tools-button" id="phoneRemoveLastPayPeriodButton" onclick="removeLastPayPeriodFromPhoneTools()" hidden>Remove last pay period</button>
           <button type="button" class="phone-tools-button" id="phoneClearRefradPlanButton" onclick="clearRefradFromPhoneTools()" hidden>Clear REFRAD plan</button>
+          <div class="phone-tools-group-title">References</div>
+          <a class="phone-tools-button" href="./assets/Pass%20Leave%20Policy%2001APR2026%20-%20Encl%20255%20NYS%20Letterhead%20-%20JTF%20Sentinel%20RDO%20and%20Leave%20Policy%201APR26.pdf" target="_blank" rel="noopener">RDO &amp; Leave Policy (01 Apr 2026)</a>
+          <a class="phone-tools-button" href="./assets/2026%20SAD%20Pay%20Rates%20Workbook.pdf#page=1" target="_blank" rel="noopener">CY 2026 Pay Rates (verified Oct 2026)</a>
+          <a class="phone-tools-button" href="./assets/Requesting%20W2s%20and%20Paystubs%20Guidance.pdf" target="_blank" rel="noopener">W-2 &amp; Paystub Guidance</a>
         </div>
       </details>
       <div class="view-toggle-bar">
@@ -2781,7 +2820,7 @@ body {
         <label for="rangeStatusSelect">What are you planning?</label>
         <select id="rangeStatusSelect" class="range-input" onchange="onRangeStatusChange()">
           <option value="lv">SAD Leave</option>
-          <option value="tdy">TDY</option>
+          <option value="tdy">AT / Drill / TDY</option>
           <option value="transfer">Transfer Day</option>
           <option value="shift">On Shift (Present for Duty)</option>
           <option value="rdo">RDO</option>
@@ -2889,10 +2928,10 @@ body {
     <div class="feedback-footer-text">
       <strong>💬 Comments, Suggestions &amp; Improvements:</strong>
       Have feedback on policy rules, pay estimates, or usability for v1? Email
-      <a href="mailto:kenton.lee4.mil@army.mil?subject=JTF%20Sentinel%20Planner%20v1%20Feedback">kenton.lee4.mil@army.mil</a>.
+      <a href="mailto:kenton.lee4.mil@army.mil?subject=NY%20SAD%20Planner%20Feedback">kenton.lee4.mil@army.mil</a>.
     </div>
     <div class="feedback-footer-actions">
-      <a class="feedback-email-btn" href="mailto:kenton.lee4.mil@army.mil?subject=JTF%20Sentinel%20Planner%20v1%20Feedback">✉️ Email Feedback</a>
+      <a class="feedback-email-btn" href="mailto:kenton.lee4.mil@army.mil?subject=NY%20SAD%20Planner%20Feedback">✉️ Email Feedback</a>
       <button type="button" class="feedback-copy-btn" id="copyFeedbackEmailBtn" onclick="copyFeedbackEmail()">📋 Copy Address</button>
     </div>
   </div>
@@ -3713,26 +3752,18 @@ function openTransferPlannerFromMenu() {
 /* ====================================================================================
    TASK FORCE ONBOARDING WIZARD (FIRST-TIME USERS & RE-RUN OPTION)
    ==================================================================================== */
-const TASK_FORCE_STORAGE_KEY = 'JTF_SENTINEL_DOCCS_TASK_FORCE';
-const WIZARD_SENTINEL_STEP_NAMES = [
+const WIZARD_STEP_NAMES = [
   'Welcome',
   'Choose View',
-  'Task Force',
+  'New York Mission',
   'Schedule & RDOs',
   'SAD Pay & Leave',
   'Pay Period',
   'How-To Offer'
 ];
-const WIZARD_EMPIRE_STEP_NAMES = [
-  'Welcome',
-  'Choose View',
-  'Task Force',
-  'Work in Progress'
-];
 let wizardCurrentStep = 1;
 let wizardSelectedView = currentViewMode;
 let wizardSelectedTheme = colorThemePreference;
-let wizardSelectedTaskForce = 'sentinel';
 let wizardIsRerun = false;
 let wizardInitialSnapshot = null;
 
@@ -3769,10 +3800,16 @@ function updateWizardPayZipMhaBadge(prof) {
   if (!info.bahEntitled) {
     badge.style.color = 'var(--text-main)';
     badge.textContent = `${labels.base} ${formatUsd(info.dailyBasePay)}/d + ${labels.adlCom} ${formatUsd(info.dailyBahRate)}/d${incText} (${formatUsd(info.dailyTotalRate)}/d · ${labels.estimateTag})${entNote}`;
-  } else if (!info.zipCode) {
+  } else if (info.locationType === 'mha' && !info.zipMatched && !info.selectedMhaName) {
+    badge.style.color = 'var(--text-sub)';
+    badge.textContent = `${labels.base}: ${formatUsd(info.dailyBasePay)}/d + ${labels.adlCom}: ${formatUsd(info.dailyBahRate)}/d${incText} — Choose an MHA for BAH (${labels.estimateTag})${entNote}`;
+  } else if (info.locationType === 'mha' && !info.zipMatched) {
+    badge.style.color = 'var(--danger)';
+    badge.textContent = `⚠️ MHA "${info.selectedMhaName}" unavailable in the BAH table (${labels.base} ${formatUsd(info.dailyBasePay)}/d + ${labels.adlCom} ${formatUsd(info.dailyBahRate)}/d${incText} · ${labels.estimateTag})${entNote}`;
+  } else if (info.locationType !== 'mha' && !info.zipCode) {
     badge.style.color = 'var(--text-sub)';
     badge.textContent = `${labels.base}: ${formatUsd(info.dailyBasePay)}/d + ${labels.adlCom}: ${formatUsd(info.dailyBahRate)}/d${incText} — Enter 5-digit ZIP for BAH (${labels.estimateTag})${entNote}`;
-  } else if (info.zipCode.length < 5) {
+  } else if (info.locationType !== 'mha' && info.zipCode.length < 5) {
     badge.style.color = 'var(--text-sub)';
     badge.textContent = `${info.zipCode.length}/5 digits...${entNote}`;
   } else if (info.zipMatched) {
@@ -3797,7 +3834,9 @@ function onWizardPayChange() {
   const prof = {
     grade: document.getElementById('wizPayGradeSelect')?.value || 'E-4',
     yosKey: document.getElementById('wizPayYosSelect')?.value || 'over6',
+    locationType: document.getElementById('wizPayLocationTypeSelect')?.value || 'zip',
     zipCode: document.getElementById('wizPayZipInput')?.value || '',
+    mhaName: document.getElementById('wizPayMhaSelect')?.value || '',
     depStatus: document.getElementById('wizPayDepSelect')?.value || 'withoutDep',
     bahEntitled: bahCheck ? bahCheck.checked : true,
     basEntitled: basCheck ? basCheck.checked : true,
@@ -3812,14 +3851,6 @@ function openSetupWizard(isRerun) {
   wizardCurrentStep = 1;
   wizardSelectedView = currentViewMode;
   wizardSelectedTheme = colorThemePreference;
-  try {
-    const savedTaskForce = localStorage.getItem(TASK_FORCE_STORAGE_KEY);
-    wizardSelectedTaskForce = savedTaskForce === 'empire-shield' ? savedTaskForce : 'sentinel';
-  } catch (e) {
-    console.warn('Task force preference load skipped:', e);
-    wizardSelectedTaskForce = 'sentinel';
-  }
-
   const schedType = document.getElementById('schedSelect').value || 'alt';
   const latestAllowedIdx = typeof getLatestAllowedPayPeriodIndex === 'function'
     ? getLatestAllowedPayPeriodIndex()
@@ -3839,10 +3870,9 @@ function openSetupWizard(isRerun) {
 
   const payProf = typeof getPayProfile === 'function'
     ? getPayProfile()
-    : { grade: 'E-4', yosKey: 'over6', zipCode: '', depStatus: 'withoutDep', bahEntitled: true, basEntitled: true, roleTier: 'none' };
+    : { grade: 'E-4', yosKey: 'over6', locationType: 'zip', zipCode: '', mhaName: '', depStatus: 'withoutDep', bahEntitled: true, basEntitled: true, roleTier: 'none' };
   const wGrade = document.getElementById('wizPayGradeSelect');
   const wYos = document.getElementById('wizPayYosSelect');
-  const wZip = document.getElementById('wizPayZipInput');
   const wDep = document.getElementById('wizPayDepSelect');
   const wBah = document.getElementById('wizBahEntitledCheck');
   const wBas = document.getElementById('wizBasEntitledCheck');
@@ -3850,7 +3880,7 @@ function openSetupWizard(isRerun) {
 
   if (wGrade) wGrade.value = payProf.grade;
   if (wYos) wYos.value = payProf.yosKey;
-  if (wZip) wZip.value = payProf.zipCode;
+  syncPayLocationInputs('wizPay', payProf);
   if (wDep) wDep.value = payProf.depStatus;
   if (wBah) wBah.checked = payProf.bahEntitled !== false;
   if (wBas) wBas.checked = payProf.basEntitled !== false;
@@ -3869,7 +3899,6 @@ function openSetupWizard(isRerun) {
   const themeSelect = document.getElementById('wizThemeSelect');
   if (themeSelect) themeSelect.value = wizardSelectedTheme;
   selectWizardView(wizardSelectedView);
-  selectWizardTaskForce(wizardSelectedTaskForce);
   renderWizardStep();
 
   const backdrop = document.getElementById('wizardBackdrop');
@@ -3891,28 +3920,6 @@ function selectWizardView(mode) {
 
 function selectWizardTheme(preference) {
   if (['system', 'light', 'dark'].includes(preference)) wizardSelectedTheme = preference;
-}
-
-function selectWizardTaskForce(taskForce) {
-  wizardSelectedTaskForce = taskForce === 'empire-shield' ? 'empire-shield' : 'sentinel';
-  const sentinelCard = document.getElementById('wizTaskForceCard_sentinel');
-  const empireCard = document.getElementById('wizTaskForceCard_empire');
-  if (sentinelCard) {
-    const selected = wizardSelectedTaskForce === 'sentinel';
-    sentinelCard.classList.toggle('selected', selected);
-    sentinelCard.setAttribute('aria-pressed', String(selected));
-  }
-  if (empireCard) {
-    const selected = wizardSelectedTaskForce === 'empire-shield';
-    empireCard.classList.toggle('selected', selected);
-    empireCard.setAttribute('aria-pressed', String(selected));
-  }
-  try {
-    localStorage.setItem(TASK_FORCE_STORAGE_KEY, wizardSelectedTaskForce);
-  } catch (e) {
-    console.warn('Task force preference save skipped:', e);
-  }
-  if (wizardCurrentStep === 3) renderWizardStep();
 }
 
 function populateWizardRdoOptions(schedType, preferredPreset) {
@@ -4136,19 +4143,16 @@ function renderWizardStep() {
   const backBtn = document.getElementById('wizBackBtn');
   const nextBtn = document.getElementById('wizNextBtn');
 
-  const isEmpireShield = wizardSelectedTaskForce === 'empire-shield';
-  const displayStep = isEmpireShield || wizardCurrentStep <= 3 ? wizardCurrentStep : wizardCurrentStep - 1;
-  const totalSteps = isEmpireShield ? 4 : 7;
-  const stepName = isEmpireShield
-    ? WIZARD_EMPIRE_STEP_NAMES[wizardCurrentStep - 1]
-    : WIZARD_SENTINEL_STEP_NAMES[displayStep - 1];
+  const displayStep = wizardCurrentStep <= 3 ? wizardCurrentStep : wizardCurrentStep - 1;
+  const totalSteps = 7;
+  const stepName = WIZARD_STEP_NAMES[displayStep - 1];
 
   if (labelEl) labelEl.textContent = `Step ${displayStep} of ${totalSteps}`;
   if (nameEl) nameEl.textContent = stepName || '';
   if (fillEl) fillEl.style.width = `${(displayStep / totalSteps) * 100}%`;
   if (backBtn) backBtn.disabled = wizardCurrentStep <= 1;
   if (nextBtn) {
-    nextBtn.style.display = (isEmpireShield && wizardCurrentStep === 4) || (!isEmpireShield && wizardCurrentStep === 8)
+    nextBtn.style.display = wizardCurrentStep === 8
       ? 'none'
       : 'inline-block';
     nextBtn.textContent = wizardCurrentStep === 1 ? 'Get Started ▶' : 'Next ▶';
@@ -4157,11 +4161,11 @@ function renderWizardStep() {
 
 function wizardStepNav(delta) {
   if (delta > 0 && wizardCurrentStep === 3) {
-    wizardCurrentStep = wizardSelectedTaskForce === 'empire-shield' ? 4 : 5;
+    wizardCurrentStep = 5;
     renderWizardStep();
     return;
   }
-  if (delta < 0 && wizardSelectedTaskForce === 'sentinel' && wizardCurrentStep === 5) {
+  if (delta < 0 && wizardCurrentStep === 5) {
     wizardCurrentStep = 3;
     renderWizardStep();
     return;
@@ -4179,17 +4183,14 @@ function wizardStepNav(delta) {
   }
   const nextStep = wizardCurrentStep + delta;
   if (nextStep < 1 || nextStep > 8) return;
-  if (wizardSelectedTaskForce === 'empire-shield' && nextStep > 4) return;
-  if (wizardSelectedTaskForce === 'sentinel' && nextStep === 4) return;
+  if (nextStep === 4) return;
   wizardCurrentStep = nextStep;
   renderWizardStep();
 }
 
 function finishWizard(openSopAfter) {
-  if (wizardSelectedTaskForce === 'sentinel') {
-    const leaveBalanceEl = document.getElementById('wizStartingLeave');
-    if (leaveBalanceEl && !leaveBalanceEl.reportValidity()) return;
-  }
+  const leaveBalanceEl = document.getElementById('wizStartingLeave');
+  if (leaveBalanceEl && !leaveBalanceEl.reportValidity()) return;
 
   const chosenView = wizardSelectedView || currentViewMode;
   const chosenSched = document.getElementById('wizSchedSelect').value || 'alt';
@@ -4212,7 +4213,9 @@ function finishWizard(openSopAfter) {
   const chosenPayProf = {
     grade: document.getElementById('wizPayGradeSelect')?.value || 'E-4',
     yosKey: document.getElementById('wizPayYosSelect')?.value || 'over6',
+    locationType: document.getElementById('wizPayLocationTypeSelect')?.value || 'zip',
     zipCode: document.getElementById('wizPayZipInput')?.value || '',
+    mhaName: document.getElementById('wizPayMhaSelect')?.value || '',
     depStatus: document.getElementById('wizPayDepSelect')?.value || 'withoutDep',
     bahEntitled: bahCheck ? bahCheck.checked : true,
     basEntitled: basCheck ? basCheck.checked : true,
@@ -4449,9 +4452,9 @@ function updateRangeHelperNote() {
     const yesRadio = document.getElementById('tdyQualRadio_yes');
     const qualifiesInTransit = Boolean(yesRadio && yesRadio.checked);
     if (qualifiesInTransit) {
-      noteEl.innerHTML = 'More than 120 miles: Sets the first and last dates to <strong>In-Transit (Travel)</strong> and fills the dates in between as <strong>TDY</strong>. Automatically adds pay periods if needed.';
+      noteEl.innerHTML = 'For AT / Drill / TDY more than 120 miles away: Sets the first and last dates to <strong>In-Transit (Travel)</strong> and fills the dates in between as <strong>AT / Drill / TDY</strong>. Automatically adds pay periods if needed.';
     } else {
-      noteEl.innerHTML = '120 miles or less: Sets every date from start through end to <strong>TDY</strong>, with no In-Transit dates.';
+      noteEl.innerHTML = 'For AT / Drill / TDY 120 miles or less: Sets every date from start through end to <strong>AT / Drill / TDY</strong>, with no In-Transit dates.';
     }
   } else if (mode === 'lv') {
     noteEl.innerHTML = 'Applies <strong>SAD Leave</strong> to every date from start through end, including both dates, and calculates the 30-day / 60-day OCONUS deadline.';
@@ -5799,6 +5802,18 @@ function getLeaveCapResumeThreshold(maxCap = MAX_LEAVE_DAYS, bufferDays = LEAVE_
   return Math.round((maxCap - safeBuffer) * 100) / 100;
 }
 
+function isValidInTransitBridge(previousStatus, nextStatus) {
+  return (previousStatus === 'shift' && nextStatus === 'drl') ||
+    (previousStatus === 'drl' && nextStatus === 'shift');
+}
+
+const LEAVE_POLICY_PDF_URL = './assets/Pass%20Leave%20Policy%2001APR2026%20-%20Encl%20255%20NYS%20Letterhead%20-%20JTF%20Sentinel%20RDO%20and%20Leave%20Policy%201APR26.pdf';
+
+function policyReferenceLink(label, page) {
+  const pageAnchor = page ? `#page=${page}` : '';
+  return `<a class="policy-cite" href="${LEAVE_POLICY_PDF_URL}${pageAnchor}" target="_blank" rel="noopener">${label}</a>`;
+}
+
 /* ====================================================================================
    ONE-TAP ERROR JUMP BANNER (STICKY TOP BAR)
    ==================================================================================== */
@@ -5887,13 +5902,12 @@ function syncPaySettingsInputs() {
   const prof = getPayProfile();
   const gradeEl = document.getElementById('payGradeSelect');
   const yosEl = document.getElementById('payYosSelect');
-  const zipEl = document.getElementById('payZipInput');
   const depEl = document.getElementById('payDepSelect');
   const bahEl = document.getElementById('payBahEntitledCheck');
   const basEl = document.getElementById('payBasEntitledCheck');
   if (gradeEl) gradeEl.value = prof.grade;
   if (yosEl) yosEl.value = prof.yosKey;
-  if (zipEl) zipEl.value = prof.zipCode;
+  syncPayLocationInputs('pay', prof);
   if (depEl) depEl.value = prof.depStatus;
   if (bahEl) bahEl.checked = prof.bahEntitled !== false;
   if (basEl) basEl.checked = prof.basEntitled !== false;
@@ -5926,10 +5940,16 @@ function updatePayZipMhaBadge(prof) {
   if (!info.bahEntitled) {
     badge.style.color = 'var(--text-main)';
     badge.textContent = `${labels.base} ${formatUsd(info.dailyBasePay)}/d + ${labels.adlCom} ${formatUsd(info.dailyBahRate)}/d${incText} (${formatUsd(info.dailyTotalRate)}/d · ${labels.estimateTag})${entNote}`;
-  } else if (!info.zipCode) {
+  } else if (info.locationType === 'mha' && !info.zipMatched && !info.selectedMhaName) {
+    badge.style.color = 'var(--text-sub)';
+    badge.textContent = `${labels.base}: ${formatUsd(info.dailyBasePay)}/d + ${labels.adlCom}: ${formatUsd(info.dailyBahRate)}/d${incText} — Choose an MHA for BAH (${labels.estimateTag})${entNote}`;
+  } else if (info.locationType === 'mha' && !info.zipMatched) {
+    badge.style.color = 'var(--danger)';
+    badge.textContent = `⚠️ MHA "${info.selectedMhaName}" unavailable in the BAH table (${labels.base} ${formatUsd(info.dailyBasePay)}/d + ${labels.adlCom} ${formatUsd(info.dailyBahRate)}/d${incText} · ${labels.estimateTag})${entNote}`;
+  } else if (info.locationType !== 'mha' && !info.zipCode) {
     badge.style.color = 'var(--text-sub)';
     badge.textContent = `${labels.base}: ${formatUsd(info.dailyBasePay)}/d + ${labels.adlCom}: ${formatUsd(info.dailyBahRate)}/d${incText} — Enter 5-digit ZIP for BAH (${labels.estimateTag})${entNote}`;
-  } else if (info.zipCode.length < 5) {
+  } else if (info.locationType !== 'mha' && info.zipCode.length < 5) {
     badge.style.color = 'var(--text-sub)';
     badge.textContent = `${info.zipCode.length}/5 digits...${entNote}`;
   } else if (info.zipMatched) {
@@ -5949,7 +5969,9 @@ function onPaySettingsChange() {
   const prof = {
     grade: document.getElementById('payGradeSelect')?.value || 'E-4',
     yosKey: document.getElementById('payYosSelect')?.value || 'over6',
+    locationType: document.getElementById('payLocationTypeSelect')?.value || 'zip',
     zipCode: document.getElementById('payZipInput')?.value || '',
+    mhaName: document.getElementById('payMhaSelect')?.value || '',
     depStatus: document.getElementById('payDepSelect')?.value || 'withoutDep',
     bahEntitled: bahEl ? bahEl.checked : true,
     basEntitled: basEl ? basEl.checked : true,
@@ -5999,7 +6021,10 @@ function renderPayReadoutForSlot(s, dayStatusIds, runningTotal) {
   const yearsOfService = info.yosKey === 'lt2'
     ? 'under 2 years'
     : `over ${String(info.yosKey || '').replace(/^over/, '')} years`;
-  const profileAssumption = `${info.grade}, ${yearsOfService}, ZIP ${info.zipCode || 'not entered'}, ${info.depStatus === 'withDep' ? 'with' : 'without'} dependents; BAH ${info.bahEntitled ? 'included when eligible' : 'not included'}; BAS ${info.basEntitled ? 'included when eligible' : 'not included'}.`;
+  const locationAssumption = info.locationType === 'mha'
+    ? `MHA ${info.selectedMhaName || 'not selected'}`
+    : `ZIP ${info.zipCode || 'not entered'}`;
+  const profileAssumption = `${info.grade}, ${yearsOfService}, ${locationAssumption}, ${info.depStatus === 'withDep' ? 'with' : 'without'} dependents; BAH ${info.bahEntitled ? 'included when eligible' : 'not included'}; BAS ${info.basEntitled ? 'included when eligible' : 'not included'}.`;
   const rateAssumptions = typeof getPayRateDataAssumptionText === 'function'
     ? getPayRateDataAssumptionText()
     : 'Using the rate tables bundled with this app.';
@@ -6437,7 +6462,10 @@ function calculateAllPayPeriodsNow() {
         rdoEarned = 0;
         if (rdoSelected > 0) {
           for (let d = 0; d < 14; d++) if (effectiveSelections[s][d] === 'rdo') flagCard(s, d);
-          perPpErrors[s].push(`<span class="policy-cite">Earned RDO Policy:</span> Minimum 3 "Present for Duty" (On Shift) days required within a pay period to earn paid Pass Days (currently ${shiftCount} On Shift days, but ${rdoSelected} RDOs selected).`);
+          perPpErrors[s].push(
+            `${policyReferenceLink('RDO Policy, Para 6.b:', null)} ` +
+            `Minimum 3 "Present for Duty" (On Shift) days required within a pay period to earn paid Pass Days (currently ${shiftCount} On Shift days, but ${rdoSelected} RDOs selected).`
+          );
         }
       } else if (schedType === 'alt') {
         if (effectiveRdoQual >= 8) rdoEarned = 6;
@@ -6526,7 +6554,7 @@ function calculateAllPayPeriodsNow() {
         rdoDiffEl.textContent = `${Math.abs(rdoDiff)} over limit!`;
         rdoDiffEl.style.color = 'var(--danger)';
         for (let d = 0; d < 14; d++) if (effectiveSelections[s][d] === 'rdo') flagCard(s, d);
-        perPpErrors[s].push(`<span class="policy-cite">RDO Limit Exceeded (${tableCite}):</span> Selected ${rdoSelected} RDOs, exceeding ${rdoEarned} authorized for this pay period.`);
+        perPpErrors[s].push(`${policyReferenceLink(`RDO Limit Exceeded (${tableCite}), Para 6.b:`, null)} Selected ${rdoSelected} RDOs, exceeding ${rdoEarned} authorized for this pay period.`);
       }
     }
 
@@ -6667,7 +6695,7 @@ function calculateAllPayPeriodsNow() {
         flagCard(curr.s, curr.d);
         hasHardError = true;
         perPpErrors[curr.s].push(
-          `<span class="policy-cite">JTF Sentinel Policy Change 2 (01 APR 2026), Para 9.b:</span> ` +
+          `${policyReferenceLink('JTF Sentinel Policy Change 2 (01 APR 2026), Para 9.b (PDF p.3):', 3)} ` +
           `In-Transit day (${curr.label}) cannot be used immediately after an RDO, Leave day, or Special Pass (${prev.label}).`
         );
       }
@@ -6676,48 +6704,48 @@ function calculateAllPayPeriodsNow() {
         flagCard(next.s, next.d);
         hasHardError = true;
         perPpErrors[curr.s].push(
-          `<span class="policy-cite">JTF Sentinel Policy Change 2 (01 APR 2026), Para 9.b:</span> ` +
+          `${policyReferenceLink('JTF Sentinel Policy Change 2 (01 APR 2026), Para 9.b (PDF p.3):', 3)} ` +
           `In-Transit day (${curr.label}) cannot be used immediately before an RDO, Leave day, or Special Pass (${next.label}).`
         );
       }
 
       if (prev && next) {
-        const bridgesShiftAndTdy = (prev.isDuty && next.st === 'drl') || (prev.st === 'drl' && next.isDuty);
+        const bridgesShiftAndTdy = isValidInTransitBridge(prev.st, next.st);
         if (!bridgesShiftAndTdy && !hasHardError) {
           flagCard(curr.s, curr.d);
           if (prev.isDuty && next.isDuty) {
             perPpErrors[curr.s].push(
-              `<span class="policy-cite">In-Transit TDY Requirement (01 APR 2026 Change 2):</span> ` +
-              `In-Transit (${curr.label}) must connect On Shift with TDY. Facility-to-facility travel without TDY should be coded as On Shift.`
+              `${policyReferenceLink('Modeled In-Transit rule; related policy reference: Para 4.e (PDF p.2)', 2)}: ` +
+              `In-Transit (${curr.label}) must connect On Shift with TDY. Para 4.e covers the 120-mile travel authorization; confirm status coding with orders and unit guidance.`
             );
           } else if (prev.st === 'drl' && curr.d === 13 && next.d === 0) {
             flagCard(next.s, next.d);
             perPpErrors[curr.s].push(
-              `<span class="policy-cite">In-Transit Boundary Rule (01 APR 2026 Change 2):</span> ` +
+              `${policyReferenceLink('Modeled pay-period boundary check; related policy reference: Para 4.e (PDF p.2)', 2)}: ` +
               `Day 13 is TDY and Day 14 is In-Transit (${curr.label}), so Day 1 of the next pay period (${next.label}) MUST be On Shift.`
             );
           } else if (prev.isDuty && curr.d === 13 && next.d === 0) {
             flagCard(next.s, next.d);
             perPpErrors[curr.s].push(
-              `<span class="policy-cite">In-Transit Boundary Rule (01 APR 2026 Change 2):</span> ` +
+              `${policyReferenceLink('Modeled pay-period boundary check; related policy reference: Para 4.e (PDF p.2)', 2)}: ` +
               `Day 13 is On Shift and Day 14 is In-Transit (${curr.label}), so Day 1 of the next pay period (${next.label}) MUST be TDY.`
             );
           } else if (curr.d === 0 && next.st === 'drl') {
             flagCard(prev.s, prev.d);
             perPpErrors[curr.s].push(
-              `<span class="policy-cite">In-Transit Boundary Rule (01 APR 2026 Change 2):</span> ` +
+              `${policyReferenceLink('Modeled pay-period boundary check; related policy reference: Para 4.e (PDF p.2)', 2)}: ` +
               `Day 1 is In-Transit (${curr.label}) and Day 2 is TDY, so Wednesday of the previous pay period (${prev.label}) MUST be On Shift.`
             );
           } else if (curr.d === 0 && next.isDuty) {
             flagCard(prev.s, prev.d);
             perPpErrors[curr.s].push(
-              `<span class="policy-cite">In-Transit Boundary Rule (01 APR 2026 Change 2):</span> ` +
+              `${policyReferenceLink('Modeled pay-period boundary check; related policy reference: Para 4.e (PDF p.2)', 2)}: ` +
               `Day 1 is In-Transit (${curr.label}) and Day 2 is On Shift, so Wednesday of the previous pay period (${prev.label}) MUST be TDY.`
             );
           } else {
             perPpErrors[curr.s].push(
-              `<span class="policy-cite">JTF Sentinel Policy Change 2 (01 APR 2026), Para 4.e &amp; 9.e:</span> ` +
-              `In-Transit (${curr.label}) MUST have On Shift on one side and TDY on the other.`
+              `${policyReferenceLink('Modeled In-Transit rule; related policy reference: Para 4.e (PDF p.2)', 2)}: ` +
+              `In-Transit (${curr.label}) must connect On Shift with TDY. Para 4.e covers the 120-mile travel authorization; confirm status coding with orders and unit guidance.`
             );
           }
         }
@@ -6726,24 +6754,24 @@ function calculateAllPayPeriodsNow() {
           if (rdoIncludesWed) {
             flagCard(curr.s, curr.d);
             perPpErrors[curr.s].push(
-              `<span class="policy-cite">Day 1 In-Transit / Wednesday RDO Conflict:</span> ` +
+              `${policyReferenceLink('Modeled In-Transit / RDO check; related policy reference: Para 4.e (PDF p.2)', 2)}: ` +
               `Day 1 (${curr.label}) is In-Transit and Day 2 is TDY, but your regular RDOs include Wednesday. Confirm Wednesday of the previous pay period is switched to On Shift.`
             );
           } else {
             perPpWarnings[curr.s].push(
-              `<span class="policy-cite">Previous Pay Period Check (Day 1 In-Transit):</span> ` +
+              `${policyReferenceLink('Modeled previous pay-period check; related policy reference: Para 4.e (PDF p.2)', 2)}: ` +
               `Because Day 1 (${curr.label}) is In-Transit and Day 2 is TDY, make sure the last day (Wednesday) of the previous pay period is coded as On Shift.`
             );
           }
         } else if (next.isDuty) {
           perPpWarnings[curr.s].push(
-            `<span class="policy-cite">Previous Pay Period Check (Day 1 In-Transit):</span> ` +
+            `${policyReferenceLink('Modeled previous pay-period check; related policy reference: Para 4.e (PDF p.2)', 2)}: ` +
             `Because Day 1 (${curr.label}) is In-Transit and Day 2 is On Shift, make sure the last day (Wednesday) of the previous pay period is coded as TDY.`
           );
         } else if (!hasHardError) {
           flagCard(curr.s, curr.d);
           perPpErrors[curr.s].push(
-            `<span class="policy-cite">In-Transit TDY Requirement (01 APR 2026 Change 2):</span> ` +
+            `${policyReferenceLink('Modeled In-Transit rule; related policy reference: Para 4.e (PDF p.2)', 2)}: ` +
             `Day 1 (${curr.label}) is In-Transit, so Day 2 must be either TDY or On Shift.`
           );
         }
@@ -6751,24 +6779,24 @@ function calculateAllPayPeriodsNow() {
         if (prev.st === 'drl') {
           if (rdoIncludesThu) {
             perPpWarnings[curr.s].push(
-              `<span class="policy-cite">Next Pay Period Check (Day 14 In-Transit / Thursday RDO):</span> ` +
+              `${policyReferenceLink('Modeled next pay-period / RDO check; related policy reference: Para 4.e (PDF p.2)', 2)}: ` +
               `Day 13 is TDY and Day 14 (${curr.label}) is In-Transit. Your regular RDOs include Thursday—make sure Day 1 (Thursday) of the next pay period is switched to On Shift.`
             );
           } else {
             perPpWarnings[curr.s].push(
-              `<span class="policy-cite">Next Pay Period Check (Day 14 In-Transit):</span> ` +
+              `${policyReferenceLink('Modeled next pay-period check; related policy reference: Para 4.e (PDF p.2)', 2)}: ` +
               `Day 13 is TDY and Day 14 (${curr.label}) is In-Transit—make sure Day 1 (Thursday) of the next pay period is coded as On Shift.`
             );
           }
         } else if (prev.isDuty) {
           perPpWarnings[curr.s].push(
-            `<span class="policy-cite">Next Pay Period Check (Day 14 In-Transit):</span> ` +
+            `${policyReferenceLink('Modeled next pay-period check; related policy reference: Para 4.e (PDF p.2)', 2)}: ` +
             `Day 13 is On Shift and Day 14 (${curr.label}) is In-Transit—make sure Day 1 (Thursday) of the next pay period is coded as On Shift.`
           );
         } else if (!hasHardError) {
           flagCard(curr.s, curr.d);
           perPpErrors[curr.s].push(
-            `<span class="policy-cite">In-Transit TDY Requirement (01 APR 2026 Change 2):</span> ` +
+            `${policyReferenceLink('Modeled In-Transit rule; related policy reference: Para 4.e (PDF p.2)', 2)}: ` +
             `Day 14 (${curr.label}) is In-Transit, so Day 13 must be either TDY or On Shift.`
           );
         }
@@ -6979,7 +7007,9 @@ const USD_FORMATTER = new Intl.NumberFormat("en-US", {
 const PAY_PROFILE_DEFAULTS = {
   grade: "E-4",
   yosKey: "over6",
+  locationType: "zip",
   zipCode: "",
+  mhaName: "",
   depStatus: "withoutDep", // "withDep" | "withoutDep"
   bahEntitled: true,
   basEntitled: true,
@@ -7001,6 +7031,95 @@ function normalizeZip5(rawZip) {
   return digits.length >= 5 ? digits.slice(0, 5) : digits;
 }
 
+function getMhaNames() {
+  const names = getPayDatabase().mhaNames;
+  return Array.isArray(names)
+    ? [...new Set(names.filter(name => typeof name === "string" && name.trim()))]
+      .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }))
+    : [];
+}
+
+function filterMhaOptions(prefix) {
+  const search = document.getElementById(`${prefix}MhaSearch`);
+  const select = document.getElementById(`${prefix}MhaSelect`);
+  const status = document.getElementById(`${prefix}MhaSearchStatus`);
+  if (!search || !select) return;
+
+  const names = getMhaNames();
+  const query = search.value.trim().toLocaleLowerCase();
+  const matchingNames = query
+    ? names.filter(name => name.toLocaleLowerCase().includes(query))
+    : names;
+  const selectedName = select.value;
+  const visibleNames = selectedName && !matchingNames.includes(selectedName)
+    ? [selectedName, ...matchingNames]
+    : matchingNames;
+
+  select.replaceChildren();
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = names.length ? "Choose an MHA" : "MHA data unavailable";
+  select.appendChild(placeholder);
+
+  visibleNames.forEach(name => {
+    const option = document.createElement("option");
+    option.value = name;
+    option.textContent = name;
+    select.appendChild(option);
+  });
+  select.value = selectedName;
+
+  if (status) {
+    status.textContent = query
+      ? `${matchingNames.length} matching ${matchingNames.length === 1 ? "area" : "areas"}`
+      : `${names.length} ${names.length === 1 ? "area" : "areas"} available`;
+  }
+}
+
+function syncPayLocationInputs(prefix, profile) {
+  const locationType = profile.locationType === "mha" ? "mha" : "zip";
+  const typeSelect = document.getElementById(`${prefix}LocationTypeSelect`);
+  const zipField = document.getElementById(`${prefix}ZipField`);
+  const mhaField = document.getElementById(`${prefix}MhaField`);
+  const zipInput = document.getElementById(`${prefix}ZipInput`);
+  const mhaSelect = document.getElementById(`${prefix}MhaSelect`);
+  const mhaSearch = document.getElementById(`${prefix}MhaSearch`);
+
+  if (typeSelect) typeSelect.value = locationType;
+  if (zipField) zipField.hidden = locationType === "mha";
+  if (mhaField) mhaField.hidden = locationType !== "mha";
+  if (zipInput) zipInput.value = normalizeZip5(profile.zipCode);
+  if (mhaSearch) mhaSearch.value = profile.mhaName || "";
+  filterMhaOptions(prefix);
+  if (mhaSelect) mhaSelect.value = profile.mhaName || "";
+}
+
+function onPayLocationTypeChange() {
+  const locationType = document.getElementById("payLocationTypeSelect")?.value;
+  const zipField = document.getElementById("payZipField");
+  const mhaField = document.getElementById("payMhaField");
+  if (zipField) zipField.hidden = locationType === "mha";
+  if (mhaField) mhaField.hidden = locationType !== "mha";
+  onPaySettingsChange();
+}
+
+function onWizardPayLocationTypeChange() {
+  const locationType = document.getElementById("wizPayLocationTypeSelect")?.value;
+  const zipField = document.getElementById("wizPayZipField");
+  const mhaField = document.getElementById("wizPayMhaField");
+  if (zipField) zipField.hidden = locationType === "mha";
+  if (mhaField) mhaField.hidden = locationType !== "mha";
+  onWizardPayChange();
+}
+
+function onMhaSelectChange(prefix) {
+  const select = document.getElementById(`${prefix}MhaSelect`);
+  const search = document.getElementById(`${prefix}MhaSearch`);
+  if (search && select) search.value = select.value;
+  if (prefix === "wizPay") onWizardPayChange();
+  else onPaySettingsChange();
+}
+
 function normalizeRoleName(rawRole, legacyRoleTier) {
   const role = String(rawRole || "").trim();
   if (ROLE_PP_INCENTIVE_BONUS[role] !== undefined) return role;
@@ -7017,7 +7136,9 @@ function getPayProfile() {
     return {
       grade: parsed.grade || PAY_PROFILE_DEFAULTS.grade,
       yosKey: parsed.yosKey || PAY_PROFILE_DEFAULTS.yosKey,
+      locationType: parsed.locationType === "mha" ? "mha" : "zip",
       zipCode: normalizeZip5(parsed.zipCode),
+      mhaName: typeof parsed.mhaName === "string" ? parsed.mhaName.trim() : "",
       depStatus: parsed.depStatus === "withDep" ? "withDep" : "withoutDep",
       bahEntitled: normalizeBooleanFlag(parsed.bahEntitled, PAY_PROFILE_DEFAULTS.bahEntitled),
       basEntitled: normalizeBooleanFlag(parsed.basEntitled, PAY_PROFILE_DEFAULTS.basEntitled),
@@ -7035,7 +7156,9 @@ function savePayProfile(profile) {
     localStorage.setItem(`${STORAGE_KEY}_PAY_PROFILE`, JSON.stringify({
       grade: profile.grade || PAY_PROFILE_DEFAULTS.grade,
       yosKey: profile.yosKey || PAY_PROFILE_DEFAULTS.yosKey,
+      locationType: profile.locationType === "mha" ? "mha" : "zip",
       zipCode: normalizeZip5(profile.zipCode),
+      mhaName: typeof profile.mhaName === "string" ? profile.mhaName.trim() : "",
       depStatus: profile.depStatus === "withDep" ? "withDep" : "withoutDep",
       bahEntitled: normalizeBooleanFlag(profile.bahEntitled, PAY_PROFILE_DEFAULTS.bahEntitled),
       basEntitled: normalizeBooleanFlag(profile.basEntitled, PAY_PROFILE_DEFAULTS.basEntitled),
@@ -7114,7 +7237,9 @@ function lookupDailySadRates(profile, includeBas = INCLUDE_BAS_BY_DEFAULT) {
   const cacheKey = JSON.stringify({
     grade: profile.grade,
     yosKey: profile.yosKey,
+    locationType: profile.locationType === "mha" ? "mha" : "zip",
     zipCode: normalizeZip5(profile.zipCode),
+    mhaName: typeof profile.mhaName === "string" ? profile.mhaName.trim() : "",
     depStatus: profile.depStatus,
     bahEntitled: normalizeBooleanFlag(profile.bahEntitled, true),
     basEntitled: normalizeBooleanFlag(profile.basEntitled, true),
@@ -7128,7 +7253,9 @@ function lookupDailySadRates(profile, includeBas = INCLUDE_BAS_BY_DEFAULT) {
   const db = getPayDatabase();
   const grade = profile.grade || PAY_PROFILE_DEFAULTS.grade;
   const yosKey = profile.yosKey || PAY_PROFILE_DEFAULTS.yosKey;
+  const locationType = profile.locationType === "mha" ? "mha" : "zip";
   const zipCode = normalizeZip5(profile.zipCode);
+  const selectedMhaName = typeof profile.mhaName === "string" ? profile.mhaName.trim() : "";
   const depStatus = profile.depStatus === "withDep" ? "withDep" : "withoutDep";
   const bahEntitled = normalizeBooleanFlag(profile && profile.bahEntitled, PAY_PROFILE_DEFAULTS.bahEntitled);
   const basEntitled = normalizeBooleanFlag(profile && profile.basEntitled, PAY_PROFILE_DEFAULTS.basEntitled);
@@ -7142,8 +7269,15 @@ function lookupDailySadRates(profile, includeBas = INCLUDE_BAS_BY_DEFAULT) {
   let mhaName = "";
   let rawBahRateForMha = 0;
 
-  if (zipCode.length === 5 && db.zipToMhaIdx && db.zipToMhaIdx[zipCode] !== undefined) {
-    const mhaIdx = db.zipToMhaIdx[zipCode];
+  let mhaIdx;
+  if (locationType === "mha") {
+    mhaIdx = Array.isArray(db.mhaNames) ? db.mhaNames.indexOf(selectedMhaName) : -1;
+    if (mhaIdx < 0) mhaIdx = undefined;
+  } else if (zipCode.length === 5 && db.zipToMhaIdx && db.zipToMhaIdx[zipCode] !== undefined) {
+    mhaIdx = db.zipToMhaIdx[zipCode];
+  }
+
+  if (mhaIdx !== undefined) {
     mhaName = (db.mhaNames && db.mhaNames[mhaIdx]) || "";
     const mhaGrades = (db.mhaBahByIdx && db.mhaBahByIdx[String(mhaIdx)]) || {};
     const pair = mhaGrades[grade]; // [monthlyWithDep, monthlyWithoutDep]
@@ -7164,7 +7298,9 @@ function lookupDailySadRates(profile, includeBas = INCLUDE_BAS_BY_DEFAULT) {
   const result = {
     grade,
     yosKey,
+    locationType,
     zipCode,
+    selectedMhaName,
     mhaName,
     zipMatched: Boolean(mhaName),
     depStatus,
@@ -7198,7 +7334,9 @@ function computePayForPayPeriod(slotIdx, dayStatusIds) {
     payPeriodStart: payPeriodStart ? toIsoDate(payPeriodStart) : "",
     grade: profile.grade,
     yosKey: profile.yosKey,
+    locationType: profile.locationType === "mha" ? "mha" : "zip",
     zipCode: normalizeZip5(profile.zipCode),
+    mhaName: typeof profile.mhaName === "string" ? profile.mhaName.trim() : "",
     depStatus: profile.depStatus,
     bahEntitled: normalizeBooleanFlag(profile.bahEntitled, true),
     basEntitled: normalizeBooleanFlag(profile.basEntitled, true),
@@ -7260,6 +7398,43 @@ function formatUsd(amount) {
 /* ====================================================================================
    [EDIT-PDF-REPORT] DA-6 LANDSCAPE REPORT (5 PPs PER SHEET) & SMART PRINT GUARD
    ==================================================================================== */
+function escapeReportHtml(value) {
+  const container = document.createElement('div');
+  container.textContent = String(value ?? '');
+  return container.innerHTML;
+}
+
+function buildReportAlertsHtml(alertsEl) {
+  if (!alertsEl) return '';
+  return [...alertsEl.children].map(alert => {
+    const alertType = alert.classList.contains('alert-error')
+      ? 'alert-error'
+      : alert.classList.contains('alert-warn') ? 'alert-warn' : '';
+    const alertClass = alertType ? `alert ${alertType}` : 'alert';
+    const content = alert.textContent || '';
+    const citation = alert.querySelector('a.policy-cite');
+    const citationText = citation?.textContent || '';
+    const citationHref = citation?.getAttribute('href') || '';
+    const pageAnchor = citationHref.startsWith(LEAVE_POLICY_PDF_URL)
+      ? citationHref.slice(LEAVE_POLICY_PDF_URL.length)
+      : null;
+    const allowedPageAnchors = ['', '#page=1', '#page=2', '#page=3', '#page=4'];
+
+    if (!citation || !allowedPageAnchors.includes(pageAnchor)) {
+      return `<div class="${alertClass}">${escapeReportHtml(content)}</div>`;
+    }
+
+    const citationIndex = content.indexOf(citationText);
+    if (citationIndex < 0) {
+      return `<div class="${alertClass}">${escapeReportHtml(content)}</div>`;
+    }
+
+    const beforeCitation = content.slice(0, citationIndex);
+    const afterCitation = content.slice(citationIndex + citationText.length);
+    return `<div class="${alertClass}">${escapeReportHtml(beforeCitation)}<a class="policy-cite" href="${LEAVE_POLICY_PDF_URL}${pageAnchor}" target="_blank" rel="noopener">${escapeReportHtml(citationText)}</a>${escapeReportHtml(afterCitation)}</div>`;
+  }).join('');
+}
+
 function buildStandaloneReportHtml(autoTriggerPrint) {
   const startPpIdx = parseInt(document.getElementById('ppSelect')?.value, 10) || 0;
   const firstPp = payPeriods[startPpIdx] || payPeriods[0];
@@ -7342,22 +7517,22 @@ function buildStandaloneReportHtml(autoTriggerPrint) {
       </div>
     `;
 
-    const rdoAuth = document.getElementById(`rdoAuth_${s}`)?.textContent ?? '0';
-    const rdoQual = document.getElementById(`rdoQual_${s}`)?.textContent ?? '';
-    const rdoUsed = document.getElementById(`rdoUsed_${s}`)?.textContent ?? '0';
-    const rdoDiff = document.getElementById(`rdoDiff_${s}`)?.textContent ?? '';
-    const lvTotal = document.getElementById(`lvTotal_${s}`)?.textContent ?? '0.00';
-    const lvTotalSub = document.getElementById(`lvTotalSub_${s}`)?.textContent ?? '';
+    const rdoAuth = escapeReportHtml(document.getElementById(`rdoAuth_${s}`)?.textContent ?? '0');
+    const rdoQual = escapeReportHtml(document.getElementById(`rdoQual_${s}`)?.textContent ?? '');
+    const rdoUsed = escapeReportHtml(document.getElementById(`rdoUsed_${s}`)?.textContent ?? '0');
+    const rdoDiff = escapeReportHtml(document.getElementById(`rdoDiff_${s}`)?.textContent ?? '');
+    const lvTotal = escapeReportHtml(document.getElementById(`lvTotal_${s}`)?.textContent ?? '0.00');
+    const lvTotalSub = escapeReportHtml(document.getElementById(`lvTotalSub_${s}`)?.textContent ?? '');
 
-    const cShift = document.getElementById(`countShift_${s}`)?.textContent ?? '0';
-    const cRdo = document.getElementById(`countRdo_${s}`)?.textContent ?? '0';
-    const cLeave = document.getElementById(`countLeave_${s}`)?.textContent ?? '0';
-    const cSpTrv = document.getElementById(`countSpTrv_${s}`)?.textContent ?? '0';
-    const cNonSad = document.getElementById(`countNonSad_${s}`)?.textContent ?? '0';
-    const cTotal = document.getElementById(`totalAssignedOut_${s}`)?.textContent ?? '14 / 14';
+    const cShift = escapeReportHtml(document.getElementById(`countShift_${s}`)?.textContent ?? '0');
+    const cRdo = escapeReportHtml(document.getElementById(`countRdo_${s}`)?.textContent ?? '0');
+    const cLeave = escapeReportHtml(document.getElementById(`countLeave_${s}`)?.textContent ?? '0');
+    const cSpTrv = escapeReportHtml(document.getElementById(`countSpTrv_${s}`)?.textContent ?? '0');
+    const cNonSad = escapeReportHtml(document.getElementById(`countNonSad_${s}`)?.textContent ?? '0');
+    const cTotal = escapeReportHtml(document.getElementById(`totalAssignedOut_${s}`)?.textContent ?? '14 / 14');
 
-    const alertsHtml = document.getElementById(`alerts_${s}`)?.innerHTML ?? '';
-    const deadlineListHtml = document.getElementById(`deadlineList_${s}`)?.innerHTML ?? '';
+    const alertsHtml = buildReportAlertsHtml(document.getElementById(`alerts_${s}`));
+    const deadlineListHtml = escapeReportHtml(document.getElementById(`deadlineList_${s}`)?.textContent ?? '');
     const pageBreakStyle = ((s + 1) % 5 === 0 && s < activePayPeriodCount - 1) ? 'page-break-after:always;' : '';
 
     sectionsHtml += `
@@ -7388,7 +7563,7 @@ function buildStandaloneReportHtml(autoTriggerPrint) {
 <html>
 <head>
 <meta charset="UTF-8">
-<title>JTF Sentinel Duty Status &amp; Leave Plan - ${smName}</title>
+<title>NY SAD Duty, Leave &amp; Pay Plan - ${escapeReportHtml(smName)}</title>
 <style>
   * { box-sizing: border-box; }
   body { font-family: 'Segoe UI', Roboto, Arial, sans-serif; color: #202124; margin: 0; padding: 6px; background: #fff; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
@@ -7424,16 +7599,16 @@ function buildStandaloneReportHtml(autoTriggerPrint) {
   </div>
   <div class="top-bar">
     <div>
-      <div class="title">JTF Sentinel Duty Status &amp; Leave Plan (DA Form 6 layout)</div>
+      <div class="title">NY SAD Duty, Leave &amp; Pay Plan (DA Form 6 layout)</div>
       <div class="sub">Planning rules modeled: 01 Apr 2026 Policy Change 2 | CY27 Holiday Memo (02 Oct 2026) | 49-day limit effective 03 Dec 2026</div>
     </div>
     <div style="font-size:9px; color:#5f6368; text-align:right;">Generated: ${nowStr}</div>
   </div>
   <div class="meta-grid">
-    <div><strong>Service member:</strong> ${smName}<br><strong>Assignment role:</strong> ${smRole}</div>
-    <div><strong>Facility or assignment:</strong> ${smFac}<br><strong>Chain of command contact:</strong> ${smLeader}</div>
+    <div><strong>Service member:</strong> ${escapeReportHtml(smName)}<br><strong>Assignment role:</strong> ${escapeReportHtml(smRole)}</div>
+    <div><strong>Facility or assignment:</strong> ${escapeReportHtml(smFac)}<br><strong>Chain of command contact:</strong> ${escapeReportHtml(smLeader)}</div>
     <div><strong>Pay periods covered:</strong> ${activePayPeriodCount}<br>${planWindowText}</div>
-    <div><strong>Shift schedule:</strong> ${schedLabel}<br><strong>Leave balance as of 18 Nov 2026:</strong> ${startingLeave} days</div>
+    <div><strong>Shift schedule:</strong> ${escapeReportHtml(schedLabel)}<br><strong>Leave balance as of 18 Nov 2026:</strong> ${escapeReportHtml(startingLeave)} days</div>
   </div>
   <div>${sectionsHtml}</div>
   <div class="sig-grid">
@@ -7467,7 +7642,7 @@ function downloadStandaloneReport() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `JTF_Sentinel_Duty_Plan_${smNameClean}.html`;
+  a.download = `NY_SAD_Duty_Plan_${smNameClean}.html`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);

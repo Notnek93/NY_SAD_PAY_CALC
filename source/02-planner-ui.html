@@ -12,7 +12,7 @@
 <div class="wizard-backdrop" id="wizardBackdrop">
   <div class="wizard-dialog" role="dialog" aria-modal="true" aria-labelledby="wizardTitle">
     <div class="wizard-header">
-      <h2 id="wizardTitle">New York Joint Task Force Pay Calculator</h2>
+      <h2 id="wizardTitle">NY SAD Duty, Leave &amp; Pay Planner</h2>
       <p>Setup and personalize your duty, leave, and pay planning.</p>
     </div>
 
@@ -30,9 +30,9 @@
       <!-- Welcome -->
       <div class="wizard-step active" id="wizardStep_1">
         <h3 class="wizard-step-title">Welcome</h3>
-        <p class="wizard-step-desc">A pay and duty-planning tool for New York Joint Task Force service members.</p>
+        <p class="wizard-step-desc">A duty, leave, and pay-planning aid for the New York State Active Duty mission.</p>
         <p class="wizard-step-desc"><strong>By SPC Lee, Kenton</strong></p>
-        <p class="wizard-step-desc">Get started by choosing your preferred view and task force.</p>
+        <p class="wizard-step-desc">Get started by choosing your preferred view and confirming the mission.</p>
         <div class="welcome-disclaimer" role="note" aria-label="Important disclaimer">
           <p><strong>Unofficial planning aid.</strong> This tool is independently created and is not an official or endorsed product of the State of New York, New York Joint Task Force, the Department of Defense, or any military service.</p>
           <p>It is for general planning only—to help service members explore leave and leave accrual, plan REFRAD and drill timing, and estimate pay. It does not provide official policy guidance, approvals, or pay or leave determinations; estimates may be incomplete or inaccurate.</p>
@@ -67,24 +67,14 @@
 
       <!-- Step 2: Choose task force -->
       <div class="wizard-step" id="wizardStep_3">
-        <h3 class="wizard-step-title">2. Choose Your Task Force</h3>
-        <p class="wizard-step-desc">Choose the task force you support. Empire Shield planning is not available yet.</p>
+        <h3 class="wizard-step-title">2. New York Mission</h3>
+        <p class="wizard-step-desc">This planner is currently limited to New York State Active Duty (NY SAD).</p>
         <div class="wizard-view-grid">
-          <div class="wizard-view-card selected" id="wizTaskForceCard_sentinel" role="button" aria-pressed="true" tabindex="0" onclick="selectWizardTaskForce('sentinel')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectWizardTaskForce('sentinel')}">
-            <div class="wizard-view-name">JTF Sentinel</div>
-            <div class="wizard-view-sub">Open the duty, leave, and SAD pay planner</div>
-          </div>
-          <div class="wizard-view-card" id="wizTaskForceCard_empire" role="button" aria-pressed="false" tabindex="0" onclick="selectWizardTaskForce('empire-shield')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectWizardTaskForce('empire-shield')}">
-            <div class="wizard-view-name">JTF Empire Shield</div>
-            <div class="wizard-view-sub">Work in progress</div>
+          <div class="wizard-view-card selected" aria-current="true">
+            <div class="wizard-view-name">NY SAD</div>
+            <div class="wizard-view-sub">New York State Active Duty</div>
           </div>
         </div>
-      </div>
-
-      <!-- Empire Shield placeholder -->
-      <div class="wizard-step" id="wizardStep_4">
-        <h3 class="wizard-step-title">JTF Empire Shield — Work in Progress</h3>
-        <p class="wizard-step-desc">The Empire Shield pay planner is not available yet. The planned tool will estimate pay from the number of drill days in a pay period. Pay rates and incentive details are still being defined.</p>
       </div>
 
       <!-- Step 3: Schedule & RDOs -->
@@ -109,7 +99,7 @@
       <!-- Step 4: SAD Pay & Leave -->
       <div class="wizard-step" id="wizardStep_6">
         <h3 class="wizard-step-title">4. SAD Pay Profile &amp; 18 NOV 2026 Leave Balance</h3>
-        <p class="wizard-step-desc">Enter your assignment role, pay grade, years of service, ZIP code for the BAH rate area, BAH/BAS eligibility, and your leave balance as of 18 Nov 2026.</p>
+        <p class="wizard-step-desc">Enter your assignment role, pay grade, years of service, ZIP code or MHA for the BAH rate area, BAH/BAS eligibility, and your leave balance as of 18 Nov 2026.</p>
         <div class="wizard-form-stack">
           <div class="field-group">
             <label for="wizSmRoleInput">Assignment Role</label>
@@ -185,9 +175,12 @@
 
           <div class="wizard-field-grid-2">
             <div class="field-group">
-              <label for="wizPayZipInput">Duty or Home ZIP Code</label>
-              <input type="text" id="wizPayZipInput" class="top-input" maxlength="5" inputmode="numeric" placeholder="e.g. 11228" oninput="onWizardPayChange()">
-              <span class="field-helper">Enter 5 digits to look up the BAH rate area.</span>
+              <label for="wizPayLocationTypeSelect">BAH Rate Location</label>
+              <select id="wizPayLocationTypeSelect" class="top-select" onchange="onWizardPayLocationTypeChange()">
+                <option value="zip">Enter ZIP Code</option>
+                <option value="mha">Choose MHA</option>
+              </select>
+              <span class="field-helper">Use either a ZIP Code or select a Military Housing Area.</span>
             </div>
 
             <div class="field-group">
@@ -197,6 +190,22 @@
                 <option value="withDep">With Dependents</option>
               </select>
               <span class="field-helper">Choose the status used by the BAH rate table.</span>
+            </div>
+          </div>
+
+          <div class="wizard-field-grid-2">
+            <div class="field-group" id="wizPayZipField">
+              <label for="wizPayZipInput">Duty or Home ZIP Code</label>
+              <input type="text" id="wizPayZipInput" class="top-input" maxlength="5" inputmode="numeric" placeholder="e.g. 11228" oninput="onWizardPayChange()">
+              <span class="field-helper">Enter 5 digits to look up the BAH rate area.</span>
+            </div>
+            <div class="field-group" id="wizPayMhaField" hidden>
+              <label for="wizPayMhaSearch">Search Military Housing Areas</label>
+              <input type="search" id="wizPayMhaSearch" class="top-input" placeholder="Type a city, state, or MHA code" oninput="filterMhaOptions('wizPay');onWizardPayChange()">
+              <select id="wizPayMhaSelect" class="top-select" onchange="onMhaSelectChange('wizPay')">
+                <option value="">Choose an MHA</option>
+              </select>
+              <span class="field-helper" id="wizPayMhaSearchStatus" aria-live="polite"></span>
             </div>
           </div>
 
@@ -426,9 +435,27 @@
         </div>
 
         <div class="field-group">
+          <label for="payLocationTypeSelect">BAH Rate Location</label>
+          <select id="payLocationTypeSelect" class="top-select" onchange="onPayLocationTypeChange()">
+            <option value="zip">Enter ZIP Code</option>
+            <option value="mha">Choose MHA</option>
+          </select>
+          <span class="field-helper">Use either a ZIP Code or select a Military Housing Area.</span>
+        </div>
+
+        <div class="field-group" id="payZipField">
           <label for="payZipInput">Duty or Home ZIP Code</label>
           <input type="text" id="payZipInput" class="top-input" maxlength="5" inputmode="numeric" placeholder="e.g. 11228" oninput="onPaySettingsChange()">
           <span class="field-helper">Enter 5 digits to look up the BAH rate area.</span>
+        </div>
+
+        <div class="field-group" id="payMhaField" hidden>
+          <label for="payMhaSearch">Search Military Housing Areas</label>
+          <input type="search" id="payMhaSearch" class="top-input" placeholder="Type a city, state, or MHA code" oninput="filterMhaOptions('pay');onPaySettingsChange()">
+          <select id="payMhaSelect" class="top-select" onchange="onMhaSelectChange('pay')">
+            <option value="">Choose an MHA</option>
+          </select>
+          <span class="field-helper" id="payMhaSearchStatus" aria-live="polite"></span>
         </div>
 
         <div class="field-group">
@@ -533,9 +560,9 @@
           <div class="sop-step-title">Plan a day or a date range</div>
           <ul class="sop-list">
             <li>For one day, select the date and choose <strong>SAD Leave</strong> in the status picker.</li>
-            <li>For several days, open <strong>Tools</strong> and choose <strong>Plan Leave</strong> or <strong>Plan TDY / Travel</strong>. Select the start and end dates; both dates are included. The planner adds pay periods when needed.</li>
+            <li>For several days, open <strong>Tools</strong> and choose <strong>Plan a date range</strong>. Select SAD Leave or AT / Drill / TDY, then enter the start and end dates; both dates are included. The planner adds pay periods when needed.</li>
             <li>For a transfer, open <strong>Tools</strong> → <strong>Plan Transfer</strong>, choose the transfer date and destination role, then apply. The date counts as paid On Shift time and accrues leave. Incentive Pay uses the highest assignment role held during a pay period, so a higher-role incentive remains for a transition pay period.</li>
-            <li>For a multi-day TDY plan, answer whether your assigned facility is more than 120 miles from your home station. If it is, the first and last dates are In-Transit with TDY in between; the range must be at least 3 days. If not, every date is TDY. Choosing In-Transit for one date opens a confirmation; choosing No leaves that date unchanged.</li>
+            <li>For a multi-day AT / Drill / TDY plan, answer whether your assigned facility is more than 120 miles from your home station. If it is, the first and last dates are In-Transit with AT / Drill / TDY in between; the range must be at least 3 days. In-Transit must connect On Shift with AT / Drill / TDY. If the distance is 120 miles or less, every date is AT / Drill / TDY. Choosing In-Transit for one date opens a confirmation; choosing No leaves that date unchanged.</li>
           </ul>
         </div>
         <div class="sop-step-card">
@@ -605,8 +632,8 @@
        ==================================================================================== -->
   <div class="header-top">
     <div>
-      <div class="calc-title">JTF Sentinel SAD DOCCS Duty Status &amp; Leave Planner (v1)</div>
-      <div class="calc-sub">DA Form 6 desktop view | Phone calendar | 01 Apr 2026 policy | 49-day limit effective 03 Dec 2026 | Saves on this device</div>
+      <div class="calc-title">NY SAD Duty, Leave &amp; Pay Planner</div>
+      <div class="calc-sub">New York State Active Duty | Desktop schedule | Phone calendar | Saves on this device</div>
     </div>
 
     <div class="header-right-actions">
@@ -622,22 +649,28 @@
           <button type="button" class="more-tools-button" onclick="openTransferPlannerFromMenu()">Plan Transfer</button>
           <button type="button" class="more-tools-button" onclick="confirmApplyDefaultPatternAll()">↺ Reset day-off pattern</button>
           <button type="button" class="more-tools-button" id="clearRefradPlanButton" onclick="clearRefradOnly()" hidden>Clear REFRAD plan</button>
+          <div class="phone-tools-group-title">References</div>
+          <a class="more-tools-button" href="./assets/Pass%20Leave%20Policy%2001APR2026%20-%20Encl%20255%20NYS%20Letterhead%20-%20JTF%20Sentinel%20RDO%20and%20Leave%20Policy%201APR26.pdf" target="_blank" rel="noopener">RDO &amp; Leave Policy (01 Apr 2026)</a>
+          <a class="more-tools-button" href="./assets/2026%20SAD%20Pay%20Rates%20Workbook.pdf#page=1" target="_blank" rel="noopener">CY 2026 Pay Rates (verified Oct 2026)</a>
+          <a class="more-tools-button" href="./assets/Requesting%20W2s%20and%20Paystubs%20Guidance.pdf" target="_blank" rel="noopener">W-2 &amp; Paystub Guidance</a>
         </div>
       </details>
       <details class="phone-tools" id="phoneTools">
         <summary>Tools</summary>
         <div class="phone-tools-menu">
           <div class="phone-tools-group-title">Plan</div>
-          <button type="button" class="phone-tools-button" onclick="openPhoneRangePlanner('lv')">Plan Leave</button>
-          <button type="button" class="phone-tools-button" onclick="openPhoneRangePlanner('tdy')">Plan TDY / Travel</button>
+          <button type="button" class="phone-tools-button" onclick="openPhoneRangePlanner()">Plan a date range</button>
           <button type="button" class="phone-tools-button" onclick="openPhoneRangePlanner('transfer')">Plan Transfer</button>
           <button type="button" class="phone-tools-button" onclick="closePhoneToolsMenu();openRefradPlanner()">Plan REFRAD</button>
-          <button type="button" class="phone-tools-button" onclick="openPhoneRangePlanner()">Plan a date range</button>
           <div class="phone-tools-group-title">Schedule</div>
           <button type="button" class="phone-tools-button" onclick="addPayPeriodFromPhoneTools()">Add pay period</button>
           <button type="button" class="phone-tools-button" onclick="confirmApplyDefaultPatternAll()">Reset day-off pattern</button>
           <button type="button" class="phone-tools-button" id="phoneRemoveLastPayPeriodButton" onclick="removeLastPayPeriodFromPhoneTools()" hidden>Remove last pay period</button>
           <button type="button" class="phone-tools-button" id="phoneClearRefradPlanButton" onclick="clearRefradFromPhoneTools()" hidden>Clear REFRAD plan</button>
+          <div class="phone-tools-group-title">References</div>
+          <a class="phone-tools-button" href="./assets/Pass%20Leave%20Policy%2001APR2026%20-%20Encl%20255%20NYS%20Letterhead%20-%20JTF%20Sentinel%20RDO%20and%20Leave%20Policy%201APR26.pdf" target="_blank" rel="noopener">RDO &amp; Leave Policy (01 Apr 2026)</a>
+          <a class="phone-tools-button" href="./assets/2026%20SAD%20Pay%20Rates%20Workbook.pdf#page=1" target="_blank" rel="noopener">CY 2026 Pay Rates (verified Oct 2026)</a>
+          <a class="phone-tools-button" href="./assets/Requesting%20W2s%20and%20Paystubs%20Guidance.pdf" target="_blank" rel="noopener">W-2 &amp; Paystub Guidance</a>
         </div>
       </details>
       <div class="view-toggle-bar">
@@ -685,7 +718,7 @@
         <label for="rangeStatusSelect">What are you planning?</label>
         <select id="rangeStatusSelect" class="range-input" onchange="onRangeStatusChange()">
           <option value="lv">SAD Leave</option>
-          <option value="tdy">TDY</option>
+          <option value="tdy">AT / Drill / TDY</option>
           <option value="transfer">Transfer Day</option>
           <option value="shift">On Shift (Present for Duty)</option>
           <option value="rdo">RDO</option>
@@ -793,10 +826,10 @@
     <div class="feedback-footer-text">
       <strong>💬 Comments, Suggestions &amp; Improvements:</strong>
       Have feedback on policy rules, pay estimates, or usability for v1? Email
-      <a href="mailto:kenton.lee4.mil@army.mil?subject=JTF%20Sentinel%20Planner%20v1%20Feedback">kenton.lee4.mil@army.mil</a>.
+      <a href="mailto:kenton.lee4.mil@army.mil?subject=NY%20SAD%20Planner%20Feedback">kenton.lee4.mil@army.mil</a>.
     </div>
     <div class="feedback-footer-actions">
-      <a class="feedback-email-btn" href="mailto:kenton.lee4.mil@army.mil?subject=JTF%20Sentinel%20Planner%20v1%20Feedback">✉️ Email Feedback</a>
+      <a class="feedback-email-btn" href="mailto:kenton.lee4.mil@army.mil?subject=NY%20SAD%20Planner%20Feedback">✉️ Email Feedback</a>
       <button type="button" class="feedback-copy-btn" id="copyFeedbackEmailBtn" onclick="copyFeedbackEmail()">📋 Copy Address</button>
     </div>
   </div>
