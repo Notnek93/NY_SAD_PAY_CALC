@@ -2181,12 +2181,19 @@ a.policy-cite:hover { text-decoration-thickness: 2px; }
       <!-- Step 2: Choose task force -->
       <div class="wizard-step" id="wizardStep_3">
         <h3 class="wizard-step-title">2. New York Mission</h3>
-        <p class="wizard-step-desc">This planner is currently limited to New York State Active Duty (NY SAD).</p>
+        <p class="wizard-step-desc">Choose the mission type you want to plan for.</p>
         <div class="wizard-view-grid">
-          <div class="wizard-view-card selected" aria-current="true">
+          <div class="wizard-view-card selected" id="wizMissionCard_nysad" onclick="selectWizardMission('nysad')">
             <div class="wizard-view-name">NY SAD</div>
             <div class="wizard-view-sub">New York State Active Duty</div>
           </div>
+          <div class="wizard-view-card" id="wizMissionCard_deployment" onclick="selectWizardMission('deployment')">
+            <div class="wizard-view-name">Deployment</div>
+            <div class="wizard-view-sub">Entitlements by country</div>
+          </div>
+        </div>
+        <div class="welcome-disclaimer" id="wizDeploymentWip" role="status" hidden style="margin-top:12px;">
+          <p><strong>Work in progress.</strong> The Deployment option is coming soon. You will enter your information and dates, see the countries you deployed to, and check which entitlements you qualify for. Choose NY SAD to continue with the planner today.</p>
         </div>
       </div>
 
@@ -3865,6 +3872,7 @@ function onWizardPayChange() {
 function openSetupWizard(isRerun) {
   wizardIsRerun = Boolean(isRerun);
   wizardCurrentStep = 1;
+  selectWizardMission('nysad');
   wizardSelectedView = currentViewMode;
   wizardSelectedTheme = colorThemePreference;
   const schedType = document.getElementById('schedSelect').value || 'alt';
@@ -3932,6 +3940,19 @@ function selectWizardView(mode) {
   const mCard = document.getElementById('wizViewCard_mobile');
   if (dCard) dCard.classList.toggle('selected', mode === 'desktop');
   if (mCard) mCard.classList.toggle('selected', mode === 'mobile');
+}
+
+let wizardSelectedMission = 'nysad';
+
+function selectWizardMission(mission) {
+  wizardSelectedMission = mission === 'deployment' ? 'deployment' : 'nysad';
+  const nyCard = document.getElementById('wizMissionCard_nysad');
+  const depCard = document.getElementById('wizMissionCard_deployment');
+  const wip = document.getElementById('wizDeploymentWip');
+  if (nyCard) nyCard.classList.toggle('selected', wizardSelectedMission === 'nysad');
+  if (depCard) depCard.classList.toggle('selected', wizardSelectedMission === 'deployment');
+  if (wip) wip.hidden = wizardSelectedMission !== 'deployment';
+  renderWizardStep();
 }
 
 function selectWizardTheme(preference) {
@@ -4172,6 +4193,7 @@ function renderWizardStep() {
       ? 'none'
       : 'inline-block';
     nextBtn.textContent = wizardCurrentStep === 1 ? 'Get Started ▶' : 'Next ▶';
+    nextBtn.disabled = wizardCurrentStep === 3 && wizardSelectedMission === 'deployment';
   }
 }
 

@@ -268,6 +268,7 @@ function onWizardPayChange() {
 function openSetupWizard(isRerun) {
   wizardIsRerun = Boolean(isRerun);
   wizardCurrentStep = 1;
+  selectWizardMission('nysad');
   wizardSelectedView = currentViewMode;
   wizardSelectedTheme = colorThemePreference;
   const schedType = document.getElementById('schedSelect').value || 'alt';
@@ -335,6 +336,19 @@ function selectWizardView(mode) {
   const mCard = document.getElementById('wizViewCard_mobile');
   if (dCard) dCard.classList.toggle('selected', mode === 'desktop');
   if (mCard) mCard.classList.toggle('selected', mode === 'mobile');
+}
+
+let wizardSelectedMission = 'nysad';
+
+function selectWizardMission(mission) {
+  wizardSelectedMission = mission === 'deployment' ? 'deployment' : 'nysad';
+  const nyCard = document.getElementById('wizMissionCard_nysad');
+  const depCard = document.getElementById('wizMissionCard_deployment');
+  const wip = document.getElementById('wizDeploymentWip');
+  if (nyCard) nyCard.classList.toggle('selected', wizardSelectedMission === 'nysad');
+  if (depCard) depCard.classList.toggle('selected', wizardSelectedMission === 'deployment');
+  if (wip) wip.hidden = wizardSelectedMission !== 'deployment';
+  renderWizardStep();
 }
 
 function selectWizardTheme(preference) {
@@ -575,6 +589,7 @@ function renderWizardStep() {
       ? 'none'
       : 'inline-block';
     nextBtn.textContent = wizardCurrentStep === 1 ? 'Get Started ▶' : 'Next ▶';
+    nextBtn.disabled = wizardCurrentStep === 3 && wizardSelectedMission === 'deployment';
   }
 }
 
