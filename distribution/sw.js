@@ -1,6 +1,6 @@
 // Maintainer map: update CORE_ASSETS when a new file must be available offline.
 // build.ps1 replaces CACHE_NAME with a fresh build timestamp on each build.
-const CACHE_NAME = "ny-sad-planner-v1-20261126-195652";
+const CACHE_NAME = "ny-sad-planner-v1-20261126-202033";
 const CORE_ASSETS = [
   "./",
   "./index.html",
@@ -10,6 +10,10 @@ const CORE_ASSETS = [
   "./assets/Pass Leave Policy 01APR2026 - Encl 255 NYS Letterhead - JTF Sentinel RDO and Leave Policy 1APR26.pdf",
   "./assets/Requesting W2s and Paystubs Guidance.pdf",
   "./manifest.json",
+  "./icons/icon-192.png",
+  "./icons/icon-512.png",
+  "./icons/icon-maskable-512.png",
+  "./icons/apple-touch-icon.png",
   "./sw.js"
 ];
 

@@ -137,6 +137,12 @@ function filterMhaOptions(prefix) {
   }
 }
 
+function syncBahDetailsVisibility(prefix) {
+  const bahCheck = document.getElementById(`${prefix}BahEntitledCheck`) || document.getElementById(prefix === "wizPay" ? "wizBahEntitledCheck" : "payBahEntitledCheck");
+  const details = document.getElementById(`${prefix}BahDetails`);
+  if (details && bahCheck) details.hidden = !bahCheck.checked;
+}
+
 function syncPayLocationInputs(prefix, profile) {
   const locationType = profile.locationType === "mha" ? "mha" : "zip";
   const typeSelect = document.getElementById(`${prefix}LocationTypeSelect`);
@@ -153,6 +159,7 @@ function syncPayLocationInputs(prefix, profile) {
   if (mhaSearch) mhaSearch.value = profile.mhaName || "";
   filterMhaOptions(prefix);
   if (mhaSelect) mhaSelect.value = profile.mhaName || "";
+  syncBahDetailsVisibility(prefix);
 }
 
 function onPayLocationTypeChange() {

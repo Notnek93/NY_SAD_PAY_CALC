@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <link rel="manifest" href="./manifest.json">
   <meta name="theme-color" content="#1a73e8">
+  <link rel="icon" type="image/png" href="./icons/icon-192.png">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="NY SAD Planner">
   <title>NY SAD Duty, Leave &amp; Pay Planner</title>
   <style>
 <!-- 01-theme-and-layout.css -->
@@ -833,6 +837,15 @@ body {
   color: var(--text-sub);
   font-size: 11.5px;
   line-height: 1.45;
+}
+
+.welcome-credit {
+  margin: 10px 0 0;
+  text-align: right;
+  font-size: 9px;
+  line-height: 1;
+  color: var(--text-sub);
+  opacity: 0.55;
 }
 
 .welcome-disclaimer p { margin: 0 0 8px; }
@@ -2133,13 +2146,11 @@ a.policy-cite:hover { text-decoration-thickness: 2px; }
       <div class="wizard-step active" id="wizardStep_1">
         <h3 class="wizard-step-title">Welcome</h3>
         <p class="wizard-step-desc">A duty, leave, and pay-planning aid for the New York State Active Duty mission.</p>
-        <p class="wizard-step-desc"><strong>By SPC Lee, Kenton</strong></p>
         <p class="wizard-step-desc">Get started by choosing your preferred view and confirming the mission.</p>
         <div class="welcome-disclaimer" role="note" aria-label="Important disclaimer">
-          <p><strong>Unofficial planning aid.</strong> This tool is independently created and is not an official or endorsed product of the State of New York, New York Joint Task Force, the Department of Defense, or any military service.</p>
-          <p>It is for general planning only—to help service members explore leave and leave accrual, plan REFRAD and drill timing, and estimate pay. It does not provide official policy guidance, approvals, or pay or leave determinations; estimates may be incomplete or inaccurate.</p>
-          <p>Verify information and decisions with your chain of command and official personnel and finance channels before acting. You are responsible for how you use this tool and for decisions you make. The creator makes no guarantees and disclaims responsibility for actions or outcomes based on this tool, to the fullest extent permitted by law.</p>
+          <p><strong>Unofficial planning aid.</strong> Not an official or endorsed product of the State of New York, the NY Joint Task Force, the Department of Defense, or any military service. Estimates for leave, pay, and REFRAD/drill timing may be incomplete or inaccurate and are not official determinations. Verify with your chain of command and official personnel and finance channels before acting. Use at your own risk.</p>
         </div>
+        <p class="welcome-credit">by SPC Lee, Kenton</p>
       </div>
 
       <!-- Step 1: Choose View -->
@@ -2277,6 +2288,25 @@ a.policy-cite:hover { text-decoration-thickness: 2px; }
 
           <div class="wizard-field-grid-2">
             <div class="field-group">
+              <label class="oconus-toggle" style="background:var(--bg-light);border:1px solid var(--border);border-radius:6px;padding:8px 10px;">
+                <input type="checkbox" id="wizBahEntitledCheck" checked onchange="onWizardPayChange()">
+                <span>Entitled to BAH</span>
+              </label>
+              <span class="field-helper">Uncheck only if you are not eligible for BAH.</span>
+            </div>
+
+            <div class="field-group">
+              <label class="oconus-toggle" style="background:var(--bg-light);border:1px solid var(--border);border-radius:6px;padding:8px 10px;">
+                <input type="checkbox" id="wizBasEntitledCheck" checked onchange="onWizardPayChange()">
+                <span>Entitled to BAS</span>
+              </label>
+              <span class="field-helper">Uncheck only if you are not eligible for BAS.</span>
+            </div>
+          </div>
+
+          <div id="wizPayBahDetails">
+          <div class="wizard-field-grid-2">
+            <div class="field-group">
               <label for="wizPayLocationTypeSelect">BAH Rate Location</label>
               <select id="wizPayLocationTypeSelect" class="top-select" onchange="onWizardPayLocationTypeChange()">
                 <option value="zip">Enter ZIP Code</option>
@@ -2310,23 +2340,6 @@ a.policy-cite:hover { text-decoration-thickness: 2px; }
               <span class="field-helper" id="wizPayMhaSearchStatus" aria-live="polite"></span>
             </div>
           </div>
-
-          <div class="wizard-field-grid-2">
-            <div class="field-group">
-              <label class="oconus-toggle" style="background:var(--bg-light);border:1px solid var(--border);border-radius:6px;padding:8px 10px;">
-                <input type="checkbox" id="wizBahEntitledCheck" checked onchange="onWizardPayChange()">
-                <span>Entitled to BAH</span>
-              </label>
-              <span class="field-helper">Uncheck only if you are not eligible for BAH.</span>
-            </div>
-
-            <div class="field-group">
-              <label class="oconus-toggle" style="background:var(--bg-light);border:1px solid var(--border);border-radius:6px;padding:8px 10px;">
-                <input type="checkbox" id="wizBasEntitledCheck" checked onchange="onWizardPayChange()">
-                <span>Entitled to BAS</span>
-              </label>
-              <span class="field-helper">Uncheck only if you are not eligible for BAS.</span>
-            </div>
           </div>
 
           <div id="wizPayZipMhaBadge" style="font-size:11.5px;font-weight:600;color:var(--text-sub);background:var(--bg-light);padding:7px 9px;border-radius:6px;border:1px solid var(--border);"></div>
@@ -2537,6 +2550,23 @@ a.policy-cite:hover { text-decoration-thickness: 2px; }
         </div>
 
         <div class="field-group">
+          <label class="oconus-toggle" style="background:var(--bg-light);border:1px solid var(--border);border-radius:6px;padding:8px 10px;">
+            <input type="checkbox" id="payBahEntitledCheck" checked onchange="onPaySettingsChange()">
+            <span>Entitled to BAH</span>
+          </label>
+          <span class="field-helper">Uncheck only if you are not eligible for BAH.</span>
+        </div>
+
+        <div class="field-group">
+          <label class="oconus-toggle" style="background:var(--bg-light);border:1px solid var(--border);border-radius:6px;padding:8px 10px;">
+            <input type="checkbox" id="payBasEntitledCheck" checked onchange="onPaySettingsChange()">
+            <span>Entitled to BAS</span>
+          </label>
+          <span class="field-helper">Uncheck only if you are not eligible for BAS.</span>
+        </div>
+
+        <div id="payBahDetails">
+        <div class="field-group">
           <label for="payLocationTypeSelect">BAH Rate Location</label>
           <select id="payLocationTypeSelect" class="top-select" onchange="onPayLocationTypeChange()">
             <option value="zip">Enter ZIP Code</option>
@@ -2568,21 +2598,6 @@ a.policy-cite:hover { text-decoration-thickness: 2px; }
           </select>
           <span class="field-helper">Choose the status used by the BAH rate table.</span>
         </div>
-
-        <div class="field-group">
-          <label class="oconus-toggle" style="background:var(--bg-light);border:1px solid var(--border);border-radius:6px;padding:8px 10px;">
-            <input type="checkbox" id="payBahEntitledCheck" checked onchange="onPaySettingsChange()">
-            <span>Entitled to BAH</span>
-          </label>
-          <span class="field-helper">Uncheck only if you are not eligible for BAH.</span>
-        </div>
-
-        <div class="field-group">
-          <label class="oconus-toggle" style="background:var(--bg-light);border:1px solid var(--border);border-radius:6px;padding:8px 10px;">
-            <input type="checkbox" id="payBasEntitledCheck" checked onchange="onPaySettingsChange()">
-            <span>Entitled to BAS</span>
-          </label>
-          <span class="field-helper">Uncheck only if you are not eligible for BAS.</span>
         </div>
       </div>
 
@@ -3822,6 +3837,7 @@ function updateWizardPayZipMhaBadge(prof) {
 }
 
 function onWizardPayChange() {
+  syncBahDetailsVisibility('wizPay');
   const wizRoleEl = document.getElementById('wizSmRoleInput');
   const wizRoleVal = wizRoleEl ? wizRoleEl.value.trim() : '';
   if (wizRoleEl && wizRoleVal !== '') {
@@ -5962,6 +5978,7 @@ function updatePayZipMhaBadge(prof) {
 }
 
 function onPaySettingsChange() {
+  if (typeof syncBahDetailsVisibility === 'function') syncBahDetailsVisibility('pay');
   if (typeof savePayProfile !== 'function') return;
   const bahEl = document.getElementById('payBahEntitledCheck');
   const basEl = document.getElementById('payBasEntitledCheck');
@@ -7076,6 +7093,12 @@ function filterMhaOptions(prefix) {
   }
 }
 
+function syncBahDetailsVisibility(prefix) {
+  const bahCheck = document.getElementById(`${prefix}BahEntitledCheck`) || document.getElementById(prefix === "wizPay" ? "wizBahEntitledCheck" : "payBahEntitledCheck");
+  const details = document.getElementById(`${prefix}BahDetails`);
+  if (details && bahCheck) details.hidden = !bahCheck.checked;
+}
+
 function syncPayLocationInputs(prefix, profile) {
   const locationType = profile.locationType === "mha" ? "mha" : "zip";
   const typeSelect = document.getElementById(`${prefix}LocationTypeSelect`);
@@ -7092,6 +7115,7 @@ function syncPayLocationInputs(prefix, profile) {
   if (mhaSearch) mhaSearch.value = profile.mhaName || "";
   filterMhaOptions(prefix);
   if (mhaSelect) mhaSelect.value = profile.mhaName || "";
+  syncBahDetailsVisibility(prefix);
 }
 
 function onPayLocationTypeChange() {

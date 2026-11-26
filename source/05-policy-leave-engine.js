@@ -179,6 +179,7 @@ function updatePayZipMhaBadge(prof) {
 }
 
 function onPaySettingsChange() {
+  if (typeof syncBahDetailsVisibility === 'function') syncBahDetailsVisibility('pay');
   if (typeof savePayProfile !== 'function') return;
   const bahEl = document.getElementById('payBahEntitledCheck');
   const basEl = document.getElementById('payBasEntitledCheck');

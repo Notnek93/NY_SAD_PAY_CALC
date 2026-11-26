@@ -10,6 +10,10 @@ const CORE_ASSETS = [
   "./assets/Pass Leave Policy 01APR2026 - Encl 255 NYS Letterhead - JTF Sentinel RDO and Leave Policy 1APR26.pdf",
   "./assets/Requesting W2s and Paystubs Guidance.pdf",
   "./manifest.json",
+  "./icons/icon-192.png",
+  "./icons/icon-512.png",
+  "./icons/icon-maskable-512.png",
+  "./icons/apple-touch-icon.png",
   "./sw.js"
 ];
 

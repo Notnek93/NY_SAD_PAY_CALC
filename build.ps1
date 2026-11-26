@@ -250,7 +250,11 @@ $hasSw       = Test-Path -LiteralPath $swSrc
 $pwaHeadTags = ""
 if ($hasManifest) {
   $pwaHeadTags = "  <link rel=""manifest"" href=""./manifest.json"">" + [Environment]::NewLine +
-                 "  <meta name=""theme-color"" content=""#1a73e8"">" + [Environment]::NewLine
+                 "  <meta name=""theme-color"" content=""#1a73e8"">" + [Environment]::NewLine +
+                 "  <link rel=""icon"" type=""image/png"" href=""./icons/icon-192.png"">" + [Environment]::NewLine +
+                 "  <link rel=""apple-touch-icon"" href=""./icons/apple-touch-icon.png"">" + [Environment]::NewLine +
+                 "  <meta name=""apple-mobile-web-app-capable"" content=""yes"">" + [Environment]::NewLine +
+                 "  <meta name=""apple-mobile-web-app-title"" content=""NY SAD Planner"">" + [Environment]::NewLine
 }
 
 $nl = [Environment]::NewLine
@@ -314,6 +318,16 @@ if ($hasSw) {
   Set-Content -LiteralPath (Join-Path $DistDir "sw.js") -Value $swContent -Encoding UTF8
   Set-Content -LiteralPath (Join-Path $rootDir "sw.js") -Value $swContent -Encoding UTF8
   Write-Host "[OK] Copied sw.js (cache: ny-sad-planner-v1-$buildStamp) -> $DistDir and $rootDir" -ForegroundColor Green
+}
+
+$iconSrcDir = Join-Path $SrcDir "icons"
+if (Test-Path -LiteralPath $iconSrcDir) {
+  foreach ($iconRoot in @($rootDir, $DistDir)) {
+    $iconDest = Join-Path $iconRoot "icons"
+    if (-not (Test-Path -LiteralPath $iconDest)) { New-Item -ItemType Directory -Path $iconDest -Force | Out-Null }
+    Copy-Item -Path (Join-Path $iconSrcDir "*") -Destination $iconDest -Force
+  }
+  Write-Host "[OK] Copied icons -> $rootDir and $DistDir" -ForegroundColor Green
 }
 
 foreach ($assetRoot in @($rootDir, $DistDir)) {

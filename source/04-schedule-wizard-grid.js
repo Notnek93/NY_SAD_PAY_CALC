@@ -240,6 +240,7 @@ function updateWizardPayZipMhaBadge(prof) {
 }
 
 function onWizardPayChange() {
+  syncBahDetailsVisibility('wizPay');
   const wizRoleEl = document.getElementById('wizSmRoleInput');
   const wizRoleVal = wizRoleEl ? wizRoleEl.value.trim() : '';
   if (wizRoleEl && wizRoleVal !== '') {
