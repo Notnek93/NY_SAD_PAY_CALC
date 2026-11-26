@@ -1,0 +1,12 @@
+{
+  "name": "New York Joint Task Force Pay Calculator",
+  "short_name": "NY JTF Pay",
+  "description": "New York Joint Task Force pay calculator and duty and leave planner.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f1f3f4",
+  "theme_color": "#1a73e8",
+  "icons": []
+}

@@ -41,6 +41,15 @@ function getPayDatabase() {
   return (typeof PAY_RATE_DB !== "undefined" && PAY_RATE_DB) ? PAY_RATE_DB : PAY_DB_FALLBACK;
 }
 
+const PAY_PROFILE_LOOKUP_CACHE = new Map();
+const PAY_PERIOD_COMPUTATION_CACHE = new Map();
+const USD_FORMATTER = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2
+});
+
 const PAY_PROFILE_DEFAULTS = {
   grade: "E-4",
   yosKey: "over4",
@@ -95,6 +104,8 @@ function getPayProfile() {
 
 function savePayProfile(profile) {
   try {
+    PAY_PROFILE_LOOKUP_CACHE.clear();
+    PAY_PERIOD_COMPUTATION_CACHE.clear();
     localStorage.setItem(`${STORAGE_KEY}_PAY_PROFILE`, JSON.stringify({
       grade: profile.grade || PAY_PROFILE_DEFAULTS.grade,
       yosKey: profile.yosKey || PAY_PROFILE_DEFAULTS.yosKey,
@@ -152,6 +163,21 @@ function resolveActiveRoleName(profile) {
 }
 
 function lookupDailySadRates(profile, includeBas = INCLUDE_BAS_BY_DEFAULT) {
+  const roleName = resolveActiveRoleName(profile);
+  const cacheKey = JSON.stringify({
+    grade: profile.grade,
+    yosKey: profile.yosKey,
+    zipCode: normalizeZip5(profile.zipCode),
+    depStatus: profile.depStatus,
+    bahEntitled: normalizeBooleanFlag(profile.bahEntitled, true),
+    basEntitled: normalizeBooleanFlag(profile.basEntitled, true),
+    roleName,
+    includeBas
+  });
+  if (PAY_PROFILE_LOOKUP_CACHE.has(cacheKey)) {
+    return PAY_PROFILE_LOOKUP_CACHE.get(cacheKey);
+  }
+
   const db = getPayDatabase();
   const grade = profile.grade || PAY_PROFILE_DEFAULTS.grade;
   const yosKey = profile.yosKey || PAY_PROFILE_DEFAULTS.yosKey;
@@ -159,7 +185,6 @@ function lookupDailySadRates(profile, includeBas = INCLUDE_BAS_BY_DEFAULT) {
   const depStatus = profile.depStatus === "withDep" ? "withDep" : "withoutDep";
   const bahEntitled = normalizeBooleanFlag(profile && profile.bahEntitled, PAY_PROFILE_DEFAULTS.bahEntitled);
   const basEntitled = normalizeBooleanFlag(profile && profile.basEntitled, PAY_PROFILE_DEFAULTS.basEntitled);
-  const roleName = resolveActiveRoleName(profile);
   const ppIncentiveBonus = getPpIncentiveBonusForRole(roleName);
 
   const gradeBaseMap = (db.baseByGradeAndYos && db.baseByGradeAndYos[grade]) || {};
@@ -189,7 +214,7 @@ function lookupDailySadRates(profile, includeBas = INCLUDE_BAS_BY_DEFAULT) {
 
   const dailyTotalRate = truncateCents(dailyBasePay + dailyBahRate);
 
-  return {
+  const result = {
     grade,
     yosKey,
     zipCode,
@@ -212,11 +237,27 @@ function lookupDailySadRates(profile, includeBas = INCLUDE_BAS_BY_DEFAULT) {
     exactDailyBahRate,
     dailyTotalRate
   };
+  PAY_PROFILE_LOOKUP_CACHE.set(cacheKey, result);
+  return result;
 }
 
 function computePayForPayPeriod(slotIdx, dayStatusIds) {
   const profile = getPayProfile();
   const rates = lookupDailySadRates(profile);
+  const cacheKey = JSON.stringify({
+    grade: profile.grade,
+    yosKey: profile.yosKey,
+    zipCode: normalizeZip5(profile.zipCode),
+    depStatus: profile.depStatus,
+    bahEntitled: normalizeBooleanFlag(profile.bahEntitled, true),
+    basEntitled: normalizeBooleanFlag(profile.basEntitled, true),
+    roleName: rates.roleName,
+    dayStatusIds
+  });
+  if (PAY_PERIOD_COMPUTATION_CACHE.has(cacheKey)) {
+    return PAY_PERIOD_COMPUTATION_CACHE.get(cacheKey);
+  }
+
   let paidSadDays = 0;
   let onShiftDays = 0;
 
@@ -237,7 +278,7 @@ function computePayForPayPeriod(slotIdx, dayStatusIds) {
     ? ` + ${PAY_LABELS.incentive} ${formatUsd(incentiveTotal)}`
     : "";
 
-  return {
+  const result = {
     paidSadDays,
     onShiftDays,
     incentiveQualified,
@@ -248,13 +289,10 @@ function computePayForPayPeriod(slotIdx, dayStatusIds) {
     totalPay,
     summaryText: `${PAY_LABELS.base} ${formatUsd(basePayTotal)} + ${PAY_LABELS.adlCom} ${formatUsd(bahTotal)}${incentivePart} (${formatUsd(rates.dailyTotalRate)}/d · ${PAY_LABELS.estimateTag})`
   };
+  PAY_PERIOD_COMPUTATION_CACHE.set(cacheKey, result);
+  return result;
 }
 
 function formatUsd(amount) {
-  return (Number(amount) || 0).toLocaleString("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  });
+  return USD_FORMATTER.format(Number(amount) || 0);
 }
