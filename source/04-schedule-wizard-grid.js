@@ -979,7 +979,10 @@ function offerLeaveFormDownload() {
 async function downloadLeaveForm() {
   const fileName = 'DOCCS_SAD_Leave_Request_Form.pdf';
   const fileUrl = new URL('./assets/DOCCS_SAD_Leave_Request_Form.pdf', document.baseURI);
-  if (navigator.share && navigator.canShare && typeof File === 'function') {
+  const userAgent = navigator.userAgent || '';
+  const isIPad = /Macintosh/i.test(userAgent) && navigator.maxTouchPoints > 1;
+  const isMobileDevice = /Android|iPhone|iPad|iPod/i.test(userAgent) || isIPad;
+  if (isMobileDevice && navigator.share && navigator.canShare && typeof File === 'function') {
     try {
       const response = await fetch(fileUrl);
       if (!response.ok) throw new Error(`Leave form download failed (${response.status}).`);
