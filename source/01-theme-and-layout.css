@@ -167,6 +167,20 @@ body {
   body { padding: 6px; padding-bottom: 36px; }
 }
 
+/* Faint logo watermark that stays fixed while the page scrolls. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: url("./icons/icon-512.png") center / min(70vmin, 520px) no-repeat;
+  opacity: 0.05;
+  pointer-events: none;
+  z-index: 2147483000;
+}
+@media print {
+  body::after { display: none; }
+}
+
 @page {
   size: landscape;
   margin: 4mm;
@@ -755,6 +769,8 @@ body {
   flex-shrink: 0;
 }
 
+.wizard-header { display: flex; align-items: center; gap: 12px; }
+.wizard-header-logo { width: 44px; height: 44px; border-radius: 10px; flex-shrink: 0; }
 .wizard-header h2 { margin: 0; font-size: 16.5px; font-weight: 700; }
 .wizard-header p  { margin: 3px 0 0; font-size: 11.5px; opacity: 0.92; }
 

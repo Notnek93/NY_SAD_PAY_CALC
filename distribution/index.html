@@ -180,6 +180,20 @@ body {
   body { padding: 6px; padding-bottom: 36px; }
 }
 
+/* Faint logo watermark that stays fixed while the page scrolls. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: url("./icons/icon-512.png") center / min(70vmin, 520px) no-repeat;
+  opacity: 0.05;
+  pointer-events: none;
+  z-index: 2147483000;
+}
+@media print {
+  body::after { display: none; }
+}
+
 @page {
   size: landscape;
   margin: 4mm;
@@ -768,6 +782,8 @@ body {
   flex-shrink: 0;
 }
 
+.wizard-header { display: flex; align-items: center; gap: 12px; }
+.wizard-header-logo { width: 44px; height: 44px; border-radius: 10px; flex-shrink: 0; }
 .wizard-header h2 { margin: 0; font-size: 16.5px; font-weight: 700; }
 .wizard-header p  { margin: 3px 0 0; font-size: 11.5px; opacity: 0.92; }
 
@@ -2127,8 +2143,11 @@ a.policy-cite:hover { text-decoration-thickness: 2px; }
 <div class="wizard-backdrop" id="wizardBackdrop">
   <div class="wizard-dialog" role="dialog" aria-modal="true" aria-labelledby="wizardTitle">
     <div class="wizard-header">
-      <h2 id="wizardTitle">NY SAD Duty, Leave &amp; Pay Planner</h2>
-      <p>Setup and personalize your duty, leave, and pay planning.</p>
+      <img class="wizard-header-logo" src="./icons/icon-192.png" alt="" width="44" height="44">
+      <div>
+        <h2 id="wizardTitle">NY SAD Duty, Leave &amp; Pay Planner</h2>
+        <p>Setup and personalize your duty, leave, and pay planning.</p>
+      </div>
     </div>
 
     <div class="wizard-progress-wrap">
