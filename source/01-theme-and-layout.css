@@ -1050,6 +1050,8 @@ body {
   min-width: 0;
 }
 
+.field-group[hidden] { display: none !important; }
+
 .field-group label {
   font-size: 10.5px;
   font-weight: 700;

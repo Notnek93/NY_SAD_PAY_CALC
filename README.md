@@ -35,7 +35,7 @@ This procedure applies to people using the planner for planning or administrativ
 
 1. Open the planner in a supported browser. Choose Desktop for the full schedule view or Phone for the touch-friendly calendar.
 2. In **Profile & Settings**, enter the leave balance requested by the planner. The current build labels this balance as of **18 Nov 2026**; enter `0` if the balance is zero. Confirm the date and balance against your records before relying on a plan.
-3. If you want a pay estimate, enter the applicable pay grade, years of service, ZIP code, dependency status, BAH/BAS eligibility, and assignment role. Use information you can verify. The ZIP code identifies a BAH rate area; it does not establish entitlement.
+3. If you want a pay estimate, enter the applicable pay grade, years of service, and either a ZIP code or a selected Military Housing Area (MHA), plus dependency status, BAH/BAS eligibility, and assignment role. The app searches the bundled MHA list by city, state, or MHA code. Use information you can verify; a location does not establish entitlement.
 4. Confirm the selected pay period and shift pattern. Review the schedule before changing dates.
 
 Saved information stays in the browser storage on that device. It does not automatically sync to another phone or computer. Avoid using a shared device for personal information, and do not assume that browser data is backed up.

@@ -99,7 +99,7 @@
       <!-- Step 4: SAD Pay & Leave -->
       <div class="wizard-step" id="wizardStep_6">
         <h3 class="wizard-step-title">4. SAD Pay Profile &amp; 18 NOV 2026 Leave Balance</h3>
-        <p class="wizard-step-desc">Enter your assignment role, pay grade, years of service, ZIP code for the BAH rate area, BAH/BAS eligibility, and your leave balance as of 18 Nov 2026.</p>
+        <p class="wizard-step-desc">Enter your assignment role, pay grade, years of service, ZIP code or MHA for the BAH rate area, BAH/BAS eligibility, and your leave balance as of 18 Nov 2026.</p>
         <div class="wizard-form-stack">
           <div class="field-group">
             <label for="wizSmRoleInput">Assignment Role</label>
@@ -175,9 +175,12 @@
 
           <div class="wizard-field-grid-2">
             <div class="field-group">
-              <label for="wizPayZipInput">Duty or Home ZIP Code</label>
-              <input type="text" id="wizPayZipInput" class="top-input" maxlength="5" inputmode="numeric" placeholder="e.g. 11228" oninput="onWizardPayChange()">
-              <span class="field-helper">Enter 5 digits to look up the BAH rate area.</span>
+              <label for="wizPayLocationTypeSelect">BAH Rate Location</label>
+              <select id="wizPayLocationTypeSelect" class="top-select" onchange="onWizardPayLocationTypeChange()">
+                <option value="zip">Enter ZIP Code</option>
+                <option value="mha">Choose MHA</option>
+              </select>
+              <span class="field-helper">Use either a ZIP Code or select a Military Housing Area.</span>
             </div>
 
             <div class="field-group">
@@ -187,6 +190,22 @@
                 <option value="withDep">With Dependents</option>
               </select>
               <span class="field-helper">Choose the status used by the BAH rate table.</span>
+            </div>
+          </div>
+
+          <div class="wizard-field-grid-2">
+            <div class="field-group" id="wizPayZipField">
+              <label for="wizPayZipInput">Duty or Home ZIP Code</label>
+              <input type="text" id="wizPayZipInput" class="top-input" maxlength="5" inputmode="numeric" placeholder="e.g. 11228" oninput="onWizardPayChange()">
+              <span class="field-helper">Enter 5 digits to look up the BAH rate area.</span>
+            </div>
+            <div class="field-group" id="wizPayMhaField" hidden>
+              <label for="wizPayMhaSearch">Search Military Housing Areas</label>
+              <input type="search" id="wizPayMhaSearch" class="top-input" placeholder="Type a city, state, or MHA code" oninput="filterMhaOptions('wizPay');onWizardPayChange()">
+              <select id="wizPayMhaSelect" class="top-select" onchange="onMhaSelectChange('wizPay')">
+                <option value="">Choose an MHA</option>
+              </select>
+              <span class="field-helper" id="wizPayMhaSearchStatus" aria-live="polite"></span>
             </div>
           </div>
 
@@ -416,9 +435,27 @@
         </div>
 
         <div class="field-group">
+          <label for="payLocationTypeSelect">BAH Rate Location</label>
+          <select id="payLocationTypeSelect" class="top-select" onchange="onPayLocationTypeChange()">
+            <option value="zip">Enter ZIP Code</option>
+            <option value="mha">Choose MHA</option>
+          </select>
+          <span class="field-helper">Use either a ZIP Code or select a Military Housing Area.</span>
+        </div>
+
+        <div class="field-group" id="payZipField">
           <label for="payZipInput">Duty or Home ZIP Code</label>
           <input type="text" id="payZipInput" class="top-input" maxlength="5" inputmode="numeric" placeholder="e.g. 11228" oninput="onPaySettingsChange()">
           <span class="field-helper">Enter 5 digits to look up the BAH rate area.</span>
+        </div>
+
+        <div class="field-group" id="payMhaField" hidden>
+          <label for="payMhaSearch">Search Military Housing Areas</label>
+          <input type="search" id="payMhaSearch" class="top-input" placeholder="Type a city, state, or MHA code" oninput="filterMhaOptions('pay');onPaySettingsChange()">
+          <select id="payMhaSelect" class="top-select" onchange="onMhaSelectChange('pay')">
+            <option value="">Choose an MHA</option>
+          </select>
+          <span class="field-helper" id="payMhaSearchStatus" aria-live="polite"></span>
         </div>
 
         <div class="field-group">

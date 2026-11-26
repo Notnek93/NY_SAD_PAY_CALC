@@ -218,10 +218,16 @@ function updateWizardPayZipMhaBadge(prof) {
   if (!info.bahEntitled) {
     badge.style.color = 'var(--text-main)';
     badge.textContent = `${labels.base} ${formatUsd(info.dailyBasePay)}/d + ${labels.adlCom} ${formatUsd(info.dailyBahRate)}/d${incText} (${formatUsd(info.dailyTotalRate)}/d · ${labels.estimateTag})${entNote}`;
-  } else if (!info.zipCode) {
+  } else if (info.locationType === 'mha' && !info.zipMatched && !info.selectedMhaName) {
+    badge.style.color = 'var(--text-sub)';
+    badge.textContent = `${labels.base}: ${formatUsd(info.dailyBasePay)}/d + ${labels.adlCom}: ${formatUsd(info.dailyBahRate)}/d${incText} — Choose an MHA for BAH (${labels.estimateTag})${entNote}`;
+  } else if (info.locationType === 'mha' && !info.zipMatched) {
+    badge.style.color = 'var(--danger)';
+    badge.textContent = `⚠️ MHA "${info.selectedMhaName}" unavailable in the BAH table (${labels.base} ${formatUsd(info.dailyBasePay)}/d + ${labels.adlCom} ${formatUsd(info.dailyBahRate)}/d${incText} · ${labels.estimateTag})${entNote}`;
+  } else if (info.locationType !== 'mha' && !info.zipCode) {
     badge.style.color = 'var(--text-sub)';
     badge.textContent = `${labels.base}: ${formatUsd(info.dailyBasePay)}/d + ${labels.adlCom}: ${formatUsd(info.dailyBahRate)}/d${incText} — Enter 5-digit ZIP for BAH (${labels.estimateTag})${entNote}`;
-  } else if (info.zipCode.length < 5) {
+  } else if (info.locationType !== 'mha' && info.zipCode.length < 5) {
     badge.style.color = 'var(--text-sub)';
     badge.textContent = `${info.zipCode.length}/5 digits...${entNote}`;
   } else if (info.zipMatched) {
@@ -246,7 +252,9 @@ function onWizardPayChange() {
   const prof = {
     grade: document.getElementById('wizPayGradeSelect')?.value || 'E-4',
     yosKey: document.getElementById('wizPayYosSelect')?.value || 'over6',
+    locationType: document.getElementById('wizPayLocationTypeSelect')?.value || 'zip',
     zipCode: document.getElementById('wizPayZipInput')?.value || '',
+    mhaName: document.getElementById('wizPayMhaSelect')?.value || '',
     depStatus: document.getElementById('wizPayDepSelect')?.value || 'withoutDep',
     bahEntitled: bahCheck ? bahCheck.checked : true,
     basEntitled: basCheck ? basCheck.checked : true,
@@ -280,10 +288,9 @@ function openSetupWizard(isRerun) {
 
   const payProf = typeof getPayProfile === 'function'
     ? getPayProfile()
-    : { grade: 'E-4', yosKey: 'over6', zipCode: '', depStatus: 'withoutDep', bahEntitled: true, basEntitled: true, roleTier: 'none' };
+    : { grade: 'E-4', yosKey: 'over6', locationType: 'zip', zipCode: '', mhaName: '', depStatus: 'withoutDep', bahEntitled: true, basEntitled: true, roleTier: 'none' };
   const wGrade = document.getElementById('wizPayGradeSelect');
   const wYos = document.getElementById('wizPayYosSelect');
-  const wZip = document.getElementById('wizPayZipInput');
   const wDep = document.getElementById('wizPayDepSelect');
   const wBah = document.getElementById('wizBahEntitledCheck');
   const wBas = document.getElementById('wizBasEntitledCheck');
@@ -291,7 +298,7 @@ function openSetupWizard(isRerun) {
 
   if (wGrade) wGrade.value = payProf.grade;
   if (wYos) wYos.value = payProf.yosKey;
-  if (wZip) wZip.value = payProf.zipCode;
+  syncPayLocationInputs('wizPay', payProf);
   if (wDep) wDep.value = payProf.depStatus;
   if (wBah) wBah.checked = payProf.bahEntitled !== false;
   if (wBas) wBas.checked = payProf.basEntitled !== false;
@@ -624,7 +631,9 @@ function finishWizard(openSopAfter) {
   const chosenPayProf = {
     grade: document.getElementById('wizPayGradeSelect')?.value || 'E-4',
     yosKey: document.getElementById('wizPayYosSelect')?.value || 'over6',
+    locationType: document.getElementById('wizPayLocationTypeSelect')?.value || 'zip',
     zipCode: document.getElementById('wizPayZipInput')?.value || '',
+    mhaName: document.getElementById('wizPayMhaSelect')?.value || '',
     depStatus: document.getElementById('wizPayDepSelect')?.value || 'withoutDep',
     bahEntitled: bahCheck ? bahCheck.checked : true,
     basEntitled: basCheck ? basCheck.checked : true,

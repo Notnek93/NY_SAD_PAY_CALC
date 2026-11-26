@@ -119,13 +119,12 @@ function syncPaySettingsInputs() {
   const prof = getPayProfile();
   const gradeEl = document.getElementById('payGradeSelect');
   const yosEl = document.getElementById('payYosSelect');
-  const zipEl = document.getElementById('payZipInput');
   const depEl = document.getElementById('payDepSelect');
   const bahEl = document.getElementById('payBahEntitledCheck');
   const basEl = document.getElementById('payBasEntitledCheck');
   if (gradeEl) gradeEl.value = prof.grade;
   if (yosEl) yosEl.value = prof.yosKey;
-  if (zipEl) zipEl.value = prof.zipCode;
+  syncPayLocationInputs('pay', prof);
   if (depEl) depEl.value = prof.depStatus;
   if (bahEl) bahEl.checked = prof.bahEntitled !== false;
   if (basEl) basEl.checked = prof.basEntitled !== false;
@@ -158,10 +157,16 @@ function updatePayZipMhaBadge(prof) {
   if (!info.bahEntitled) {
     badge.style.color = 'var(--text-main)';
     badge.textContent = `${labels.base} ${formatUsd(info.dailyBasePay)}/d + ${labels.adlCom} ${formatUsd(info.dailyBahRate)}/d${incText} (${formatUsd(info.dailyTotalRate)}/d · ${labels.estimateTag})${entNote}`;
-  } else if (!info.zipCode) {
+  } else if (info.locationType === 'mha' && !info.zipMatched && !info.selectedMhaName) {
+    badge.style.color = 'var(--text-sub)';
+    badge.textContent = `${labels.base}: ${formatUsd(info.dailyBasePay)}/d + ${labels.adlCom}: ${formatUsd(info.dailyBahRate)}/d${incText} — Choose an MHA for BAH (${labels.estimateTag})${entNote}`;
+  } else if (info.locationType === 'mha' && !info.zipMatched) {
+    badge.style.color = 'var(--danger)';
+    badge.textContent = `⚠️ MHA "${info.selectedMhaName}" unavailable in the BAH table (${labels.base} ${formatUsd(info.dailyBasePay)}/d + ${labels.adlCom} ${formatUsd(info.dailyBahRate)}/d${incText} · ${labels.estimateTag})${entNote}`;
+  } else if (info.locationType !== 'mha' && !info.zipCode) {
     badge.style.color = 'var(--text-sub)';
     badge.textContent = `${labels.base}: ${formatUsd(info.dailyBasePay)}/d + ${labels.adlCom}: ${formatUsd(info.dailyBahRate)}/d${incText} — Enter 5-digit ZIP for BAH (${labels.estimateTag})${entNote}`;
-  } else if (info.zipCode.length < 5) {
+  } else if (info.locationType !== 'mha' && info.zipCode.length < 5) {
     badge.style.color = 'var(--text-sub)';
     badge.textContent = `${info.zipCode.length}/5 digits...${entNote}`;
   } else if (info.zipMatched) {
@@ -181,7 +186,9 @@ function onPaySettingsChange() {
   const prof = {
     grade: document.getElementById('payGradeSelect')?.value || 'E-4',
     yosKey: document.getElementById('payYosSelect')?.value || 'over6',
+    locationType: document.getElementById('payLocationTypeSelect')?.value || 'zip',
     zipCode: document.getElementById('payZipInput')?.value || '',
+    mhaName: document.getElementById('payMhaSelect')?.value || '',
     depStatus: document.getElementById('payDepSelect')?.value || 'withoutDep',
     bahEntitled: bahEl ? bahEl.checked : true,
     basEntitled: basEl ? basEl.checked : true,
@@ -231,7 +238,10 @@ function renderPayReadoutForSlot(s, dayStatusIds, runningTotal) {
   const yearsOfService = info.yosKey === 'lt2'
     ? 'under 2 years'
     : `over ${String(info.yosKey || '').replace(/^over/, '')} years`;
-  const profileAssumption = `${info.grade}, ${yearsOfService}, ZIP ${info.zipCode || 'not entered'}, ${info.depStatus === 'withDep' ? 'with' : 'without'} dependents; BAH ${info.bahEntitled ? 'included when eligible' : 'not included'}; BAS ${info.basEntitled ? 'included when eligible' : 'not included'}.`;
+  const locationAssumption = info.locationType === 'mha'
+    ? `MHA ${info.selectedMhaName || 'not selected'}`
+    : `ZIP ${info.zipCode || 'not entered'}`;
+  const profileAssumption = `${info.grade}, ${yearsOfService}, ${locationAssumption}, ${info.depStatus === 'withDep' ? 'with' : 'without'} dependents; BAH ${info.bahEntitled ? 'included when eligible' : 'not included'}; BAS ${info.basEntitled ? 'included when eligible' : 'not included'}.`;
   const rateAssumptions = typeof getPayRateDataAssumptionText === 'function'
     ? getPayRateDataAssumptionText()
     : 'Using the rate tables bundled with this app.';
