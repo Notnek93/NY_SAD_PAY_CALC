@@ -1160,81 +1160,6 @@ body {
 .sop-panel { display: none; }
 .sop-panel.active { display: block; }
 
-.sop-live-block {
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 10px;
-  margin-bottom: 12px;
-  background: var(--surface);
-}
-
-.sop-live-ui {
-  background: var(--bg-light);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 10px;
-  overflow-x: auto;
-}
-
-.sop-pointer {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 19px;
-  height: 19px;
-  border-radius: 50%;
-  background: var(--danger);
-  color: #ffffff;
-  font-size: 11px;
-  font-weight: 800;
-  margin-right: 4px;
-  vertical-align: middle;
-}
-
-.sop-pointer-sm {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 15px;
-  height: 15px;
-  border-radius: 50%;
-  background: var(--danger);
-  color: #ffffff;
-  font-size: 9px;
-  font-weight: 800;
-  margin-bottom: 2px;
-}
-
-.sop-short-line {
-  margin-top: 8px;
-  padding: 8px 10px;
-  background: var(--primary-bg);
-  border-left: 4px solid var(--primary);
-  border-radius: 4px;
-  font-size: 12.5px;
-  font-weight: 700;
-  color: var(--primary-strong);
-}
-
-.sop-demo-chip {
-  padding: 5px 8px;
-  border-radius: 4px;
-  font-size: 11px;
-  font-weight: 700;
-  border: 1px solid var(--border);
-}
-
-.sop-demo-grid14 { width: 100%; min-width: 620px; border-collapse: collapse; table-layout: fixed; background: #202124; }
-.sop-demo-grid14 th { background: #3c4043; color: #ffffff; border: 1px solid #5f6368; padding: 3px 2px; font-size: 9.5px; }
-.sop-demo-grid14 td { border: 1px solid #5f6368; padding: 3px 2px; text-align: center; font-size: 9.5px; font-weight: 700; background: #f8f9fa; }
-
-.sop-demo-phone { max-width: 340px; margin: 0 auto; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 8px; }
-.sop-demo-7col { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; margin-bottom: 8px; }
-.sop-demo-7hdr { background: #3c4043; color: #ffffff; font-size: 8.5px; font-weight: 700; text-align: center; padding: 3px 0; border-radius: 3px; }
-.sop-demo-tile { display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid var(--border); border-radius: 4px; padding: 4px 1px; font-size: 9px; font-weight: 800; min-width: 0; }
-.sop-demo-picker { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
-.sop-demo-picker-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 8px; }
-
 .sop-step-card { background: var(--bg-light); border: 1px solid var(--border); border-left: 4px solid var(--primary); border-radius: 8px; padding: 10px 12px; margin-bottom: 10px; }
 .sop-step-card.warn-card { border-left-color: var(--warning); background: var(--warning-bg); }
 .sop-step-card.success-card { border-left-color: var(--success); background: var(--success-bg); }
@@ -1268,11 +1193,6 @@ body {
   .refrad-planner-header { padding: 12px; }
   .refrad-planner-body { padding: 12px; }
   .refrad-planner-footer { padding: 0 12px 12px; }
-  .sop-live-block { padding: 8px; margin-bottom: 10px; }
-  .sop-live-ui { padding: 6px; }
-  .sop-demo-phone { max-width: 100%; padding: 6px; }
-  .sop-demo-tile { font-size: 8.5px; padding: 3px 0; }
-  .sop-short-line { font-size: 12px; padding: 7px 8px; }
 }
 
 /* ====================================================================================
@@ -2461,149 +2381,115 @@ body {
   <div class="sop-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="sopModalTitle">
     <div class="sop-modal-header">
       <div>
-        <h3 id="sopModalTitle">📖 JTF Sentinel Duty &amp; Leave Planner — How-To &amp; SOP Guide</h3>
-        <p>Quick instructions for Phone &amp; Desktop planning, policy rules, and CoC export.</p>
+        <h3 id="sopModalTitle">📖 How to Use the Planner</h3>
+        <p>Simple steps for setup, leave, REFRAD, and saving your plan.</p>
       </div>
       <button type="button" class="sop-close-x" onclick="closeSopModal()">✕ Close</button>
     </div>
 
     <div class="sop-tabs-bar">
-      <button type="button" class="sop-tab-btn active" id="sopTabBtn_phone" onclick="switchSopTab('phone')">📱 Phone Guide</button>
-      <button type="button" class="sop-tab-btn" id="sopTabBtn_desktop" onclick="switchSopTab('desktop')">💻 Desktop Guide</button>
-      <button type="button" class="sop-tab-btn" id="sopTabBtn_rules" onclick="switchSopTab('rules')">📋 Policy Rules</button>
-      <button type="button" class="sop-tab-btn" id="sopTabBtn_export" onclick="switchSopTab('export')">🖨️ CoC Export</button>
+      <button type="button" class="sop-tab-btn active" id="sopTabBtn_start" onclick="switchSopTab('start')">1. Start Here</button>
+      <button type="button" class="sop-tab-btn" id="sopTabBtn_leave" onclick="switchSopTab('leave')">2. Plan Leave</button>
+      <button type="button" class="sop-tab-btn" id="sopTabBtn_refrad" onclick="switchSopTab('refrad')">3. Plan REFRAD</button>
+      <button type="button" class="sop-tab-btn" id="sopTabBtn_save" onclick="switchSopTab('save')">4. Save &amp; Export</button>
     </div>
 
     <div class="sop-modal-body">
       <div class="alert alert-success" id="sopUpgradeBanner" style="display:none;margin-bottom:10px;">
-        <strong>✓ Upgraded to v1:</strong> Your previous saved planner data was automatically migrated and saved.
+        <strong>✓ Your saved plan was upgraded.</strong> Review your settings and leave balance before continuing.
       </div>
 
-      <div class="sop-panel active" id="sopPanel_phone">
-        <div class="sop-live-block">
-          <div class="sop-step-title"><span class="sop-pointer">1</span> Tap a Date Tile &amp; Pick a Duty Status</div>
-          <div class="sop-live-ui">
-            <div class="sop-demo-phone">
-              <div class="sop-demo-7col">
-                <div class="sop-demo-7hdr">THU</div>
-                <div class="sop-demo-7hdr">FRI</div>
-                <div class="sop-demo-7hdr">SAT</div>
-                <div class="sop-demo-7hdr">SUN</div>
-                <div class="sop-demo-7hdr">MON</div>
-                <div class="sop-demo-7hdr">TUE</div>
-                <div class="sop-demo-7hdr">WED</div>
-                <div class="sop-demo-tile"><span class="sop-pointer-sm">1</span><span>11/19</span><span>SHFT</span></div>
-                <div class="sop-demo-tile" style="background:var(--success-bg);color:var(--success);"><span>11/20</span><span>RDO</span></div>
-                <div class="sop-demo-tile" style="background:var(--success-bg);color:var(--success);"><span>11/21</span><span>RDO</span></div>
-                <div class="sop-demo-tile" style="background:var(--success-bg);color:var(--success);"><span>11/22</span><span>RDO</span></div>
-                <div class="sop-demo-tile"><span>11/23</span><span>SHFT</span></div>
-                <div class="sop-demo-tile"><span>11/24</span><span>SHFT</span></div>
-                <div class="sop-demo-tile"><span>11/25</span><span>SHFT</span></div>
-              </div>
-              <div class="sop-demo-picker">
-                <div class="sop-demo-chip" style="background:#fff;">Present (On Shift)</div>
-                <div class="sop-demo-chip" style="background:var(--success-bg);color:var(--success);">Pass (RDO)</div>
-                <div class="sop-demo-chip" style="background:var(--primary-bg);color:var(--primary);">SAD Leave</div>
-                <div class="sop-demo-chip" style="background:#fffde7;color:#f57f17;">TDY (Drill)</div>
-              </div>
-              <div class="sop-demo-picker-4">
-                <div class="sop-demo-chip" style="background:#ede7f6;color:#4527a0;">RFRD</div>
-                <div class="sop-demo-chip" style="background:#e1f5fe;color:#0277bd;">TRV</div>
-                <div class="sop-demo-chip" style="background:#fce8e6;color:#c5221f;">INCP</div>
-                <div class="sop-demo-chip" style="background:#f3e5f5;color:#7b1fa2;">SP</div>
-              </div>
-            </div>
-          </div>
-          <div class="sop-short-line">Tap any date tile on the THU–WED mini-calendar, then tap its new status in the inline picker.</div>
-        </div>
-
+      <div class="sop-panel active" id="sopPanel_start">
         <div class="sop-step-card">
-          <div class="sop-step-title">Multi-Day Ranges &amp; Extra Pay Periods</div>
+          <div class="sop-step-title">1. Set up your planner</div>
           <ul class="sop-list">
-            <li>Open <strong>More tools</strong> and choose <strong>📅 Plan Range</strong> to fill a start-to-end date range with SAD Leave, TDY (with the 120-mile In-Transit check), RDO, or On Shift.</li>
-            <li>Tap <strong>➕ Add Pay Period</strong> at the bottom of the last pay period to extend your plan.</li>
+            <li>Open <strong>⚙️ Edit Settings</strong>. Enter your <strong>18 Nov 2026 leave balance</strong>; this field is required. Enter <strong>0</strong> if you have no leave balance.</li>
+            <li>Choose your beginning pay period and shift schedule. Add your pay profile and ZIP code if you want an estimated pay calculation.</li>
+            <li>On your schedule, tap a date on a phone or click a day on desktop. Choose the status for that date. Use <strong>More tools</strong> for additional planning actions.</li>
           </ul>
         </div>
-      </div>
-
-      <div class="sop-panel" id="sopPanel_desktop">
-        <div class="sop-live-block">
-          <div class="sop-step-title"><span class="sop-pointer">1</span> Click Any Cell in the DA-6 Matrix</div>
-          <div class="sop-live-ui">
-            <table class="sop-demo-grid14">
-              <thead>
-                <tr>
-                  <th>DATE</th>
-                  <th>11/19</th>
-                  <th>11/20</th>
-                  <th>11/21</th>
-                  <th>11/22</th>
-                  <th>11/23</th>
-                  <th>11/24</th>
-                  <th>11/25</th>
-                </tr>
-                <tr>
-                  <th>DAY</th>
-                  <th>THU</th>
-                  <th>FRI</th>
-                  <th>SAT</th>
-                  <th>SUN</th>
-                  <th>MON</th>
-                  <th>TUE</th>
-                  <th>WED</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td style="background:#3c4043;color:#fff;">STATUS</td>
-                  <td><span class="sop-pointer-sm">1</span> SHFT</td>
-                  <td style="background:var(--success-bg);color:var(--success);">RDO</td>
-                  <td style="background:var(--success-bg);color:var(--success);">RDO</td>
-                  <td style="background:var(--success-bg);color:var(--success);">RDO</td>
-                  <td>SHFT</td>
-                  <td>SHFT</td>
-                  <td>SHFT</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <div class="sop-short-line">Click any day cell in the DA-6 matrix to open the inline status selector right above the grid.</div>
-        </div>
-
         <div class="sop-step-card">
-          <div class="sop-step-title">Live Metrics, Pay Estimates &amp; Error Jump Banner</div>
+          <div class="sop-step-title">Status key</div>
           <ul class="sop-list">
-            <li>Each pay period updates RDO authorization vs. usage, SAD leave accrual/ending balance, estimated SAD pay, and 30-day / 60-day OCONUS deadlines automatically.</li>
-            <li>If a policy rule is violated, click the red banner at the top to jump straight to the first error.</li>
+            <li><strong>SHFT:</strong> Present / On Shift. <strong>RDO:</strong> Pass / regular day off. <strong>LV:</strong> SAD Leave.</li>
+            <li><strong>TDY:</strong> Drill / TDY. <strong>TRV:</strong> In-Transit travel. <strong>SP:</strong> Special Pass. <strong>INCP:</strong> INCAP Pay.</li>
+            <li><strong>RFRD, TERM, and OFF</strong> are managed by the REFRAD planner; use <strong>Plan REFRAD</strong> to change that plan.</li>
           </ul>
         </div>
-      </div>
-
-      <div class="sop-panel" id="sopPanel_rules">
         <div class="sop-step-card warn-card">
-          <div class="sop-step-title">Key Policy &amp; Leave Rules Built Into v1</div>
+          <div class="sop-step-title">Important</div>
           <ul class="sop-list">
-            <li><strong>Leave Accrual &amp; 49-Day Cap:</strong> 8+ qualifying days = +1.25d/PP; 5–7 qualifying days = +0.75d/PP. Capped at 49.00 days effective 03 DEC 2026 (resumes below 47.00d).</li>
-            <li><strong>Special Holiday Passes (02 OCT 2026 Memo):</strong> Each holiday Special Pass may be used once, on or after the holiday date, within the 3-pay-period window, and cannot be paired as RDO + RDO or Shift + RDO on weekend holidays.</li>
-            <li><strong>In-Transit (01 APR 2026 Change 2):</strong> Bridges On Shift and TDY; cannot sit directly adjacent to RDO, SAD Leave, Terminal Leave, or Special Pass days.</li>
-            <li><strong>Plan REFRAD:</strong> Choose either a REFRAD Report Date (the day you report for duty, followed by Terminal Leave) or a fixed Mission End Date (Terminal Leave before the last mission-paid day). The planner marks dates after the plan as Off Mission and removes later pay periods.</li>
+            <li>Your plan saves in this browser on this device. It does not automatically sync between your phone and computer.</li>
+            <li>This is an unofficial planning aid. Verify policy, pay, leave, and approval decisions through your chain of command and official channels.</li>
           </ul>
         </div>
       </div>
 
-      <div class="sop-panel" id="sopPanel_export">
-        <div class="sop-step-card success-card">
-          <div class="sop-step-title">Exporting for Your Chain of Command</div>
+      <div class="sop-panel" id="sopPanel_leave">
+        <div class="sop-step-card">
+          <div class="sop-step-title">Plan a day or a date range</div>
           <ul class="sop-list">
-            <li>Fill out <strong>Service Member</strong>, <strong>Assignment Role</strong>, <strong>AO / Facility</strong>, and <strong>Next in Chain of Command</strong> in <strong>⚙️ Edit Settings</strong> first.</li>
-            <li>Use <strong>🖨️ Export / Print DA-6 PDF</strong> for a landscape report (up to 5 pay periods per sheet) or <strong>💾 Download CoC Report</strong> to save a standalone HTML copy.</li>
+            <li>For one day, select the date and choose <strong>SAD Leave</strong> in the status picker.</li>
+            <li>For several days, open <strong>More tools</strong> → <strong>Plan Range</strong>. Choose the status and start and end dates; both dates are included. The planner can add pay periods when the range extends beyond the open schedule.</li>
+            <li>For TDY, answer the 120-mile question shown in Plan Range. If outside 120 miles, the range starts and ends with In-Transit and has TDY in between; this needs at least 3 days. If within 120 miles, the range is all TDY.</li>
+          </ul>
+        </div>
+        <div class="sop-step-card">
+          <div class="sop-step-title">Save the SAD Leave Request Form</div>
+          <ul class="sop-list">
+            <li>The first time you choose SAD Leave, the planner asks whether you want to save the request form.</li>
+            <li>You can also use <strong>📄 Save SAD Leave Request Form (PDF)</strong> in the action buttons below the schedule at any time.</li>
+            <li>Leave submission deadlines shown in the planner are estimates. Confirm the current requirements with your chain of command.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="sop-panel" id="sopPanel_refrad">
+        <div class="sop-step-card">
+          <div class="sop-step-title">Choose the date method that matches your plan</div>
+          <ul class="sop-list">
+            <li>Open <strong>🧭 Plan REFRAD</strong>. The planner currently supports two voluntary date methods; it does not have a separate involuntary REFRAD flow or determine eligibility or approval. Follow your chain of command's instructions for an involuntary REFRAD.</li>
+            <li><strong>REFRAD Report Date:</strong> Choose the day you report for work. That day is marked RFRD and counts as Present / On Shift. Terminal Leave starts the next day; Off Mission follows the Terminal Leave block.</li>
+            <li><strong>Mission End Date:</strong> Choose the last mission-paid day. Terminal Leave is planned before that date; Off Mission follows it.</li>
+            <li>Review the schedule after applying the plan. It can replace later planned statuses and shorten the displayed schedule after the plan cutoff.</li>
+          </ul>
+        </div>
+        <div class="sop-step-card">
+          <div class="sop-step-title">Change or clear a REFRAD plan</div>
+          <ul class="sop-list">
+            <li>Open <strong>Plan REFRAD</strong> to apply a different date or method.</li>
+            <li>To remove the plan, open <strong>Reset or clear saved data</strong> below the schedule and choose <strong>Clear REFRAD plan</strong>. This restores the schedule that was saved before the plan was applied.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="sop-panel" id="sopPanel_save">
+        <div class="sop-step-card">
+          <div class="sop-step-title">Save the leave form</div>
+          <ul class="sop-list">
+            <li>On supported phones and tablets, tap <strong>Save SAD Leave Request Form (PDF)</strong> and choose <strong>Save to Files</strong> or another destination in the share menu.</li>
+            <li>On desktop, the button downloads the PDF through your browser. Look in the browser's Downloads location or use its save prompt.</li>
+          </ul>
+        </div>
+        <div class="sop-step-card">
+          <div class="sop-step-title">Export your schedule</div>
+          <ul class="sop-list">
+            <li>For a printable schedule, choose <strong>🖨️ Export / Print DA-6 PDF</strong>, then select a printer or Save as PDF in the print dialog.</li>
+            <li>To save an HTML copy of the report, choose <strong>💾 Download CoC Report</strong>. Add service member and chain-of-command details in <strong>⚙️ Edit Settings</strong> before exporting.</li>
+          </ul>
+        </div>
+        <div class="sop-step-card warn-card">
+          <div class="sop-step-title">Before sharing or submitting</div>
+          <ul class="sop-list">
+            <li>Review the dates, leave balance, statuses, and pay assumptions. Estimates and policy checks are not official determinations or approvals.</li>
+            <li>Use <strong>Reset or clear saved data</strong> only when you intend to remove the information saved in this browser.</li>
           </ul>
         </div>
       </div>
     </div>
 
     <div class="sop-modal-footer">
-      <span>JTF Sentinel SAD DOCCS Planner (v1)</span>
+      <span>Unofficial planning guide • Verify current requirements with official channels</span>
       <button type="button" class="status-sheet-close" onclick="closeSopModal()">Done</button>
     </div>
   </div>
@@ -2939,14 +2825,13 @@ function getLastWeekdayOfMonth(year, monthZeroIndexed, weekday) {
 }
 
 /* ====================================================================================
-   [EDIT-SOP-MODAL] SOP MODAL NAVIGATION (AUTO-DETECTS PHONE VS DESKTOP)
+   [EDIT-SOP-MODAL] HOW-TO GUIDE TAB NAVIGATION
    ==================================================================================== */
 function openSopModal(tabKey) {
   const backdrop = document.getElementById('sopModalBackdrop');
   if (!backdrop) return;
   backdrop.classList.add('open');
-  const defaultTab = currentViewMode === 'mobile' ? 'phone' : 'desktop';
-  switchSopTab(tabKey || defaultTab);
+  switchSopTab(tabKey || 'start');
 }
 
 function closeSopModal() {
@@ -2957,7 +2842,7 @@ function closeSopModal() {
 }
 
 function switchSopTab(tabKey) {
-  ['phone', 'desktop', 'rules', 'export'].forEach(k => {
+  ['start', 'leave', 'refrad', 'save'].forEach(k => {
     const btn = document.getElementById(`sopTabBtn_${k}`);
     const panel = document.getElementById(`sopPanel_${k}`);
     if (btn) btn.classList.toggle('active', k === tabKey);
