@@ -1,4 +1,10 @@
-<!-- 04-schedule-wizard-grid.js -->
+// 04-schedule-wizard-grid.js
+
+/* Maintainer map:
+ * Edit RDO presets, wizard/settings interactions, planner controls, and REFRAD UI
+ * behavior here. Markup IDs are in source\02-planner-ui.html; policy calculations
+ * are in source\05-policy-leave-engine.js. Keep event-handler names and IDs in sync.
+ */
 
 /* ====================================================================================
    [EDIT-RDO-PRESETS] RDO PRESET DROPDOWN OPTIONS (4/3 AND 5/2)
@@ -120,6 +126,7 @@ function applyRdoPresetForSlot(slotIdx, presetKey) {
 }
 
 function applyRdoPresetAll(presetKey) {
+  clearLastDayStatusUndo();
   activeRdoPreset = presetKey || (document.getElementById('schedSelect').value === 'alt' ? 'fri_sun' : 'sat_sun');
   hasAppliedRdoPreset = true;
   ensureSlotCapacity(activePayPeriodCount);
@@ -136,6 +143,19 @@ function applyRdoPresetAll(presetKey) {
 
 function applyDefaultPatternAll() {
   applyRdoPresetAll(document.getElementById('schedSelect').value === 'alt' ? 'fri_sun' : 'sat_sun');
+}
+
+function confirmApplyDefaultPatternAll() {
+  if (!confirm('Reset the RDO pattern in every open pay period? Other date selections in those pay periods may be replaced.')) return;
+  applyDefaultPatternAll();
+  const menu = document.getElementById('headerMoreTools');
+  if (menu) menu.open = false;
+}
+
+function openRangeBuilderFromMenu() {
+  const menu = document.getElementById('headerMoreTools');
+  if (menu) menu.open = false;
+  openRangeBuilderModal();
 }
 
 /* ====================================================================================
@@ -159,6 +179,7 @@ const WIZARD_EMPIRE_STEP_NAMES = [
 ];
 let wizardCurrentStep = 1;
 let wizardSelectedView = currentViewMode;
+let wizardSelectedTheme = colorThemePreference;
 let wizardSelectedTaskForce = 'sentinel';
 let wizardIsRerun = false;
 let wizardInitialSnapshot = null;
@@ -184,7 +205,7 @@ function updateWizardPayZipMhaBadge(prof) {
   const labels = info.labels || {
     base: 'Fee-DMNA (Base Pay)',
     adlCom: 'Adl Com (BAH + BAS)',
-    incentive: 'Role Bonus',
+    incentive: 'Incentive Pay',
     estimateTag: 'Est. · Before Tax'
   };
   const incAmt = info.ppIncentiveBonus || 0;
@@ -223,7 +244,7 @@ function onWizardPayChange() {
 
   const prof = {
     grade: document.getElementById('wizPayGradeSelect')?.value || 'E-4',
-    yosKey: document.getElementById('wizPayYosSelect')?.value || 'over4',
+    yosKey: document.getElementById('wizPayYosSelect')?.value || 'over6',
     zipCode: document.getElementById('wizPayZipInput')?.value || '',
     depStatus: document.getElementById('wizPayDepSelect')?.value || 'withoutDep',
     bahEntitled: bahCheck ? bahCheck.checked : true,
@@ -238,6 +259,7 @@ function openSetupWizard(isRerun) {
   wizardIsRerun = Boolean(isRerun);
   wizardCurrentStep = 1;
   wizardSelectedView = currentViewMode;
+  wizardSelectedTheme = colorThemePreference;
   try {
     const savedTaskForce = localStorage.getItem(TASK_FORCE_STORAGE_KEY);
     wizardSelectedTaskForce = savedTaskForce === 'empire-shield' ? savedTaskForce : 'sentinel';
@@ -265,7 +287,7 @@ function openSetupWizard(isRerun) {
 
   const payProf = typeof getPayProfile === 'function'
     ? getPayProfile()
-    : { grade: 'E-4', yosKey: 'over4', zipCode: '', depStatus: 'withoutDep', bahEntitled: true, basEntitled: true, roleTier: 'none' };
+    : { grade: 'E-4', yosKey: 'over6', zipCode: '', depStatus: 'withoutDep', bahEntitled: true, basEntitled: true, roleTier: 'none' };
   const wGrade = document.getElementById('wizPayGradeSelect');
   const wYos = document.getElementById('wizPayYosSelect');
   const wZip = document.getElementById('wizPayZipInput');
@@ -292,6 +314,8 @@ function openSetupWizard(isRerun) {
   updateWizardPayZipMhaBadge(payProf);
 
   populateWizardPpOptions(startPpIdx);
+  const themeSelect = document.getElementById('wizThemeSelect');
+  if (themeSelect) themeSelect.value = wizardSelectedTheme;
   selectWizardView(wizardSelectedView);
   selectWizardTaskForce(wizardSelectedTaskForce);
   renderWizardStep();
@@ -301,7 +325,7 @@ function openSetupWizard(isRerun) {
 }
 
 function rerunSetupWizard() {
-  closeSettingsModal();
+  if (!closeSettingsModal()) return;
   openSetupWizard(true);
 }
 
@@ -311,6 +335,10 @@ function selectWizardView(mode) {
   const mCard = document.getElementById('wizViewCard_mobile');
   if (dCard) dCard.classList.toggle('selected', mode === 'desktop');
   if (mCard) mCard.classList.toggle('selected', mode === 'mobile');
+}
+
+function selectWizardTheme(preference) {
+  if (['system', 'light', 'dark'].includes(preference)) wizardSelectedTheme = preference;
 }
 
 function selectWizardTaskForce(taskForce) {
@@ -375,17 +403,36 @@ function populateWizardPpOptions(selectedIdx) {
   });
   const safeIdx = Math.min(Math.max(0, selectedIdx || 0), latestAllowedIdx);
   wizPp.value = safeIdx;
+  updateJumpToCurrentPayPeriodButtons();
 }
 
 function setWizardToCurrentPp() {
-  let foundIdx = typeof getLatestAllowedPayPeriodIndex === 'function'
-    ? getLatestAllowedPayPeriodIndex()
-    : 0;
-  payPeriods.forEach((pp, idx) => {
-    if (pp.isCurrent && pp.isAllowedStart !== false) foundIdx = idx;
-  });
+  const foundIdx = getCurrentPayPeriodIndex();
   const wizPp = document.getElementById('wizPpSelect');
   if (wizPp) wizPp.value = foundIdx;
+  updateJumpToCurrentPayPeriodButtons();
+}
+
+function getCurrentPayPeriodIndex() {
+  const currentIdx = payPeriods.findIndex(pp => pp.isCurrent && pp.isAllowedStart !== false);
+  return currentIdx >= 0
+    ? currentIdx
+    : (typeof getLatestAllowedPayPeriodIndex === 'function' ? getLatestAllowedPayPeriodIndex() : 0);
+}
+
+function updateJumpToCurrentPayPeriodButtons() {
+  const currentIdx = getCurrentPayPeriodIndex();
+  const settingsSelect = document.getElementById('ppSelect');
+  const settingsButton = document.getElementById('settingsJumpToCurrentPpButton');
+  if (settingsSelect && settingsButton) {
+    settingsButton.hidden = parseInt(settingsSelect.value, 10) === currentIdx;
+  }
+
+  const wizardSelect = document.getElementById('wizPpSelect');
+  const wizardButtonWrap = document.getElementById('wizardJumpToCurrentPpWrap');
+  if (wizardSelect && wizardButtonWrap) {
+    wizardButtonWrap.hidden = parseInt(wizardSelect.value, 10) === currentIdx;
+  }
 }
 
 function renderWizardStep() {
@@ -437,6 +484,8 @@ function wizardStepNav(delta) {
       alert('Please select your Assignment Role (C2, External Support, Facility Leadership, or General Purpose) before continuing.');
       return;
     }
+    const leaveBalanceEl = document.getElementById('wizStartingLeave');
+    if (leaveBalanceEl && !leaveBalanceEl.reportValidity()) return;
   }
   const nextStep = wizardCurrentStep + delta;
   if (nextStep < 1 || nextStep > 8) return;
@@ -447,6 +496,11 @@ function wizardStepNav(delta) {
 }
 
 function finishWizard(openSopAfter) {
+  if (wizardSelectedTaskForce === 'sentinel') {
+    const leaveBalanceEl = document.getElementById('wizStartingLeave');
+    if (leaveBalanceEl && !leaveBalanceEl.reportValidity()) return;
+  }
+
   const chosenView = wizardSelectedView || currentViewMode;
   const chosenSched = document.getElementById('wizSchedSelect').value || 'alt';
   const chosenRdo = document.getElementById('wizRdoSelect').value || (chosenSched === 'alt' ? 'fri_sun' : 'sat_sun');
@@ -467,7 +521,7 @@ function finishWizard(openSopAfter) {
 
   const chosenPayProf = {
     grade: document.getElementById('wizPayGradeSelect')?.value || 'E-4',
-    yosKey: document.getElementById('wizPayYosSelect')?.value || 'over4',
+    yosKey: document.getElementById('wizPayYosSelect')?.value || 'over6',
     zipCode: document.getElementById('wizPayZipInput')?.value || '',
     depStatus: document.getElementById('wizPayDepSelect')?.value || 'withoutDep',
     bahEntitled: bahCheck ? bahCheck.checked : true,
@@ -504,7 +558,10 @@ function finishWizard(openSopAfter) {
   }
 
   setViewMode(chosenView);
+  colorThemePreference = wizardSelectedTheme;
+  applyColorTheme();
   updateQuickProfileStrip();
+  saveStateToLocalStorage();
 
   const backdrop = document.getElementById('wizardBackdrop');
   if (backdrop) backdrop.classList.remove('open');
@@ -544,8 +601,12 @@ function openSettingsModal(guardModeAction) {
 
   const primaryBtn = document.getElementById('settingsPrimaryBtn');
   const alertEl = document.getElementById('settingsGuardAlert');
+  const cocDetails = document.getElementById('cocReportDetails');
+  const themeSelect = document.getElementById('settingsThemeSelect');
+  if (themeSelect) themeSelect.value = colorThemePreference;
 
   if (pendingExportAction) {
+    if (cocDetails) cocDetails.open = true;
     const missingIds = getMissingExportFields();
     missingIds.forEach(id => {
       const el = document.getElementById(id);
@@ -579,11 +640,14 @@ function openSettingsModal(guardModeAction) {
   }
 }
 
-function closeSettingsModal() {
+function closeSettingsModal(skipLeaveValidation) {
+  const leaveBalanceEl = document.getElementById('startingLeaveInput');
+  if (!skipLeaveValidation && leaveBalanceEl && !leaveBalanceEl.reportValidity()) return false;
   pendingExportAction = null;
   clearMissingFieldHighlights();
   const backdrop = document.getElementById('settingsBackdrop');
   if (backdrop) backdrop.classList.remove('open');
+  return true;
 }
 
 function validateBeforeExport(actionType) {
@@ -610,7 +674,7 @@ function onSettingsPrimaryAction() {
       return;
     }
     const actionToRun = pendingExportAction;
-    closeSettingsModal();
+    if (!closeSettingsModal()) return;
     if (actionToRun === 'pdf') exportToPdfForCoC();
     else if (actionToRun === 'download') downloadStandaloneReport();
   } else {
@@ -667,14 +731,6 @@ function openRangeBuilderModal(slotOverride) {
 function closeRangeBuilderModal() {
   const card = document.getElementById('rangeBuilderCard');
   if (card) card.classList.remove('open');
-}
-
-function selectTdyInTransitQual(choice) {
-  const yesRadio = document.getElementById('tdyQualRadio_yes');
-  const noRadio = document.getElementById('tdyQualRadio_no');
-  if (yesRadio) yesRadio.checked = (choice === 'yes');
-  if (noRadio) noRadio.checked = (choice === 'no');
-  onTdyQualRadioChange();
 }
 
 function onTdyQualRadioChange() {
@@ -754,6 +810,7 @@ function applyPlannedDateRange() {
 
   const endOffsetDays = Math.floor((endDate.getTime() - firstPpStart.getTime()) / 86400000);
   const requiredSlots = Math.floor(endOffsetDays / 14) + 1;
+  clearLastDayStatusUndo();
 
   if (requiredSlots > activePayPeriodCount) {
     const prevCount = activePayPeriodCount;
@@ -803,8 +860,12 @@ function onDateSelect(s, d) {
     return;
   }
   const currentSt = effectiveSelections[s][d];
+  if (currentSt === 'refrad_rpt') {
+    alert('Use Plan REFRAD to change or clear the REFRAD date.');
+    return;
+  }
   if (currentSt === 'term_lv' || currentSt === 'off_mission') {
-    alert('Days after your REFRAD Report Date are automatically calculated as Terminal Leave or Post-REFRAD (Off). Move or clear REFRAD to edit these days.');
+    alert('Terminal Leave and Post-REFRAD (Off) dates are calculated by the REFRAD plan. Change or clear the plan to edit them.');
     return;
   }
   openInlineStatusPicker(s, d);
@@ -867,6 +928,7 @@ function renderInlineStatusPicker(s, d) {
 
   let optionsHtml = '';
   STATUS_OPTIONS.forEach(st => {
+    if (st.isToolOnly) return;
     if (st.isSpecialPass && st.holidayDate) {
       if (dayDate < st.holidayDate || dayDate > st.expirationDate) return;
     }
@@ -894,7 +956,27 @@ function renderInlineStatusPicker(s, d) {
 
 function pickStatusFromInlinePicker(s, d, statusId) {
   setDayStatusDirect(s, d, statusId);
+  if (statusId === 'lv' && userSelections[s]?.[d] === 'lv') {
+    offerLeaveFormDownload();
+  }
   closeInlineStatusPicker();
+}
+
+function offerLeaveFormDownload() {
+  let alreadyOffered = false;
+  try {
+    alreadyOffered = localStorage.getItem(LEAVE_FORM_OFFERED_KEY) === '1';
+    if (!alreadyOffered) localStorage.setItem(LEAVE_FORM_OFFERED_KEY, '1');
+  } catch (error) {
+    console.warn('Leave form offer preference could not be saved:', error);
+  }
+  if (alreadyOffered) return;
+
+  if (!confirm('Would you like to download the SAD Leave Request Form (PDF) now? You can also download it later from the planner.')) return;
+  const link = document.createElement('a');
+  link.href = './assets/DOCCS_SAD_Leave_Request_Form.pdf';
+  link.download = 'DOCCS_SAD_Leave_Request_Form.pdf';
+  link.click();
 }
 
 /* ====================================================================================
@@ -1247,6 +1329,50 @@ function spConflictOpenUnshownPp() {
   }
 }
 
+let lastDayStatusUndoSnapshot = null;
+let REFRAD_SCHEDULE_EXPANSION_PENDING = false;
+
+function clearLastDayStatusUndo() {
+  lastDayStatusUndoSnapshot = null;
+  const button = document.getElementById('undoScheduleButton');
+  if (button) {
+    button.hidden = true;
+    button.disabled = true;
+  }
+}
+
+function captureLastDayStatusUndo() {
+  lastDayStatusUndoSnapshot = {
+    activePayPeriodCount,
+    startPpIdx: parseInt(document.getElementById('ppSelect').value, 10),
+    previousStartPpIdx,
+    userSelections: userSelections.map(row => [...row]),
+    refradPlanMode,
+    refradPlanDate,
+    refradScheduleSnapshot: cloneRefradScheduleSnapshot(refradScheduleSnapshot)
+  };
+  const button = document.getElementById('undoScheduleButton');
+  if (button) {
+    button.hidden = false;
+    button.disabled = false;
+  }
+}
+
+function undoLastDayStatusChange() {
+  if (!lastDayStatusUndoSnapshot) return;
+  activePayPeriodCount = lastDayStatusUndoSnapshot.activePayPeriodCount;
+  document.getElementById('ppSelect').value = lastDayStatusUndoSnapshot.startPpIdx;
+  previousStartPpIdx = lastDayStatusUndoSnapshot.previousStartPpIdx;
+  userSelections = lastDayStatusUndoSnapshot.userSelections.map(row => [...row]);
+  refradPlanMode = lastDayStatusUndoSnapshot.refradPlanMode;
+  refradPlanDate = lastDayStatusUndoSnapshot.refradPlanDate;
+  refradScheduleSnapshot = cloneRefradScheduleSnapshot(lastDayStatusUndoSnapshot.refradScheduleSnapshot);
+  updateRefradClearButton();
+  clearLastDayStatusUndo();
+  buildAllPayPeriodGrids();
+  saveStateToLocalStorage();
+}
+
 function setDayStatusDirect(s, d, targetStatus) {
   const startPpIdx = parseInt(document.getElementById('ppSelect').value, 10);
   const pp = payPeriods[startPpIdx + s];
@@ -1254,14 +1380,21 @@ function setDayStatusDirect(s, d, targetStatus) {
   const dayDate = addDays(pp.start, d);
   const stOpt = getStatusMeta(targetStatus);
 
+  if (targetStatus === 'refrad_rpt') {
+    alert('Use Plan REFRAD to set the REFRAD date.');
+    return;
+  }
+  if (userSelections[s][d] === 'refrad_rpt') {
+    alert('Use Plan REFRAD to change or clear the REFRAD date.');
+    return;
+  }
+
   if (userSelections[s][d] === targetStatus) return;
 
-  if (targetStatus !== 'refrad_rpt') {
-    const currentEffective = effectiveSelections[s][d];
-    if (currentEffective === 'term_lv' || currentEffective === 'off_mission') {
-      alert('Days after your REFRAD Report Date are automatically calculated as Terminal Leave or Post-REFRAD (Off). Move or clear REFRAD to edit these days.');
-      return;
-    }
+  const currentEffective = effectiveSelections[s][d];
+  if (currentEffective === 'term_lv' || currentEffective === 'off_mission') {
+    alert('Terminal Leave and Post-REFRAD (Off) dates are calculated by the REFRAD plan. Change or clear the plan to edit them.');
+    return;
   }
 
   if (stOpt && stOpt.isSpecialPass && stOpt.holidayDate) {
@@ -1281,13 +1414,7 @@ function setDayStatusDirect(s, d, targetStatus) {
     }
   }
 
-  if (targetStatus === 'refrad_rpt') {
-    for (let p = 0; p < userSelections.length; p++) {
-      for (let i = 0; i < 14; i++) {
-        if (userSelections[p][i] === 'refrad_rpt') userSelections[p][i] = 'shift';
-      }
-    }
-  }
+  captureLastDayStatusUndo();
 
   userSelections[s][d] = targetStatus;
   calculateAllPayPeriods();
@@ -1392,9 +1519,6 @@ function buildAllPayPeriodGrids() {
     let actionButtonsHtml = '';
     if (s === activePayPeriodCount - 1) {
       actionButtonsHtml += `<button type="button" class="btn-add-pp" onclick="addPayPeriod()">➕ Add Pay Period (PP #${activePayPeriodCount + 1})</button>`;
-      if (activePayPeriodCount > 1) {
-        actionButtonsHtml += `<button type="button" class="btn-remove-pp" onclick="removeLastPayPeriod()">🗑️ Remove Last PP</button>`;
-      }
     }
 
     section.innerHTML = `
@@ -1402,7 +1526,13 @@ function buildAllPayPeriodGrids() {
         <div class="pp-section-title">PP ${String(pp.ppNum).padStart(2, '0')}: ${formatShortDate(pp.start)} – ${formatFullDate(pp.end)}</div>
         <div class="pp-header-right">
           <span class="pp-section-badge">${badgeText}</span>
-          <button type="button" class="pp-header-range-btn" onclick="openRangeBuilderModal(${s})">📅 Plan Range</button>
+          <details class="pp-more-tools">
+            <summary>More tools</summary>
+            <div class="more-tools-menu">
+              <button type="button" class="more-tools-button" onclick="openRangeBuilderModal(${s})">📅 Plan Range for this pay period</button>
+              ${s === activePayPeriodCount - 1 && activePayPeriodCount > 1 ? `<button type="button" class="more-tools-button" onclick="removeLastPayPeriod()">🗑️ Remove Last Pay Period</button>` : ''}
+            </div>
+          </details>
         </div>
       </div>
 
@@ -1482,6 +1612,7 @@ function buildAllPayPeriodGrids() {
 }
 
 function addPayPeriod() {
+  clearLastDayStatusUndo();
   const newSlot = activePayPeriodCount;
   activePayPeriodCount++;
   const startPpIdx = parseInt(document.getElementById('ppSelect').value, 10);
@@ -1502,6 +1633,8 @@ function addPayPeriod() {
 
 function removeLastPayPeriod() {
   if (activePayPeriodCount > 1) {
+    if (!confirm(`Remove the last pay period and its scheduled dates? This cannot be undone.`)) return;
+    clearLastDayStatusUndo();
     activePayPeriodCount--;
     buildAllPayPeriodGrids();
     saveStateToLocalStorage();
@@ -1532,8 +1665,10 @@ function updateCardVisual(s, d, statusId) {
 }
 
 function onStartPayPeriodChange() {
+  clearLastDayStatusUndo();
   const newStartPpIdx = parseInt(document.getElementById('ppSelect').value, 10);
   const delta = newStartPpIdx - previousStartPpIdx;
+  updateJumpToCurrentPayPeriodButtons();
 
   if (delta !== 0) {
     const oldCopy = userSelections.slice(0, activePayPeriodCount).map(arr => [...arr]);
@@ -1552,19 +1687,24 @@ function onStartPayPeriodChange() {
   }
 }
 
-function onScheduleTypeChange() {
+function onScheduleTypeChange(schedEl) {
+  const previousType = schedEl && schedEl.dataset.previousValue;
+  if (previousType && previousType !== schedEl.value) {
+    const confirmed = confirm('Changing the shift schedule resets day statuses in all open pay periods to the default pattern. Continue?');
+    if (!confirmed) {
+      schedEl.value = previousType;
+      return;
+    }
+  }
   updatePresetDropdownOptions();
   applyDefaultPatternAll();
+  if (schedEl) schedEl.dataset.previousValue = schedEl.value;
 }
 
 function jumpToCurrentPayPeriod(forceReset) {
-  let foundIdx = typeof getLatestAllowedPayPeriodIndex === 'function'
-    ? getLatestAllowedPayPeriodIndex()
-    : 0;
-  payPeriods.forEach((pp, idx) => {
-    if (pp.isCurrent && pp.isAllowedStart !== false) foundIdx = idx;
-  });
+  const foundIdx = getCurrentPayPeriodIndex();
   document.getElementById('ppSelect').value = foundIdx;
+  updateJumpToCurrentPayPeriodButtons();
   if (forceReset) {
     previousStartPpIdx = foundIdx;
     applyDefaultPatternAll();
@@ -1573,14 +1713,248 @@ function jumpToCurrentPayPeriod(forceReset) {
   }
 }
 
+function updateRefradClearButton() {
+  const button = document.getElementById('clearRefradPlanButton');
+  if (button) button.hidden = !(refradPlanMode && refradPlanDate);
+}
+
 function clearRefradOnly() {
-  for (let s = 0; s < userSelections.length; s++) {
-    for (let d = 0; d < 14; d++) {
-      if (userSelections[s][d] === 'refrad_rpt') userSelections[s][d] = 'shift';
+  const refradCount = userSelections.reduce((count, row) => count + row.filter(statusId => statusId === 'refrad_rpt').length, 0);
+  if (refradCount === 0 && !refradPlanMode) {
+    alert('No REFRAD plan is set.');
+    return;
+  }
+  if (!confirm('Clear the REFRAD plan? Automatically generated Terminal Leave and Post-REFRAD days will return to the saved schedule.')) return;
+  clearLastDayStatusUndo();
+  const savedSchedule = cloneRefradScheduleSnapshot(refradScheduleSnapshot);
+  if (savedSchedule) {
+    ensurePayPeriodIndex(savedSchedule.startPpIdx + savedSchedule.activePayPeriodCount + 3);
+    document.getElementById('ppSelect').value = savedSchedule.startPpIdx;
+    previousStartPpIdx = savedSchedule.previousStartPpIdx;
+    activePayPeriodCount = savedSchedule.activePayPeriodCount;
+    userSelections = savedSchedule.userSelections.map(row =>
+      row.map(statusId => statusId === 'refrad_rpt' ? 'shift' : statusId)
+    );
+  } else {
+    for (let s = 0; s < userSelections.length; s++) {
+      for (let d = 0; d < 14; d++) {
+        if (userSelections[s][d] === 'refrad_rpt') userSelections[s][d] = 'shift';
+      }
     }
   }
-  calculateAllPayPeriods();
+  refradPlanMode = '';
+  refradPlanDate = '';
+  refradScheduleSnapshot = null;
+  updateRefradClearButton();
+  updateJumpToCurrentPayPeriodButtons();
+  buildAllPayPeriodGrids();
   saveStateToLocalStorage();
+}
+
+function getRefradDateLocation(dateIso) {
+  const date = parseIsoDateLocal(dateIso);
+  const firstPpStart = payPeriods[0]?.start;
+  if (!date || !firstPpStart) return null;
+  const dayOffset = Math.round((date.getTime() - firstPpStart.getTime()) / 86400000);
+  const ppIdx = Math.floor(dayOffset / 14);
+  return { ppIdx, dayIdx: dayOffset - ppIdx * 14 };
+}
+
+function openRefradPlanner() {
+  const leaveBalanceEl = document.getElementById('startingLeaveInput');
+  if (leaveBalanceEl && !leaveBalanceEl.reportValidity()) {
+    openSettingsModal();
+    setTimeout(() => leaveBalanceEl.focus(), 60);
+    return;
+  }
+
+  const modeSelect = document.getElementById('refradPlanModeSelect');
+  const dateInput = document.getElementById('refradPlanDateInput');
+  const earliestDate = payPeriods[0]?.start;
+  const firstBalanceDate = addDays(LEAVE_ANCHOR_DATE, 1);
+  const minimumDate = earliestDate && earliestDate > firstBalanceDate ? earliestDate : firstBalanceDate;
+  if (modeSelect) modeSelect.value = refradPlanMode || 'report_date';
+  if (dateInput) {
+    dateInput.min = toIsoDate(minimumDate);
+    dateInput.value = refradPlanDate || toIsoDate(new Date());
+  }
+  onRefradModeChange();
+  const backdrop = document.getElementById('refradPlannerBackdrop');
+  if (backdrop) backdrop.classList.add('open');
+}
+
+function closeRefradPlanner() {
+  const backdrop = document.getElementById('refradPlannerBackdrop');
+  if (backdrop) backdrop.classList.remove('open');
+}
+
+function onRefradModeChange() {
+  const mode = document.getElementById('refradPlanModeSelect')?.value || 'report_date';
+  const dateLabel = document.getElementById('refradDateLabel');
+  const helper = document.getElementById('refradModeHelper');
+  const notice = document.getElementById('refradPlanNotice');
+  if (mode === 'mission_end') {
+    if (dateLabel) dateLabel.textContent = 'MISSION END DATE (LAST MISSION-PAID DAY)';
+    if (helper) {
+      helper.textContent = 'Choose the last day the mission can pay you. The planner will mark that date as REFRAD, schedule remaining Terminal Leave immediately before it, and stop mission pay after it.';
+    }
+    if (notice) {
+      notice.textContent = 'Remaining Terminal Leave will be scheduled backward from the selected last mission-paid day, replacing earlier statuses as needed. That date is marked REFRAD; later dates in that pay period are Off Mission, and later pay periods are removed. Your leave balance is as of 18 Nov 2026, so choose 19 Nov 2026 or later.';
+    }
+  } else {
+    if (dateLabel) dateLabel.textContent = 'REFRAD REPORT DATE';
+    if (helper) {
+      helper.textContent = 'Choose the day you will report to work for REFRAD. That date is marked RFRD and counts as Present / On Shift; remaining Terminal Leave starts the next day, with Off Mission dates after Terminal Leave ends.';
+    }
+    if (notice) {
+      notice.textContent = 'Remaining Terminal Leave will be scheduled forward from the day after your REFRAD Report Date, replacing later statuses as needed. The report date counts as Present / On Shift. The planner adds or removes pay periods so the final period ends with your Terminal Leave and Off Mission dates. Your leave balance is as of 18 Nov 2026, so choose 19 Nov 2026 or later.';
+    }
+  }
+}
+
+function shiftScheduleStartEarlier(newStartPpIdx) {
+  const oldStartPpIdx = parseInt(document.getElementById('ppSelect').value, 10);
+  const periodsAdded = oldStartPpIdx - newStartPpIdx;
+  if (periodsAdded <= 0) return false;
+
+  const oldCount = activePayPeriodCount;
+  const oldSelections = userSelections.slice(0, oldCount).map(row => [...row]);
+  const newCount = oldCount + periodsAdded;
+  ensurePayPeriodIndex(newStartPpIdx + newCount + 3);
+  document.getElementById('ppSelect').value = newStartPpIdx;
+  previousStartPpIdx = newStartPpIdx;
+  activePayPeriodCount = newCount;
+  ensureSlotCapacity(newCount);
+
+  for (let slot = 0; slot < periodsAdded; slot++) {
+    applyRdoPresetForSlot(slot, activeRdoPreset);
+  }
+  for (let slot = 0; slot < oldCount; slot++) {
+    userSelections[periodsAdded + slot] = oldSelections[slot];
+  }
+  return true;
+}
+
+function ensureRefradPlanSchedule() {
+  const location = getRefradDateLocation(refradPlanDate);
+  if (!location) return false;
+
+  const startPpIdx = parseInt(document.getElementById('ppSelect').value, 10);
+  const targetSlot = location.ppIdx - startPpIdx;
+  const neededPeriods = Math.max(0, targetSlot + 1 - activePayPeriodCount);
+  if (neededPeriods === 0) return false;
+
+  const oldCount = activePayPeriodCount;
+  activePayPeriodCount += neededPeriods;
+  ensurePayPeriodIndex(startPpIdx + activePayPeriodCount + 3);
+  ensureSlotCapacity(activePayPeriodCount);
+  for (let slot = oldCount; slot < activePayPeriodCount; slot++) {
+    applyRdoPresetForSlot(slot, activeRdoPreset);
+  }
+  return true;
+}
+
+function finalizeRefradPlanAfterCalculation() {
+  requestAnimationFrame(() => {
+    if (REFRAD_SCHEDULE_EXPANSION_PENDING) {
+      finalizeRefradPlanAfterCalculation();
+      return;
+    }
+    const location = getRefradDateLocation(refradPlanDate);
+    if (!location) return;
+    const startPpIdx = parseInt(document.getElementById('ppSelect').value, 10);
+    saveStateToLocalStorage();
+    closeRefradPlanner();
+    if (REFRAD_BACKFILL_LEAVE_REMAINING >= 1) {
+      const direction = refradPlanMode === 'mission_end' ? 'before this date' : 'after this date';
+      alert(
+        `${Math.floor(REFRAD_BACKFILL_LEAVE_REMAINING)} whole leave day(s) could not be scheduled ${direction}. ` +
+        `Your leave balance is as of 18 Nov 2026, so there may not be enough days after that date. ` +
+        `Choose a later REFRAD date or review your leave balance.`
+      );
+    }
+    const targetSlot = location.ppIdx - startPpIdx;
+    const cellId = currentViewMode === 'mobile'
+      ? `dayRow_list_${targetSlot}_${location.dayIdx}`
+      : `dayRow_grid_${targetSlot}_${location.dayIdx}`;
+    const cellEl = document.getElementById(cellId) || document.getElementById(`ppSection_${targetSlot}`);
+    if (cellEl) {
+      cellEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      cellEl.classList.remove('error-flash');
+      void cellEl.offsetWidth;
+      cellEl.classList.add('error-flash');
+    }
+  });
+}
+
+function applyRefradPlan() {
+  const leaveBalanceEl = document.getElementById('startingLeaveInput');
+  if (leaveBalanceEl && !leaveBalanceEl.reportValidity()) {
+    closeRefradPlanner();
+    openSettingsModal();
+    setTimeout(() => leaveBalanceEl.focus(), 60);
+    return;
+  }
+
+  const dateInput = document.getElementById('refradPlanDateInput');
+  if (!dateInput || !dateInput.reportValidity()) return;
+  const mode = document.getElementById('refradPlanModeSelect')?.value || 'report_date';
+  const dateIso = dateInput.value;
+  const firstBalanceDate = addDays(LEAVE_ANCHOR_DATE, 1);
+  if (parseIsoDateLocal(dateIso) < firstBalanceDate) {
+    alert('Choose a REFRAD date on or after 19 Nov 2026. The leave balance used by this planner is as of 18 Nov 2026.');
+    return;
+  }
+  const location = getRefradDateLocation(dateIso);
+  if (!location || location.ppIdx < 0) {
+    alert('Choose a REFRAD date within the planner calendar.');
+    return;
+  }
+  const dateDescription = mode === 'mission_end'
+    ? 'The selected date will be the last mission-paid day. Remaining Terminal Leave will be scheduled before it; later dates will be Off Mission, and later pay periods will be removed.'
+    : 'The selected date will be marked REFRAD Report Date and count as Present / On Shift. Remaining Terminal Leave will start the next day; Off Mission dates follow the Terminal Leave block, and later pay periods will be removed.';
+  if (!confirm(`Apply the ${mode === 'mission_end' ? 'MISSION END DATE' : 'REFRAD REPORT DATE'} of ${formatFullDate(parseIsoDateLocal(dateIso))}? ${dateDescription}`)) return;
+
+  captureLastDayStatusUndo();
+  if (!refradScheduleSnapshot) {
+    refradScheduleSnapshot = {
+      startPpIdx: parseInt(document.getElementById('ppSelect').value, 10),
+      previousStartPpIdx,
+      activePayPeriodCount,
+      userSelections: userSelections.slice(0, activePayPeriodCount).map(row =>
+        row.map(statusId => statusId === 'refrad_rpt' ? 'shift' : statusId)
+      )
+    };
+  }
+  userSelections.forEach(row => {
+    for (let d = 0; d < row.length; d++) {
+      if (row[d] === 'refrad_rpt') row[d] = 'shift';
+    }
+  });
+
+  ensurePayPeriodIndex(location.ppIdx);
+  const currentStart = parseInt(document.getElementById('ppSelect').value, 10);
+  if (location.ppIdx < currentStart) {
+    shiftScheduleStartEarlier(location.ppIdx);
+  }
+  refradPlanMode = mode;
+  refradPlanDate = dateIso;
+  updateRefradClearButton();
+  REFRAD_BACKFILL_DAYS_NEEDED = 0;
+  REFRAD_BACKFILL_DAYS_APPLIED = 0;
+  REFRAD_BACKFILL_LEAVE_REMAINING = 0;
+
+  ensureRefradPlanSchedule();
+  const startPpIdx = parseInt(document.getElementById('ppSelect').value, 10);
+  const targetSlot = location.ppIdx - startPpIdx;
+  userSelections[targetSlot][location.dayIdx] = 'refrad_rpt';
+  activePayPeriodCount = targetSlot + 1;
+  userSelections = userSelections.slice(0, activePayPeriodCount);
+  effectiveSelections = effectiveSelections.slice(0, activePayPeriodCount);
+  closeInlineStatusPicker();
+  closeRangeBuilderModal();
+  buildAllPayPeriodGrids();
+  finalizeRefradPlanAfterCalculation();
 }
 
 function flagCard(s, d) {

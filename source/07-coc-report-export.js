@@ -1,4 +1,8 @@
-<!-- 07-coc-report-export.js -->
+// 07-coc-report-export.js
+
+/* Maintainer map: edit printable report layout and print behavior in [EDIT-PDF-REPORT].
+ * The downloadable SAD leave form is a separate PDF asset copied by build.ps1.
+ */
 
 /* ====================================================================================
    [EDIT-PDF-REPORT] DA-6 LANDSCAPE REPORT (5 PPs PER SHEET) & SMART PRINT GUARD
@@ -17,6 +21,14 @@ function buildStandaloneReportHtml(autoTriggerPrint) {
   const planWindowText = (firstPp && endPp)
     ? `${formatShortDate(firstPp.start)} – ${formatFullDate(endPp.end)}`
     : '';
+  const reportTheme = getComputedStyle(document.documentElement);
+  const resolveThemeColor = value => {
+    const token = /^var\((--[\w-]+)\)$/.exec(value);
+    if (!token) return value;
+    const color = reportTheme.getPropertyValue(token[1]).trim();
+    if (!color) throw new Error(`Report color variable ${token[1]} is not defined.`);
+    return color;
+  };
 
   let sectionsHtml = '';
 
@@ -34,6 +46,9 @@ function buildStandaloneReportHtml(autoTriggerPrint) {
       const badgeInfo = DATE_BADGE_MAP[iso] || null;
       const dayName = DAY_NAMES[d % 7];
       const stObj = getStatusMeta(effectiveSelections[s][d]);
+      const statusBackground = resolveThemeColor(stObj.color);
+      const statusText = resolveThemeColor(stObj.textCol);
+      const statusBorder = resolveThemeColor(stObj.border || stObj.color);
       const isConflict = Boolean(document.getElementById(`dayRow_grid_${s}_${d}`)?.classList.contains('conflict'));
 
       const holTagHtml = badgeInfo
@@ -44,7 +59,7 @@ function buildStandaloneReportHtml(autoTriggerPrint) {
       thDays += `<th style="border:1px solid #5f6368;padding:1px 2px;font-size:9px;background:#3c4043;color:#fff;text-align:center;">${dayName}</th>`;
       tdCells += `
         <td style="border:1px solid ${isConflict ? '#c5221f' : '#5f6368'};padding:2px;text-align:center;background:${isConflict ? '#fce8e6' : '#f8f9fa'};height:22px;vertical-align:middle;">
-          <div style="font-size:8.5px;font-weight:700;padding:1px 2px;border-radius:2px;background:${stObj.color};color:${stObj.textCol};border:1px solid ${stObj.border || stObj.color};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+          <div style="font-size:8.5px;font-weight:700;padding:1px 2px;border-radius:2px;background:${statusBackground};color:${statusText};border:1px solid ${statusBorder};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
             ${stObj.name}
           </div>
         </td>
@@ -116,7 +131,7 @@ function buildStandaloneReportHtml(autoTriggerPrint) {
     `;
   }
 
-  return `<!DOCTYPE html>
+  const reportHtml = `<!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
@@ -177,6 +192,7 @@ function buildStandaloneReportHtml(autoTriggerPrint) {
 ${autoTriggerPrint ? `<script>window.onload = function() { setTimeout(function() { window.print(); }, 250); };<\/script>` : ''}
 </body>
 </html>`;
+  return reportHtml.replace(/var\((--[\w-]+)\)/g, token => resolveThemeColor(token));
 }
 
 function exportToPdfForCoC() {
