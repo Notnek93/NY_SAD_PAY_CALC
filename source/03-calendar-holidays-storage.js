@@ -162,14 +162,13 @@ function getLastWeekdayOfMonth(year, monthZeroIndexed, weekday) {
 }
 
 /* ====================================================================================
-   [EDIT-SOP-MODAL] SOP MODAL NAVIGATION (AUTO-DETECTS PHONE VS DESKTOP)
+   [EDIT-SOP-MODAL] HOW-TO GUIDE TAB NAVIGATION
    ==================================================================================== */
 function openSopModal(tabKey) {
   const backdrop = document.getElementById('sopModalBackdrop');
   if (!backdrop) return;
   backdrop.classList.add('open');
-  const defaultTab = currentViewMode === 'mobile' ? 'phone' : 'desktop';
-  switchSopTab(tabKey || defaultTab);
+  switchSopTab(tabKey || 'start');
 }
 
 function closeSopModal() {
@@ -180,7 +179,7 @@ function closeSopModal() {
 }
 
 function switchSopTab(tabKey) {
-  ['phone', 'desktop', 'rules', 'export'].forEach(k => {
+  ['start', 'leave', 'refrad', 'save'].forEach(k => {
     const btn = document.getElementById(`sopTabBtn_${k}`);
     const panel = document.getElementById(`sopPanel_${k}`);
     if (btn) btn.classList.toggle('active', k === tabKey);
