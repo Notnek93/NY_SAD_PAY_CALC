@@ -1,4 +1,10 @@
-<!-- 06-sad-pay-calculator.js -->
+// 06-sad-pay-calculator.js
+
+/* Maintainer map:
+ * Edit pay defaults, BAS assumptions, and role incentives in the settings below.
+ * Base-pay/BAH/ZIP data is generated from data\BasePay.csv and data\raw\*.csv by
+ * build.ps1; do not hand-edit PAY_RATE_DB in source\07-pay-data.js.
+ */
 
 /* ====================================================================================
    [EDIT-PAY-DB] SAD PAY CALCULATOR (BASE PAY + BAH + BAS + ROLE BONUS -> PAY PERIOD)
@@ -20,6 +26,7 @@ const BAS_MONTHLY_RATES_2026 = {
   enlisted: 476.95,
   officer: 328.48
 };
+const BAS_RATE_YEAR = 2026;
 
 // Per-pay-period role incentive bonuses (USD per pay period, awarded in full if >= 1 On Shift day in PP)
 const ROLE_PP_INCENTIVE_BONUS = {
@@ -33,12 +40,20 @@ const ROLE_PP_INCENTIVE_BONUS = {
 const PAY_LABELS = {
   base: "Fee-DMNA (Base Pay)",
   adlCom: "Adl Com (BAH + BAS)",
-  incentive: "Role Bonus",
+  incentive: "Incentive Pay",
   estimateTag: "Est. · Before Tax"
 };
 
 function getPayDatabase() {
   return (typeof PAY_RATE_DB !== "undefined" && PAY_RATE_DB) ? PAY_RATE_DB : PAY_DB_FALLBACK;
+}
+
+function getPayRateDataAssumptionText() {
+  const rateData = getPayDatabase().rateData || {};
+  const yearLabel = (year) => Number.isInteger(Number(year)) && Number(year) > 0
+    ? String(Number(year))
+    : "year not specified";
+  return `Base pay ${yearLabel(rateData.basePayYear)}; BAH ${yearLabel(rateData.bahRateYear)}; ZIP-to-MHA ${yearLabel(rateData.zipMhaYear)}; BAS ${BAS_RATE_YEAR}.`;
 }
 
 const PAY_PROFILE_LOOKUP_CACHE = new Map();
@@ -52,7 +67,7 @@ const USD_FORMATTER = new Intl.NumberFormat("en-US", {
 
 const PAY_PROFILE_DEFAULTS = {
   grade: "E-4",
-  yosKey: "over4",
+  yosKey: "over6",
   zipCode: "",
   depStatus: "withoutDep", // "withDep" | "withoutDep"
   bahEntitled: true,
@@ -287,7 +302,7 @@ function computePayForPayPeriod(slotIdx, dayStatusIds) {
     bahTotal,
     incentiveTotal,
     totalPay,
-    summaryText: `${PAY_LABELS.base} ${formatUsd(basePayTotal)} + ${PAY_LABELS.adlCom} ${formatUsd(bahTotal)}${incentivePart} (${formatUsd(rates.dailyTotalRate)}/d · ${PAY_LABELS.estimateTag})`
+    summaryText: `${PAY_LABELS.base} ${formatUsd(basePayTotal)} + ${PAY_LABELS.adlCom} ${formatUsd(bahTotal)} (${formatUsd(rates.dailyTotalRate)}/d)${incentivePart} · ${PAY_LABELS.estimateTag}`
   };
   PAY_PERIOD_COMPUTATION_CACHE.set(cacheKey, result);
   return result;

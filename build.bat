@@ -1,3 +1,5 @@
+REM Maintainer map: this is a Windows convenience wrapper for build.ps1.
+REM Change build inputs or source assembly in build.ps1, not in generated HTML.
 @echo off
 setlocal
 

@@ -1,4 +1,10 @@
-<!-- 05-policy-leave-engine.js -->
+// 05-policy-leave-engine.js
+
+/* Maintainer map:
+ * Edit leave caps/anchors, policy validation, leave deadlines, and duty-status
+ * calculations in the [EDIT-*] sections below. Status definitions are in
+ * source\03-calendar-holidays-storage.js; pay-rate inputs are in source\06-sad-pay-calculator.js.
+ */
 
 /* ====================================================================================
    [EDIT-LEAVE-RATES] 49-DAY LEAVE CAP (EFF. 03 DEC 2026) & 18 NOV 2026 ANCHOR
@@ -42,7 +48,15 @@ function updateErrorJumpBanner(perPpErrors) {
     const ppLabel = firstPp ? `PP ${String(firstPp.ppNum).padStart(2, '0')}` : `PP #${firstErrorSlotIdx + 1}`;
     const errWord = totalErrors === 1 ? 'Policy Error' : 'Policy Errors';
     const ppScope = errorPpCount > 1 ? ` across ${errorPpCount} Pay Periods` : '';
-    textEl.textContent = `❌ ${totalErrors} ${errWord}${ppScope} — First error in ${ppLabel}`;
+    const ppSection = document.getElementById(`ppSection_${firstErrorSlotIdx}`);
+    const conflictSelector = currentViewMode === 'mobile' ? '.mini-cal-tile.conflict' : '.day-cell.conflict';
+    const firstConflictCell = ppSection ? ppSection.querySelector(conflictSelector) : null;
+    const dayMatch = firstConflictCell && firstConflictCell.id.match(/_(\d+)_(\d+)$/);
+    const firstErrorDate = firstPp && dayMatch
+      ? formatFullDate(addDays(firstPp.start, Number(dayMatch[2])))
+      : '';
+    const locationText = firstErrorDate ? `${ppLabel}, ${firstErrorDate}` : ppLabel;
+    textEl.textContent = `❌ ${totalErrors} ${errWord}${ppScope} — First highlighted issue: ${locationText}. Tap to review the message and fix it.`;
     banner.classList.add('visible');
   } else {
     banner.classList.remove('visible');
@@ -113,7 +127,7 @@ function updatePayZipMhaBadge(prof) {
   const labels = info.labels || {
     base: 'Fee-DMNA (Base Pay)',
     adlCom: 'Adl Com (BAH + BAS)',
-    incentive: 'Role Bonus',
+    incentive: 'Incentive Pay',
     estimateTag: 'Est. · Before Tax'
   };
   const incAmt = info.ppIncentiveBonus || 0;
@@ -154,7 +168,7 @@ function onPaySettingsChange() {
   const roleVal = (document.getElementById('smRoleInput')?.value || '').trim();
   const prof = {
     grade: document.getElementById('payGradeSelect')?.value || 'E-4',
-    yosKey: document.getElementById('payYosSelect')?.value || 'over4',
+    yosKey: document.getElementById('payYosSelect')?.value || 'over6',
     zipCode: document.getElementById('payZipInput')?.value || '',
     depStatus: document.getElementById('payDepSelect')?.value || 'withoutDep',
     bahEntitled: bahEl ? bahEl.checked : true,
@@ -180,7 +194,7 @@ function renderPayReadoutForSlot(s, dayStatusIds, runningTotal) {
   const labels = info.labels || {
     base: 'Fee-DMNA (Base Pay)',
     adlCom: 'Adl Com (BAH + BAS)',
-    incentive: 'Role Bonus',
+    incentive: 'Incentive Pay',
     estimateTag: 'Est. · Before Tax'
   };
 
@@ -190,7 +204,7 @@ function renderPayReadoutForSlot(s, dayStatusIds, runningTotal) {
     if (summaryTable && summaryTable.parentElement) {
       boxEl = document.createElement('div');
       boxEl.id = `payReadout_${s}`;
-      boxEl.style.cssText = 'display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;background:var(--bg-light);border:1px solid var(--border);border-radius:6px;padding:6px 10px;margin-top:6px;font-size:11.5px;';
+      boxEl.style.cssText = 'display:flex;flex-direction:column;gap:6px;background:var(--bg-light);border:1px solid var(--border);border-radius:6px;padding:6px 10px;margin-top:6px;font-size:11.5px;';
       summaryTable.parentElement.insertBefore(boxEl, summaryTable.nextSibling);
     }
   }
@@ -201,12 +215,31 @@ function renderPayReadoutForSlot(s, dayStatusIds, runningTotal) {
   const incSegment = incAmt > 0
     ? ` + ${labels.incentive} ${formatUsd(info.incentiveTotal)}`
     : '';
-  const summaryText = `SAD Est. Pay: ${formatUsd(info.totalPay)} (${info.paidSadDays}d @ ${formatUsd(info.dailyTotalRate)}/d · ${labels.estimateTag})${entTag} | Cum: ${formatUsd(nextRunningTotal)}`;
+  const summaryText = `SAD Est. Pay: ${formatUsd(info.totalPay)} (${info.paidSadDays}d @ ${formatUsd(info.dailyTotalRate)}/d${incAmt > 0 ? ` + ${labels.incentive} ${formatUsd(info.incentiveTotal)}` : ''} · ${labels.estimateTag})${entTag} | Cum: ${formatUsd(nextRunningTotal)}`;
+  const yearsOfService = info.yosKey === 'lt2'
+    ? 'under 2 years'
+    : `over ${String(info.yosKey || '').replace(/^over/, '')} years`;
+  const profileAssumption = `${info.grade}, ${yearsOfService}, ZIP ${info.zipCode || 'not entered'}, ${info.depStatus === 'withDep' ? 'with' : 'without'} dependents; BAH ${info.bahEntitled ? 'included when eligible' : 'not included'}; BAS ${info.basEntitled ? 'included when eligible' : 'not included'}.`;
+  const rateAssumptions = typeof getPayRateDataAssumptionText === 'function'
+    ? getPayRateDataAssumptionText()
+    : 'Using the rate tables bundled with this app.';
 
   if (boxEl) {
     boxEl.innerHTML = `
-      <span><strong>💵 SAD Pay (${info.grade}, ${info.paidSadDays}d${mhaTag}${entTag}):</strong> ${labels.base} ${formatUsd(info.basePayTotal)} + ${labels.adlCom} ${formatUsd(info.bahTotal)}${incSegment} (${formatUsd(info.dailyTotalRate)}/d)</span>
-      <span style="color:var(--success);font-weight:700;">PP Est: ${formatUsd(info.totalPay)} &bull; Cum: ${formatUsd(nextRunningTotal)} <span style="color:var(--text-sub);font-weight:600;">(${labels.estimateTag})</span></span>
+      <div class="pay-readout-main">
+        <span><strong>💵 SAD Pay (${info.grade}, ${info.paidSadDays}d${mhaTag}${entTag}):</strong> ${labels.base} ${formatUsd(info.basePayTotal)} + ${labels.adlCom} ${formatUsd(info.bahTotal)} (${formatUsd(info.dailyTotalRate)}/d)${incSegment}</span>
+        <span class="pay-readout-total">PP Est: ${formatUsd(info.totalPay)} &bull; Cum: ${formatUsd(nextRunningTotal)} <span class="pay-readout-note">(${labels.estimateTag})</span></span>
+      </div>
+      <details class="pay-estimate-assumptions">
+        <summary>Estimate assumptions</summary>
+        <div class="pay-estimate-assumptions-body">
+          <div>${profileAssumption}</div>
+          <div>Base pay and applicable BAH + BAS convert monthly rates to daily rates using ÷ 30, round down to cents, then multiply by ${info.paidSadDays} eligible SAD days. The displayed daily rate excludes Incentive Pay.</div>
+          <div>Incentive Pay is added once for the pay period when at least one On Shift day qualifies; it is not part of the daily rate.</div>
+          <div>Rate data: ${rateAssumptions}</div>
+          <div>Estimate is before tax; daily rates are rounded down to cents.</div>
+        </div>
+      </details>
     `;
   }
 
@@ -229,6 +262,7 @@ function calculateAllPayPeriodsNow() {
   const effCapDateStr = formatFullDate(LEAVE_CAP_EFFECTIVE_DATE);
 
   ensureSlotCapacity(activePayPeriodCount);
+  REFRAD_SCHEDULE_EXPANSION_PENDING = false;
 
   let refradSlot = -1;
   let refradDay = -1;
@@ -269,41 +303,199 @@ function calculateAllPayPeriodsNow() {
   const anchorGlobalPpIdx = Math.floor(anchorOffsetDays / 14);
   const anchorDayInPp = ((anchorOffsetDays % 14) + 14) % 14;
 
-  let runningLeaveBal = targetAnchorBal;
-
-  if (anchorGlobalPpIdx >= 0) {
+  const getStartingLeaveBalance = (selectionRows) => {
+    let balance = targetAnchorBal;
+    if (anchorGlobalPpIdx < 0) return balance;
     ensurePayPeriodIndex(Math.max(anchorGlobalPpIdx, startPpIdx + activePayPeriodCount));
     const anchorPp = payPeriods[anchorGlobalPpIdx];
 
     if (startPpIdx <= anchorGlobalPpIdx && anchorPp) {
       const anchorSlotIdx = anchorGlobalPpIdx - startPpIdx;
-      const anchorSel = (anchorSlotIdx >= 0 && anchorSlotIdx < userSelections.length)
-        ? userSelections[anchorSlotIdx]
+      const anchorSel = (anchorSlotIdx >= 0 && anchorSlotIdx < selectionRows.length)
+        ? selectionRows[anchorSlotIdx]
         : null;
-
-      let bal = targetAnchorBal;
 
       if (anchorSel) {
         for (let d = anchorDayInPp; d >= 0; d--) {
           if (anchorSel[d] === 'lv' || anchorSel[d] === 'term_lv') {
-            bal = Math.round((bal + 1) * 100) / 100;
+            balance = Math.round((balance + 1) * 100) / 100;
           }
         }
-        if (anchorDayInPp < 13) {
+        if (anchorDayInPp === 13) {
           const anchorDelta = getPpLeaveDelta(anchorPp, anchorSel);
-          bal = Math.max(0, Math.round((bal - anchorDelta.earned) * 100) / 100);
+          balance = Math.max(0, Math.round((balance - anchorDelta.earned) * 100) / 100);
         }
       }
 
       for (let pIdx = anchorGlobalPpIdx - 1; pIdx >= startPpIdx; pIdx--) {
         const pPp = payPeriods[pIdx];
         const slotIdx = pIdx - startPpIdx;
-        const pSel = (slotIdx >= 0 && slotIdx < userSelections.length) ? userSelections[slotIdx] : null;
+        const pSel = (slotIdx >= 0 && slotIdx < selectionRows.length) ? selectionRows[slotIdx] : null;
         const delta = getPpLeaveDelta(pPp, pSel);
-        bal = Math.max(0, Math.round((bal - delta.earned + delta.lvDays) * 100) / 100);
+        balance = Math.max(0, Math.round((balance - delta.earned + delta.lvDays) * 100) / 100);
+      }
+    }
+    return balance;
+  };
+
+  const simulateLeavePoolAtRefrad = (selectionRows) => {
+    let balance = getStartingLeaveBalance(selectionRows);
+    let suspended = balance >= MAX_LEAVE_DAYS;
+    for (let s = 0; s <= refradSlot; s++) {
+      const endDay = s === refradSlot ? refradDay : 13;
+      let qualifyingDays = 0;
+      let sadLeaveUsed = 0;
+      let terminalLeaveUsed = 0;
+      for (let d = 0; d <= endDay; d++) {
+        const statusId = selectionRows[s]?.[d] || 'shift';
+        const status = getStatusMeta(statusId);
+        if (status.leaveQual) qualifyingDays++;
+        if (statusId === 'lv') sadLeaveUsed++;
+        if (statusId === 'term_lv') terminalLeaveUsed++;
       }
 
-      runningLeaveBal = bal;
+      const rawAccrual = qualifyingDays >= 8 ? 1.25 : qualifyingDays >= 5 ? 0.75 : 0;
+      const afterSadLeave = Math.round((balance - sadLeaveUsed) * 100) / 100;
+      if (suspended && afterSadLeave < resumeThreshold) suspended = false;
+      let accrued = rawAccrual;
+      if (suspended) {
+        accrued = 0;
+      } else if (afterSadLeave + rawAccrual >= MAX_LEAVE_DAYS) {
+        accrued = Math.max(0, Math.round((MAX_LEAVE_DAYS - afterSadLeave) * 100) / 100);
+        suspended = true;
+      }
+      balance = Math.round((afterSadLeave + accrued - terminalLeaveUsed) * 100) / 100;
+    }
+    return balance;
+  };
+
+  REFRAD_BACKFILL_DAYS_NEEDED = 0;
+  REFRAD_BACKFILL_DAYS_APPLIED = 0;
+  REFRAD_BACKFILL_LEAVE_REMAINING = 0;
+  if (refradSlot !== -1) {
+    const isReportDatePlan = refradPlanMode !== 'mission_end';
+    const markerPp = payPeriods[startPpIdx + refradSlot];
+    if (markerPp && anchorGlobalPpIdx >= 0 && addDays(markerPp.start, refradDay) >= LEAVE_ANCHOR_DATE && startPpIdx > anchorGlobalPpIdx + 1) {
+      if (shiftScheduleStartEarlier(anchorGlobalPpIdx + 1)) {
+        REFRAD_SCHEDULE_EXPANSION_PENDING = true;
+        closeInlineStatusPicker();
+        buildAllPayPeriodGrids();
+        saveStateToLocalStorage();
+        return;
+      }
+    }
+
+    const baseRows = userSelections.slice(0, activePayPeriodCount).map(row => [...row]);
+    const availableDaysBeforeMarker = refradSlot * 14 + refradDay;
+    const markerDate = markerPp ? addDays(markerPp.start, refradDay) : LEAVE_ANCHOR_DATE;
+    const firstEligibleLeaveDate = addDays(LEAVE_ANCHOR_DATE, 1);
+    const scheduleStartDate = payPeriods[startPpIdx]?.start || firstEligibleLeaveDate;
+    const candidateStartDate = scheduleStartDate > firstEligibleLeaveDate ? scheduleStartDate : firstEligibleLeaveDate;
+    const scheduledCandidateDays = Math.max(0, Math.round((markerDate.getTime() - candidateStartDate.getTime()) / 86400000));
+    const daysSinceAnchor = Math.max(0, Math.round((markerDate.getTime() - firstEligibleLeaveDate.getTime()) / 86400000));
+    let bestRows = baseRows;
+    let bestCount = 0;
+    let bestRemaining = simulateLeavePoolAtRefrad(baseRows);
+
+    if (isReportDatePlan) {
+      const availableLeave = Math.max(0, bestRemaining);
+      bestCount = Math.min(
+        Math.floor(MAX_LEAVE_DAYS),
+        Math.floor(availableLeave + 0.0001)
+      );
+      bestRemaining = Math.round((availableLeave - bestCount) * 100) / 100;
+
+      const terminalEndOffset = refradSlot * 14 + refradDay + bestCount;
+      const terminalEndSlot = Math.floor(terminalEndOffset / 14);
+      const requiredPeriodCount = terminalEndSlot + 1;
+      if (requiredPeriodCount !== activePayPeriodCount) {
+        const oldCount = activePayPeriodCount;
+        activePayPeriodCount = requiredPeriodCount;
+        ensurePayPeriodIndex(startPpIdx + activePayPeriodCount + 3);
+        ensureSlotCapacity(activePayPeriodCount);
+        if (activePayPeriodCount > oldCount) {
+          for (let slot = oldCount; slot < activePayPeriodCount; slot++) {
+            applyRdoPresetForSlot(slot, activeRdoPreset || 'fri_sun');
+          }
+        } else {
+          userSelections = userSelections.slice(0, activePayPeriodCount);
+          effectiveSelections = effectiveSelections.slice(0, activePayPeriodCount);
+        }
+        REFRAD_SCHEDULE_EXPANSION_PENDING = true;
+        closeInlineStatusPicker();
+        buildAllPayPeriodGrids();
+        saveStateToLocalStorage();
+        return;
+      }
+
+      bestRows = baseRows.map(row => [...row]);
+      for (let i = 1; i <= bestCount; i++) {
+        const dayOffset = refradSlot * 14 + refradDay + i;
+        const slot = Math.floor(dayOffset / 14);
+        const day = dayOffset - slot * 14;
+        bestRows[slot][day] = 'term_lv';
+      }
+
+      effectiveSelections = bestRows.map(row => [...row]);
+      for (let s = 0; s < activePayPeriodCount; s++) {
+        for (let d = 0; d < 14; d++) {
+          if (s * 14 + d > terminalEndOffset) effectiveSelections[s][d] = 'off_mission';
+        }
+      }
+      REFRAD_BACKFILL_DAYS_NEEDED = bestCount;
+      REFRAD_BACKFILL_DAYS_APPLIED = bestCount;
+      REFRAD_BACKFILL_LEAVE_REMAINING = bestRemaining;
+    } else {
+      const maximumCandidateDays = Math.min(
+        Math.floor(MAX_LEAVE_DAYS),
+        availableDaysBeforeMarker,
+        scheduledCandidateDays,
+        daysSinceAnchor
+      );
+      for (let candidateCount = 1; candidateCount <= maximumCandidateDays; candidateCount++) {
+        const candidateRows = baseRows.map(row => [...row]);
+        for (let i = 1; i <= candidateCount; i++) {
+          const dayOffset = refradSlot * 14 + refradDay - i;
+          const slot = Math.floor(dayOffset / 14);
+          const day = dayOffset - slot * 14;
+          candidateRows[slot][day] = 'term_lv';
+        }
+        const remaining = simulateLeavePoolAtRefrad(candidateRows);
+        if (remaining >= -0.005) {
+          bestRows = candidateRows;
+          bestCount = candidateCount;
+          bestRemaining = remaining;
+        }
+      }
+
+      effectiveSelections = bestRows.map(row => [...row]);
+      for (let d = refradDay + 1; d < 14; d++) effectiveSelections[refradSlot][d] = 'off_mission';
+      REFRAD_BACKFILL_DAYS_APPLIED = bestCount;
+      REFRAD_BACKFILL_LEAVE_REMAINING = Math.max(0, bestRemaining);
+      REFRAD_BACKFILL_DAYS_NEEDED = Math.min(
+        daysSinceAnchor,
+        bestCount + Math.floor(Math.max(0, bestRemaining) + 0.0001)
+      );
+    }
+  }
+
+  let runningLeaveBal = getStartingLeaveBalance(effectiveSelections);
+  if (refradSlot !== -1) {
+    const markerPp = payPeriods[startPpIdx + refradSlot];
+    if (markerPp && REFRAD_BACKFILL_DAYS_NEEDED > REFRAD_BACKFILL_DAYS_APPLIED && startPpIdx > 0) {
+      const markerDate = addDays(markerPp.start, refradDay);
+      const firstEligibleLeaveDate = addDays(LEAVE_ANCHOR_DATE, 1);
+      const neededStartDate = addDays(markerDate, -REFRAD_BACKFILL_DAYS_NEEDED);
+      const earliestNeededDate = neededStartDate < firstEligibleLeaveDate ? firstEligibleLeaveDate : neededStartDate;
+      const neededOffset = Math.round((earliestNeededDate.getTime() - firstPpStart.getTime()) / 86400000);
+      const neededStartPpIdx = Math.max(0, Math.floor(neededOffset / 14));
+      if (startPpIdx > neededStartPpIdx && shiftScheduleStartEarlier(neededStartPpIdx)) {
+        REFRAD_SCHEDULE_EXPANSION_PENDING = true;
+        closeInlineStatusPicker();
+        buildAllPayPeriodGrids();
+        saveStateToLocalStorage();
+        return;
+      }
     }
   }
 
@@ -311,6 +503,11 @@ function calculateAllPayPeriodsNow() {
   let globalSpUsageMap = {};
   let terminalPoolRemaining = 0;
   let lastTerminalSlot = refradSlot;
+  if (refradSlot !== -1) {
+    for (let s = 0; s < activePayPeriodCount; s++) {
+      if (effectiveSelections[s].includes('term_lv')) lastTerminalSlot = s;
+    }
+  }
   const perPpErrors = Array.from({ length: activePayPeriodCount }, () => []);
   const perPpWarnings = Array.from({ length: activePayPeriodCount }, () => []);
 
@@ -327,26 +524,22 @@ function calculateAllPayPeriodsNow() {
       });
     }
 
-    if (refradSlot !== -1 && s > refradSlot) {
+    if (refradSlot !== -1 && refradPlanMode === 'mission_end' && s > refradSlot) {
       for (let d = 0; d < 14; d++) {
-        if (terminalPoolRemaining >= 1.0) {
-          effectiveSelections[s][d] = 'term_lv';
-          terminalPoolRemaining = Math.round((terminalPoolRemaining - 1.0) * 100) / 100;
-          lastTerminalSlot = s;
-        } else {
-          effectiveSelections[s][d] = 'off_mission';
-        }
+        effectiveSelections[s][d] = 'off_mission';
       }
     }
 
     if (s === refradSlot) {
       let preRefradLeaveQual = 0;
       let preRefradSadLeaveUsed = 0;
+      let preRefradTerminalLeaveUsed = 0;
       for (let d = 0; d <= refradDay; d++) {
         const stId = effectiveSelections[s][d];
         const stObj = getStatusMeta(stId);
         if (stObj.leaveQual) preRefradLeaveQual++;
         if (stId === 'lv') preRefradSadLeaveUsed++;
+        if (stId === 'term_lv') preRefradTerminalLeaveUsed++;
       }
 
       let refradPpEarned = 0;
@@ -364,14 +557,13 @@ function calculateAllPayPeriodsNow() {
         refradPpEarned = 0;
       }
 
-      terminalPoolRemaining = Math.round((balAfterPreLv + refradPpEarned) * 100) / 100;
+      terminalPoolRemaining = Math.round(
+        (balAfterPreLv + refradPpEarned - preRefradTerminalLeaveUsed -
+          (refradPlanMode === 'mission_end' ? 0 : REFRAD_BACKFILL_DAYS_APPLIED)) * 100
+      ) / 100;
 
-      for (let d = refradDay + 1; d < 14; d++) {
-        if (terminalPoolRemaining >= 1.0) {
-          effectiveSelections[s][d] = 'term_lv';
-          terminalPoolRemaining = Math.round((terminalPoolRemaining - 1.0) * 100) / 100;
-          lastTerminalSlot = s;
-        } else {
+      if (refradPlanMode === 'mission_end') {
+        for (let d = refradDay + 1; d < 14; d++) {
           effectiveSelections[s][d] = 'off_mission';
         }
       }
@@ -509,7 +701,27 @@ function calculateAllPayPeriodsNow() {
     let endBalForThisPp = Math.round((balAfterDeduction + actualLeaveAccrued - termLeaveCount) * 100) / 100;
 
     if (endBalForThisPp < 0) {
-      perPpErrors[s].push(`<span class="policy-cite">Exhausted SAD Leave Balance:</span> Leave balance dropped below zero (${endBalForThisPp.toFixed(2)}). SMs cannot take more SAD Leave than accrued.`);
+      const availableLeave = Math.max(0, startBalForThisPp + actualLeaveAccrued);
+      let leaveUsedThroughDay = 0;
+      let exhaustionDay = -1;
+      for (let d = 0; d < 14; d++) {
+        const statusId = effectiveSelections[s][d];
+        if (statusId === 'lv' || statusId === 'term_lv') {
+          leaveUsedThroughDay++;
+          if (exhaustionDay === -1 && leaveUsedThroughDay > availableLeave) exhaustionDay = d;
+        }
+      }
+      const startPpIdx = parseInt(document.getElementById('ppSelect').value, 10);
+      const pp = payPeriods[startPpIdx + s];
+      const exhaustionDate = pp && exhaustionDay >= 0
+        ? formatFullDate(addDays(pp.start, exhaustionDay))
+        : '';
+      if (exhaustionDay >= 0) flagCard(s, exhaustionDay);
+      perPpErrors[s].push(
+        `<span class="policy-cite">Exhausted SAD Leave Balance:</span> ` +
+        `Leave balance dropped below zero (${endBalForThisPp.toFixed(2)})${exhaustionDate ? ` when leave was scheduled on ${exhaustionDate}` : ''}. ` +
+        `SMs cannot take more SAD Leave than accrued. Remove or move leave starting on the highlighted date.`
+      );
     }
 
     runningLeaveBal = endBalForThisPp;
@@ -565,11 +777,23 @@ function calculateAllPayPeriodsNow() {
     runningEstPay = payRes.nextRunningTotal;
   }
 
-  if (refradSlot !== -1 && terminalPoolRemaining > 0 && terminalPoolRemaining < 1.0 && lastTerminalSlot !== -1) {
-    perPpWarnings[lastTerminalSlot].push(
-      `<span class="policy-cite">Terminal Leave Fractional Remainder:</span> ` +
-      `${terminalPoolRemaining.toFixed(2)} fractional leave day(s) remain after whole Terminal Leave days were applied (SAD Leave is charged in full-day increments).`
-    );
+  if (refradSlot !== -1 && terminalPoolRemaining > 0) {
+    if (REFRAD_BACKFILL_DAYS_NEEDED > REFRAD_BACKFILL_DAYS_APPLIED) {
+      perPpWarnings[refradSlot].push(
+        `<span class="policy-cite">Terminal Leave Could Not Be Fully Scheduled:</span> ` +
+        `${Math.floor(terminalPoolRemaining)} whole leave day(s) remain because the schedule does not include enough earlier dates.`
+      );
+    } else if (terminalPoolRemaining >= 1.0) {
+      perPpWarnings[refradSlot].push(
+        `<span class="policy-cite">Terminal Leave Balance Remaining:</span> ` +
+        `${Math.floor(terminalPoolRemaining)} whole leave day(s) remain. Your balance is as of 18 Nov 2026, so there may not be enough days after that date to schedule all of it before REFRAD.`
+      );
+    } else if (terminalPoolRemaining < 1.0 && lastTerminalSlot !== -1) {
+      perPpWarnings[lastTerminalSlot].push(
+        `<span class="policy-cite">Terminal Leave Fractional Remainder:</span> ` +
+        `${terminalPoolRemaining.toFixed(2)} fractional leave day(s) remain after whole Terminal Leave days were applied (SAD Leave is charged in full-day increments).`
+      );
+    }
   }
 
   const timeline = [];
@@ -795,6 +1019,10 @@ function calculateAllPayPeriodsNow() {
       const div = document.createElement('div');
       div.className = 'alert alert-error';
       div.innerHTML = `❌ ${err}`;
+      const help = document.createElement('div');
+      help.className = 'alert-helper';
+      help.textContent = 'To fix: tap a red-highlighted date, choose an allowed duty status, and the planner will recheck your schedule.';
+      div.appendChild(help);
       alertsEl.appendChild(div);
     });
 

@@ -1,10 +1,16 @@
-<!-- 08-app-startup.js -->
+// 08-app-startup.js
+
+/* Maintainer map: page startup order and first-run/returning-user setup are handled
+ * here. Load and assemble the preceding source files in the order listed by build.ps1.
+ */
 
 /* ====================================================================================
    INITIALIZATION ON PAGE LOAD (AUTO-MIGRATES V5 -> V6 & SKIPS WIZARD FOR RETURNING USERS)
    ==================================================================================== */
 initPayPeriods();
 const loadResult = loadStateFromLocalStorage();
+updateRefradClearButton();
+updateJumpToCurrentPayPeriodButtons();
 updatePresetDropdownOptions();
 
 if (loadResult.restored && typeof getPayProfile === 'function' && typeof savePayProfile === 'function') {
@@ -34,6 +40,12 @@ if (!loadResult.restored) {
   buildAllPayPeriodGrids();
   setViewMode(currentViewMode);
   updateQuickProfileStrip();
+
+  const startingLeaveInput = document.getElementById('startingLeaveInput');
+  if (startingLeaveInput && !startingLeaveInput.checkValidity()) {
+    openSettingsModal();
+    setTimeout(() => startingLeaveInput.focus(), 60);
+  }
 
   if (loadResult.migratedFromV5) {
     saveStateToLocalStorage();

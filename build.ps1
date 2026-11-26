@@ -1,4 +1,9 @@
 # build.ps1
+# Maintainer map:
+# - Update source assembly and generated output paths in section 2 below.
+# - Pay data is built from data\BasePay.csv and the newest data\raw CSVs.
+# - Update $grades below if the source pay tables add supported grades.
+# - Run: powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\build.ps1 -SrcDir .\source -DistDir .\distribution
 param(
   [Parameter(Mandatory = $true)][string]$SrcDir,
   [Parameter(Mandatory = $true)][string]$DistDir
@@ -145,7 +150,19 @@ if ($baseCsvPath -and $bahRawFile -and $zipRawFile) {
     }
   }
 
+  $basePayYear = $null
+  if ($baseCsvFile -and $baseCsvFile.BaseName -match "^base-pay-(\d{4})$") {
+    $basePayYear = [int]$Matches[1]
+  }
+  $bahRateYear = [int]($bahRawFile.BaseName -replace "^bah-rates-", "")
+  $zipMhaYear = [int]($zipRawFile.BaseName -replace "^zip-to-mha-", "")
+
   $dbObj = @{
+    rateData          = @{
+      basePayYear = $basePayYear
+      bahRateYear = $bahRateYear
+      zipMhaYear  = $zipMhaYear
+    }
     baseByGradeAndYos = $baseMap
     mhaNames          = $mhaList
     zipToMhaIdx       = $zipToMhaIdx
@@ -153,7 +170,7 @@ if ($baseCsvPath -and $bahRawFile -and $zipRawFile) {
   }
 
   $json = $dbObj | ConvertTo-Json -Depth 6 -Compress
-  Set-Content -LiteralPath $payDataJsPath -Value "const PAY_RATE_DB = $json;" -Encoding UTF8
+  Set-Content -LiteralPath $payDataJsPath -Value "// Generated from data CSV files by build.ps1; edit the CSV inputs instead.`r`nconst PAY_RATE_DB = $json;" -Encoding UTF8
   Write-Host "[OK] Compiled $($zipToMhaIdx.Count) ZIPs across $($mhaList.Count) MHAs." -ForegroundColor Green
 } else {
   throw "Cannot compile pay database; missing BasePay.csv or data\raw\bah-rates-YYYY.csv / zip-to-mha-YYYY.csv."
@@ -176,11 +193,17 @@ $requiredSources = @(
   "07-coc-report-export.js",
   "08-app-startup.js"
 )
+$leaveFormSource = Join-Path $SrcDir "assets\DOCCS_SAD_Leave_Request_Form.pdf"
+if (-not (Test-Path -LiteralPath $leaveFormSource)) {
+  throw "Missing required source file: $leaveFormSource"
+}
+
 foreach ($requiredSource in $requiredSources) {
   $requiredPath = Join-Path $SrcDir $requiredSource
   if (-not (Test-Path -LiteralPath $requiredPath)) {
     throw "Missing required source file: $requiredPath"
   }
+
   if ((Get-Item -LiteralPath $requiredPath).Length -eq 0) {
     throw "Required source file is empty: $requiredPath"
   }
@@ -274,3 +297,12 @@ if ($hasSw) {
   Set-Content -LiteralPath (Join-Path $rootDir "sw.js") -Value $swContent -Encoding UTF8
   Write-Host "[OK] Copied sw.js (cache: sentinel-planner-v1-$buildStamp) -> $DistDir and $rootDir" -ForegroundColor Green
 }
+
+foreach ($assetRoot in @($rootDir, $DistDir)) {
+  $assetDir = Join-Path $assetRoot "assets"
+  if (-not (Test-Path -LiteralPath $assetDir)) {
+    New-Item -ItemType Directory -Path $assetDir -Force | Out-Null
+  }
+  Copy-Item -LiteralPath $leaveFormSource -Destination (Join-Path $assetDir "DOCCS_SAD_Leave_Request_Form.pdf") -Force
+}
+Write-Host "[OK] Copied SAD leave form PDF -> $rootDir and $DistDir" -ForegroundColor Green

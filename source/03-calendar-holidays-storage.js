@@ -1,4 +1,10 @@
-<!-- 03-calendar-holidays-storage.js -->
+// 03-calendar-holidays-storage.js
+
+/* Maintainer map:
+ * Edit policy switches, storage keys/migration, calendar anchors, status options,
+ * and holiday rules in their [EDIT-*] sections below. Status meanings belong here;
+ * leave/pay calculations are in source\05-policy-leave-engine.js and source\06-sad-pay-calculator.js.
+ */
 
 /* ====================================================================================
    [EDIT-POLICY-SWITCHES] MASTER ON/OFF SWITCHES FOR RESCINDED 22 OCT 2026 POLICY RULES
@@ -13,6 +19,7 @@ const ENFORCE_BOOKEND_RULE = false;
    ==================================================================================== */
 const STORAGE_KEY = 'JTF_SENTINEL_DOCCS_PLANNER_V6';
 const LEGACY_STORAGE_KEY = 'JTF_SENTINEL_DOCCS_PLANNER_V5';
+const LEAVE_FORM_OFFERED_KEY = `${STORAGE_KEY}_LEAVE_FORM_OFFERED`;
 const DAY_NAMES = ['THU', 'FRI', 'SAT', 'SUN', 'MON', 'TUE', 'WED'];
 
 /* ====================================================================================
@@ -23,8 +30,40 @@ const FIRST_PP_OFFSET = -16;
 const INITIAL_LAST_PP_OFFSET = 52;
 
 let currentViewMode = window.innerWidth <= 768 ? 'mobile' : 'desktop';
+let colorThemePreference = 'system';
 let activePayPeriodCount = 1;
 let previousStartPpIdx = 0;
+
+function applyColorTheme() {
+  const systemPrefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const useDarkTheme = colorThemePreference === 'dark' || (colorThemePreference === 'system' && systemPrefersDark);
+  document.documentElement.dataset.theme = useDarkTheme ? 'dark' : 'light';
+  document.documentElement.style.colorScheme = useDarkTheme ? 'dark' : 'light';
+}
+
+function setColorThemePreference(preference) {
+  if (!['system', 'light', 'dark'].includes(preference)) return;
+  colorThemePreference = preference;
+  applyColorTheme();
+  const wizardSelect = document.getElementById('wizThemeSelect');
+  const settingsSelect = document.getElementById('settingsThemeSelect');
+  if (wizardSelect) wizardSelect.value = preference;
+  if (settingsSelect) settingsSelect.value = preference;
+  saveStateToLocalStorage();
+}
+
+const systemColorScheme = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+if (systemColorScheme) {
+  const onSystemColorSchemeChange = () => {
+    if (colorThemePreference === 'system') applyColorTheme();
+  };
+  if (typeof systemColorScheme.addEventListener === 'function') {
+    systemColorScheme.addEventListener('change', onSystemColorSchemeChange);
+  } else if (typeof systemColorScheme.addListener === 'function') {
+    systemColorScheme.addListener(onSystemColorSchemeChange);
+  }
+}
+applyColorTheme();
 
 /* Unified Inline Status Picker State (Desktop & Phone) */
 let activePicker = { open: false, s: -1, d: -1 };
@@ -36,17 +75,17 @@ let pendingExportAction = null;
    [EDIT-STATUS-CODES] DUTY STATUS DEFINITIONS
    ==================================================================================== */
 const BASE_STATUS_OPTIONS = [
-  { id: 'shift',      name: 'Present (On Shift)',            shortName: 'SHFT', leaveQual: true,  rdoQual: true,  paidSad: true,  color: '#ffffff', textCol: '#202124', border: '#dadce0' },
-  { id: 'rdo',        name: 'Pass (RDO)',                 shortName: 'RDO',  leaveQual: false, rdoQual: false, paidSad: true,  color: '#e6f4ea', textCol: '#137333', border: '#ceead6' },
-  { id: 'lv',         name: 'SAD Leave',           shortName: 'LV',   leaveQual: true,  rdoQual: true,  paidSad: true,  color: '#e8f0fe', textCol: '#1a73e8', border: '#d2e3fc' },
-  { id: 'refrad_rpt', name: 'REFRAD Report Date',  shortName: 'RFRD', leaveQual: true,  rdoQual: true,  paidSad: true,  color: '#ede7f6', textCol: '#4527a0', border: '#b39ddb' },
-  { id: 'trv',        name: 'In-Transit (Travel)', shortName: 'TRV',  leaveQual: true,  rdoQual: false, paidSad: true,  color: '#e1f5fe', textCol: '#0277bd', border: '#b3e5fc' },
-  { id: 'drl',        name: 'TDY (Drill)',                 shortName: 'TDY',  leaveQual: false, rdoQual: false, paidSad: false, color: '#fffde7', textCol: '#f57f17', border: '#fff9c4' },
-  { id: 'incap',      name: 'INCAP Pay',           shortName: 'INCP', leaveQual: false, rdoQual: false, paidSad: false, color: '#fce8e6', textCol: '#c5221f', border: '#f5c2c0' }
+  { id: 'shift',      name: 'Present (On Shift)',            shortName: 'SHFT', leaveQual: true,  rdoQual: true,  paidSad: true,  color: 'var(--surface)', textCol: 'var(--text-main)', border: 'var(--border)' },
+  { id: 'rdo',        name: 'Pass (RDO)',                 shortName: 'RDO',  leaveQual: false, rdoQual: false, paidSad: true,  color: 'var(--status-rdo-bg)', textCol: 'var(--status-rdo-text)', border: 'var(--status-rdo-border)' },
+  { id: 'lv',         name: 'SAD Leave',           shortName: 'LV',   leaveQual: true,  rdoQual: true,  paidSad: true,  color: 'var(--status-leave-bg)', textCol: 'var(--status-leave-text)', border: 'var(--status-leave-border)' },
+  { id: 'refrad_rpt', name: 'REFRAD Report Date',  shortName: 'RFRD', leaveQual: true,  rdoQual: true,  paidSad: true,  color: 'var(--status-refrad-bg)', textCol: 'var(--status-refrad-text)', border: 'var(--status-refrad-border)', isToolOnly: true },
+  { id: 'trv',        name: 'In-Transit (Travel)', shortName: 'TRV',  leaveQual: true,  rdoQual: false, paidSad: true,  color: 'var(--status-transit-bg)', textCol: 'var(--status-transit-text)', border: 'var(--status-transit-border)' },
+  { id: 'drl',        name: 'TDY (Drill)',                 shortName: 'TDY',  leaveQual: false, rdoQual: false, paidSad: false, color: 'var(--status-drill-bg)', textCol: 'var(--status-drill-text)', border: 'var(--status-drill-border)' },
+  { id: 'incap',      name: 'INCAP Pay',           shortName: 'INCP', leaveQual: false, rdoQual: false, paidSad: false, color: 'var(--status-incap-bg)', textCol: 'var(--status-incap-text)', border: 'var(--status-incap-border)' }
 ];
 
-const AUTO_TERMINAL_META = { id: 'term_lv', name: 'Terminal Leave', shortName: 'TERM', leaveQual: false, rdoQual: false, paidSad: true, color: '#f3e5f5', textCol: '#6a1b9a', border: '#ce93d8' };
-const AUTO_OFF_MISSION_META = { id: 'off_mission', name: 'Post-REFRAD (Off)', shortName: 'OFF', leaveQual: false, rdoQual: false, paidSad: false, color: '#eceff1', textCol: '#78909c', border: '#cfd8dc' };
+const AUTO_TERMINAL_META = { id: 'term_lv', name: 'Terminal Leave', shortName: 'TERM', leaveQual: false, rdoQual: false, paidSad: true, color: 'var(--status-terminal-bg)', textCol: 'var(--status-terminal-text)', border: 'var(--status-terminal-border)' };
+const AUTO_OFF_MISSION_META = { id: 'off_mission', name: 'Post-REFRAD (Off)', shortName: 'OFF', leaveQual: false, rdoQual: false, paidSad: false, color: 'var(--status-off-bg)', textCol: 'var(--status-off-text)', border: 'var(--status-off-border)' };
 
 let STATUS_OPTIONS = [...BASE_STATUS_OPTIONS];
 let payPeriods = [];
@@ -56,10 +95,26 @@ let effectiveSelections = [new Array(14).fill('shift')];
 let activeRdoPreset = 'fri_sun';
 let hasAppliedRdoPreset = false;
 let oconusBlockFlags = {};
+let refradPlanMode = '';
+let refradPlanDate = '';
+let refradScheduleSnapshot = null;
+let REFRAD_BACKFILL_DAYS_NEEDED = 0;
+let REFRAD_BACKFILL_DAYS_APPLIED = 0;
+let REFRAD_BACKFILL_LEAVE_REMAINING = 0;
 
 const generatedHolidayYears = new Set();
 const HOLIDAY_RULES = [];
 const DATE_BADGE_MAP = {};
+
+function cloneRefradScheduleSnapshot(snapshot) {
+  if (!snapshot) return null;
+  return {
+    startPpIdx: snapshot.startPpIdx,
+    previousStartPpIdx: snapshot.previousStartPpIdx,
+    activePayPeriodCount: snapshot.activePayPeriodCount,
+    userSelections: snapshot.userSelections.map(row => [...row])
+  };
+}
 
 function toIsoDate(d) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -137,6 +192,7 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') {
     closeSopModal();
     closeSettingsModal();
+    closeRefradPlanner();
     closeRangeBuilderModal();
     closeInlineStatusPicker();
     closeSpConflictModal();
@@ -349,6 +405,7 @@ function saveStateToLocalStorageNow() {
   try {
     const payload = {
       viewMode: currentViewMode,
+      colorThemePreference,
       startPpIdx: parseInt(document.getElementById('ppSelect').value, 10) || 0,
       activePayPeriodCount,
       startingLeave: document.getElementById('startingLeaveInput').value,
@@ -358,21 +415,29 @@ function saveStateToLocalStorageNow() {
       smFacility: document.getElementById('smFacilityInput').value,
       smLeader: document.getElementById('smLeaderInput').value,
       activeRdoPreset,
+      refradPlanMode,
+      refradPlanDate,
+      refradScheduleSnapshot: cloneRefradScheduleSnapshot(refradScheduleSnapshot),
       userSelections: userSelections.slice(0, activePayPeriodCount),
       oconusBlockFlags
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
-    const badge = document.getElementById('saveStatusBadge');
-    if (badge) {
-      badge.textContent = '✓ Auto-Saved';
-      badge.style.opacity = '1';
-    }
+    setSaveStatusBadge('✓ Saved on this device', false);
   } catch (e) {
+    setSaveStatusBadge('⚠ Not saved — changes may be lost', true);
     console.warn('Auto-save skipped:', e);
   }
 }
 
+function setSaveStatusBadge(message, hasError) {
+  const badge = document.getElementById('saveStatusBadge');
+  if (!badge) return;
+  badge.textContent = message;
+  badge.classList.toggle('save-badge-error', Boolean(hasError));
+}
+
 function saveStateToLocalStorage() {
+  setSaveStatusBadge('Saving…', false);
   if (SAVE_STATE_TIMER !== null) window.clearTimeout(SAVE_STATE_TIMER);
   SAVE_STATE_TIMER = window.setTimeout(() => {
     SAVE_STATE_TIMER = null;
@@ -405,6 +470,10 @@ function loadStateFromLocalStorage() {
     if (data.viewMode === 'desktop' || data.viewMode === 'mobile') {
       currentViewMode = data.viewMode;
     }
+    if (['system', 'light', 'dark'].includes(data.colorThemePreference)) {
+      colorThemePreference = data.colorThemePreference;
+    }
+    applyColorTheme();
     const latestAllowedIdx = getLatestAllowedPayPeriodIndex();
     if (typeof data.startPpIdx === 'number' && data.startPpIdx >= 0) {
       ensurePayPeriodIndex(data.startPpIdx);
@@ -429,10 +498,54 @@ function loadStateFromLocalStorage() {
     if (Array.isArray(data.userSelections) && data.userSelections.length > 0) {
       userSelections = data.userSelections.map(row => Array.isArray(row) && row.length === 14 ? row : new Array(14).fill('shift'));
     }
+    const hasRefradMarker = userSelections.some(row => row.includes('refrad_rpt'));
+    refradPlanMode = hasRefradMarker
+      ? (data.refradPlanMode === 'mission_end' ? 'mission_end' : 'report_date')
+      : '';
+    refradPlanDate = hasRefradMarker && typeof data.refradPlanDate === 'string'
+      ? data.refradPlanDate
+      : '';
+    const savedSchedule = data.refradScheduleSnapshot;
+    const savedRows = savedSchedule && savedSchedule.userSelections;
+    const validSavedSchedule = hasRefradMarker &&
+      savedSchedule &&
+      Number.isInteger(savedSchedule.startPpIdx) && savedSchedule.startPpIdx >= 0 &&
+      Number.isInteger(savedSchedule.previousStartPpIdx) && savedSchedule.previousStartPpIdx >= 0 &&
+      Number.isInteger(savedSchedule.activePayPeriodCount) && savedSchedule.activePayPeriodCount >= 1 &&
+      Array.isArray(savedRows) &&
+      savedRows.length >= savedSchedule.activePayPeriodCount &&
+      savedRows.slice(0, savedSchedule.activePayPeriodCount).every(row =>
+        Array.isArray(row) && row.length === 14 && row.every(statusId => typeof statusId === 'string')
+      );
+    refradScheduleSnapshot = validSavedSchedule
+      ? cloneRefradScheduleSnapshot({
+          ...savedSchedule,
+          userSelections: savedRows.slice(0, savedSchedule.activePayPeriodCount)
+        })
+      : null;
+    if (hasRefradMarker && !refradPlanDate) {
+      for (let s = 0; s < userSelections.length && !refradPlanDate; s++) {
+        const d = userSelections[s].indexOf('refrad_rpt');
+        const pp = payPeriods[previousStartPpIdx + s];
+        if (d >= 0 && pp) refradPlanDate = toIsoDate(addDays(pp.start, d));
+      }
+    }
+    let trimmedAfterRefrad = false;
+    if (hasRefradMarker && refradPlanMode === 'mission_end' && refradPlanDate && typeof getRefradDateLocation === 'function') {
+      const refradLocation = getRefradDateLocation(refradPlanDate);
+      const refradSlot = refradLocation ? refradLocation.ppIdx - previousStartPpIdx : -1;
+      if (refradSlot >= 0 && refradSlot + 1 < activePayPeriodCount) {
+        activePayPeriodCount = refradSlot + 1;
+        userSelections = userSelections.slice(0, activePayPeriodCount);
+        effectiveSelections = effectiveSelections.slice(0, activePayPeriodCount);
+        trimmedAfterRefrad = true;
+      }
+    }
     ensureSlotCapacity(activePayPeriodCount);
     if (data.oconusBlockFlags && typeof data.oconusBlockFlags === 'object') {
       oconusBlockFlags = data.oconusBlockFlags;
     }
+    if (trimmedAfterRefrad) saveStateToLocalStorage();
     return { restored: true, migratedFromV5 };
   } catch (e) {
     return { restored: false, migratedFromV5: false };
@@ -440,22 +553,30 @@ function loadStateFromLocalStorage() {
 }
 
 function clearSavedLocalStorage() {
-  if (!confirm('Clear all saved schedule data and re-open the setup wizard?')) return;
+  if (!confirm('Wipe the saved schedule, pay profile, and report details from this browser? This cannot be undone. The setup wizard will reopen.')) return;
+  if (typeof clearLastDayStatusUndo === 'function') clearLastDayStatusUndo();
   localStorage.removeItem(STORAGE_KEY);
   localStorage.removeItem(LEGACY_STORAGE_KEY);
   localStorage.removeItem(`${STORAGE_KEY}_PAY_PROFILE`);
+  localStorage.removeItem(LEAVE_FORM_OFFERED_KEY);
+  colorThemePreference = 'system';
+  applyColorTheme();
   document.getElementById('smNameInput').value = '';
   document.getElementById('smRoleInput').value = '';
   document.getElementById('smFacilityInput').value = '';
   document.getElementById('smLeaderInput').value = '';
   document.getElementById('startingLeaveInput').value = '';
+  refradPlanMode = '';
+  refradPlanDate = '';
+  refradScheduleSnapshot = null;
+  if (typeof updateRefradClearButton === 'function') updateRefradClearButton();
   document.getElementById('schedSelect').value = 'alt';
   activeRdoPreset = 'fri_sun';
   hasAppliedRdoPreset = false;
   activePayPeriodCount = 1;
   closeInlineStatusPicker();
   closeRangeBuilderModal();
-  closeSettingsModal();
+  closeSettingsModal(true);
   closeSpConflictModal();
   userSelections = [new Array(14).fill('shift')];
   effectiveSelections = [new Array(14).fill('shift')];
