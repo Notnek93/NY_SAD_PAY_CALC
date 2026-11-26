@@ -176,9 +176,8 @@ body::after {
   opacity: 0.05;
   pointer-events: none;
   z-index: 2147483000;
-}
-@media print {
-  body::after { display: none; }
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
 }
 
 @page {
