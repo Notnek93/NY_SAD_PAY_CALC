@@ -111,20 +111,20 @@ function buildStandaloneReportHtml(autoTriggerPrint) {
       <div style="margin-bottom:5px;page-break-inside:avoid;border:1px solid #dadce0;border-radius:5px;padding:5px 7px;background:#fff;${pageBreakStyle}">
         <div style="display:flex;justify-content:space-between;align-items:center;font-size:10.5px;font-weight:700;color:#1a73e8;margin-bottom:3px;border-bottom:1px solid #f1f3f4;padding-bottom:2px;">
           <span>PP ${String(pp.ppNum).padStart(2, '0')}: ${formatShortDate(pp.start)} – ${formatFullDate(pp.end)} ${s === 0 ? '[Beginning PP]' : `[+${s} PP]`}</span>
-          <span style="font-size:9px;color:#5f6368;font-weight:600;">RDO: ${rdoUsed}/${rdoAuth} (${rdoDiff}) | Ending Leave: ${lvTotal} (${lvTotalSub})</span>
+          <span style="font-size:9px;color:#5f6368;font-weight:600;">Regular days off: ${rdoUsed}/${rdoAuth} (${rdoDiff}) | Ending leave: ${lvTotal} (${lvTotalSub})</span>
         </div>
         <div style="background:#fff;border:1px solid #dadce0;border-left:3px solid #1a73e8;border-radius:3px;padding:2px 6px;margin-bottom:4px;font-size:9px;">
-          <strong>📅 Deadlines (30d Std / 60d OCONUS):</strong> ${deadlineListHtml}
+          <strong>📅 Leave submission deadlines (30 days; 60 days for OCONUS):</strong> ${deadlineListHtml}
         </div>
         ${da6TablePrint}
         <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px;font-size:9px;background:#f8f9fa;padding:3px 6px;border-radius:3px;border:1px solid #e8eaed;">
           <span><strong>On Shift:</strong> ${cShift}</span>
-          <span><strong>RDO:</strong> ${cRdo}</span>
+          <span><strong>Regular days off:</strong> ${cRdo}</span>
           <span><strong>SAD Leave:</strong> ${cLeave}</span>
           <span><strong>SP / In-Transit:</strong> ${cSpTrv}</span>
-          <span><strong>TDY / INCAP:</strong> ${cNonSad}</span>
-          <span><strong>Accounted:</strong> ${cTotal}</span>
-          <span style="color:#1a73e8;"><strong>Sched:</strong> ${rdoQual}</span>
+          <span><strong>TDY / INCAP pay:</strong> ${cNonSad}</span>
+          <span><strong>Days accounted:</strong> ${cTotal}</span>
+          <span style="color:#1a73e8;"><strong>Qualifying days:</strong> ${rdoQual}</span>
         </div>
         ${alertsHtml ? `<div style="margin-top:3px;">${alertsHtml}</div>` : ''}
       </div>
@@ -166,21 +166,21 @@ function buildStandaloneReportHtml(autoTriggerPrint) {
 <body>
 <div class="report-wrap">
   <div class="no-print-bar">
-    <span><strong>📄 Auto-Formatted for Landscape (Up to 5 PPs per Sheet):</strong> Choose <strong>"Save as PDF"</strong> as your Printer Destination.</span>
+    <span><strong>📄 Formatted for landscape (up to 5 pay periods per page).</strong> Choose <strong>Save as PDF</strong> in your print options.</span>
     <button class="print-btn" onclick="window.print()">🖨️ Print / Save PDF</button>
   </div>
   <div class="top-bar">
     <div>
-      <div class="title">JTF Sentinel SAD DOCCS Duty Status &amp; Leave Plan (DA Form 6 Matrix — v1)</div>
-      <div class="sub">Compliance: 01 APR 2026 Policy Change 2 | CY27 Holiday Memo (02 OCT 2026) | 49-Day Cap Eff. 03 DEC 2026</div>
+      <div class="title">JTF Sentinel Duty Status &amp; Leave Plan (DA Form 6 layout)</div>
+      <div class="sub">Planning rules modeled: 01 Apr 2026 Policy Change 2 | CY27 Holiday Memo (02 Oct 2026) | 49-day limit effective 03 Dec 2026</div>
     </div>
     <div style="font-size:9px; color:#5f6368; text-align:right;">Generated: ${nowStr}</div>
   </div>
   <div class="meta-grid">
-    <div><strong>Service Member:</strong> ${smName}<br><strong>Role:</strong> ${smRole}</div>
-    <div><strong>AO / Facility:</strong> ${smFac}<br><strong>Next in CoC:</strong> ${smLeader}</div>
-    <div><strong>Plan Window:</strong> ${activePayPeriodCount} PP<br>${planWindowText}</div>
-    <div><strong>Schedule:</strong> ${schedLabel}<br><strong>18NOV26 Leave:</strong> ${startingLeave} days</div>
+    <div><strong>Service member:</strong> ${smName}<br><strong>Assignment role:</strong> ${smRole}</div>
+    <div><strong>Facility or assignment:</strong> ${smFac}<br><strong>Chain of command contact:</strong> ${smLeader}</div>
+    <div><strong>Pay periods covered:</strong> ${activePayPeriodCount}<br>${planWindowText}</div>
+    <div><strong>Shift schedule:</strong> ${schedLabel}<br><strong>Leave balance as of 18 Nov 2026:</strong> ${startingLeave} days</div>
   </div>
   <div>${sectionsHtml}</div>
   <div class="sig-grid">

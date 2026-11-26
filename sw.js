@@ -1,6 +1,6 @@
 ﻿// Maintainer map: update CORE_ASSETS when a new file must be available offline.
 // build.ps1 replaces CACHE_NAME with a fresh build timestamp on each build.
-const CACHE_NAME = "sentinel-planner-v1-20261126-085205";
+const CACHE_NAME = "sentinel-planner-v1-20261126-094441";
 const CORE_ASSETS = [
   "./",
   "./index.html",

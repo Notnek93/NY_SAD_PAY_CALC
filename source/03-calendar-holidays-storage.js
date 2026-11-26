@@ -33,6 +33,7 @@ let currentViewMode = window.innerWidth <= 768 ? 'mobile' : 'desktop';
 let colorThemePreference = 'system';
 let activePayPeriodCount = 1;
 let previousStartPpIdx = 0;
+let mobileVisiblePayPeriodSlot = 0;
 
 function applyColorTheme() {
   const systemPrefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -76,11 +77,11 @@ let pendingExportAction = null;
    ==================================================================================== */
 const BASE_STATUS_OPTIONS = [
   { id: 'shift',      name: 'Present (On Shift)',            shortName: 'SHFT', leaveQual: true,  rdoQual: true,  paidSad: true,  color: 'var(--surface)', textCol: 'var(--text-main)', border: 'var(--border)' },
-  { id: 'rdo',        name: 'Pass (RDO)',                 shortName: 'RDO',  leaveQual: false, rdoQual: false, paidSad: true,  color: 'var(--status-rdo-bg)', textCol: 'var(--status-rdo-text)', border: 'var(--status-rdo-border)' },
+  { id: 'rdo',        name: 'Regular Day Off (RDO)',      shortName: 'RDO',  leaveQual: false, rdoQual: false, paidSad: true,  color: 'var(--status-rdo-bg)', textCol: 'var(--status-rdo-text)', border: 'var(--status-rdo-border)' },
   { id: 'lv',         name: 'SAD Leave',           shortName: 'LV',   leaveQual: true,  rdoQual: true,  paidSad: true,  color: 'var(--status-leave-bg)', textCol: 'var(--status-leave-text)', border: 'var(--status-leave-border)' },
   { id: 'refrad_rpt', name: 'REFRAD Report Date',  shortName: 'RFRD', leaveQual: true,  rdoQual: true,  paidSad: true,  color: 'var(--status-refrad-bg)', textCol: 'var(--status-refrad-text)', border: 'var(--status-refrad-border)', isToolOnly: true },
   { id: 'trv',        name: 'In-Transit (Travel)', shortName: 'TRV',  leaveQual: true,  rdoQual: false, paidSad: true,  color: 'var(--status-transit-bg)', textCol: 'var(--status-transit-text)', border: 'var(--status-transit-border)' },
-  { id: 'drl',        name: 'TDY (Drill)',                 shortName: 'TDY',  leaveQual: false, rdoQual: false, paidSad: false, color: 'var(--status-drill-bg)', textCol: 'var(--status-drill-text)', border: 'var(--status-drill-border)' },
+  { id: 'drl',        name: 'TDY / Drill',                shortName: 'TDY',  leaveQual: false, rdoQual: false, paidSad: false, color: 'var(--status-drill-bg)', textCol: 'var(--status-drill-text)', border: 'var(--status-drill-border)' },
   { id: 'incap',      name: 'INCAP Pay',           shortName: 'INCP', leaveQual: false, rdoQual: false, paidSad: false, color: 'var(--status-incap-bg)', textCol: 'var(--status-incap-text)', border: 'var(--status-incap-border)' }
 ];
 
@@ -552,7 +553,7 @@ function loadStateFromLocalStorage() {
 }
 
 function clearSavedLocalStorage() {
-  if (!confirm('Wipe the saved schedule, pay profile, and report details from this browser? This cannot be undone. The setup wizard will reopen.')) return;
+  if (!confirm('Clear the saved schedule, pay profile, and report details from this device? This cannot be undone. Setup will restart.')) return;
   if (typeof clearLastDayStatusUndo === 'function') clearLastDayStatusUndo();
   localStorage.removeItem(STORAGE_KEY);
   localStorage.removeItem(LEGACY_STORAGE_KEY);
@@ -573,6 +574,7 @@ function clearSavedLocalStorage() {
   activeRdoPreset = 'fri_sun';
   hasAppliedRdoPreset = false;
   activePayPeriodCount = 1;
+  mobileVisiblePayPeriodSlot = 0;
   closeInlineStatusPicker();
   closeRangeBuilderModal();
   closeSettingsModal(true);
@@ -597,10 +599,10 @@ function updateQuickProfileStrip() {
   const qpRdo = document.getElementById('qpRdo');
   const qpLeave = document.getElementById('qpLeave');
 
-  if (qpName) qpName.textContent = smName || 'Not Set';
+  if (qpName) qpName.textContent = smName || 'Not entered';
   if (qpSched) qpSched.textContent = schedType === 'alt' ? '4/3 (6 RDOs)' : '5/2 (4 RDOs)';
   if (qpRdo) qpRdo.textContent = getRdoPresetLabel(schedType, activeRdoPreset);
-  if (qpLeave) qpLeave.textContent = `${(Number.isNaN(startLeave) ? 0 : startLeave).toFixed(2)}d`;
+  if (qpLeave) qpLeave.textContent = `${(Number.isNaN(startLeave) ? 0 : startLeave).toFixed(2)} days`;
 }
 
 function onUserMetadataInput() {
