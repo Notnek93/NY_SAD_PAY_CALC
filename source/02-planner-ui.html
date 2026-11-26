@@ -1,0 +1,869 @@
+<!-- 02-planner-ui.html -->
+
+<!-- Maintainer map: edit visible wording and markup here; keep element IDs aligned
+     with source\04-schedule-wizard-grid.js and source\05-policy-leave-engine.js.
+     Theme and layout styles live in source\01-theme-and-layout.css. -->
+
+<!-- ====================================================================================
+     [EDIT-MODALS-UI] SETUP WIZARD, EDIT SETTINGS, SOP MODAL, SP CONFLICT & MAIN UI
+     ==================================================================================== -->
+
+<!-- Onboarding Wizard -->
+<div class="wizard-backdrop" id="wizardBackdrop">
+  <div class="wizard-dialog" role="dialog" aria-modal="true" aria-labelledby="wizardTitle">
+    <div class="wizard-header">
+      <img class="wizard-header-logo" src="./icons/icon-192.png" alt="" width="44" height="44">
+      <div>
+        <h2 id="wizardTitle">NY SAD Duty, Leave &amp; Pay Planner</h2>
+        <p>Setup and personalize your duty, leave, and pay planning.</p>
+      </div>
+    </div>
+
+    <div class="wizard-progress-wrap">
+      <div class="wizard-progress-top">
+        <span id="wizardStepLabel">Step 1 of 7</span>
+        <span id="wizardStepName">Welcome</span>
+      </div>
+      <div class="wizard-progress-track">
+        <div class="wizard-progress-fill" id="wizardProgressFill"></div>
+      </div>
+    </div>
+
+    <div class="wizard-body">
+      <!-- Welcome -->
+      <div class="wizard-step active" id="wizardStep_1">
+        <h3 class="wizard-step-title">Welcome</h3>
+        <p class="wizard-step-desc">A duty, leave, and pay-planning aid for the New York State Active Duty mission.</p>
+        <p class="wizard-step-desc">Get started by choosing your preferred view and confirming the mission.</p>
+        <p class="wizard-step-desc"><strong>Privacy:</strong> Your information is stored only in this browser, on this device. The planner has no account, no server, and does not upload your data. Avoid using a shared device, and keep your device locked when not in use.</p>
+        <div class="welcome-disclaimer" role="note" aria-label="Important disclaimer">
+          <p><strong>Unofficial planning aid.</strong> Not an official or endorsed product of the State of New York, the NY Joint Task Force, the Department of Defense, or any military service. Estimates for leave, pay, and REFRAD/drill timing may be incomplete or inaccurate and are not official determinations. Verify with your chain of command and official personnel and finance channels before acting. Use at your own risk.</p>
+        </div>
+        <p class="welcome-credit">by SPC Lee, Kenton</p>
+      </div>
+
+      <!-- Step 1: Choose View -->
+      <div class="wizard-step" id="wizardStep_2">
+        <h3 class="wizard-step-title">1. Choose Your Preferred View</h3>
+        <p class="wizard-step-desc">Choose the view that fits your screen. Desktop shows the full DA Form 6-style schedule; Phone shows a touch-friendly calendar.</p>
+        <div class="wizard-view-grid">
+          <div class="wizard-view-card selected" id="wizViewCard_desktop" onclick="selectWizardView('desktop')">
+            <div class="wizard-view-icon">💻</div>
+            <div class="wizard-view-name">Desktop View</div>
+          </div>
+          <div class="wizard-view-card" id="wizViewCard_mobile" onclick="selectWizardView('mobile')">
+            <div class="wizard-view-icon">📱</div>
+            <div class="wizard-view-name">Phone View</div>
+          </div>
+        </div>
+        <div class="field-group" style="margin-top:12px;">
+          <label for="wizThemeSelect">Color Theme</label>
+          <select id="wizThemeSelect" class="top-select" onchange="selectWizardTheme(this.value)">
+            <option value="system">Use device setting (recommended)</option>
+            <option value="light">Light</option>
+            <option value="dark">Dark</option>
+          </select>
+          <span class="field-helper">Use your device's appearance setting, or choose Light or Dark.</span>
+        </div>
+      </div>
+
+      <!-- Install as an app (optional; content follows the chosen view) -->
+      <div class="wizard-step" id="wizardStep_9">
+        <h3 class="wizard-step-title">2. Install as an App (Optional)</h3>
+        <p class="wizard-step-desc">Add the planner to your device so it opens like an app, with its own icon. You can skip this step and do it any time.</p>
+        <div id="wizInstallDesktop">
+          <div class="welcome-disclaimer" style="margin-bottom:10px;">
+            <p><strong>Chrome or Edge (Windows, Mac, Chromebook)</strong></p>
+            <p>1. Open this page in Chrome or Edge.<br>2. Click the <strong>Install</strong> icon at the right end of the address bar. If you don't see it, open the <strong>⋮</strong> or <strong>…</strong> menu.<br>3. Chrome: choose <strong>Cast, save, and share → Install page as app</strong>. Edge: choose <strong>Apps → Install this site as an app</strong>.<br>4. Click <strong>Install</strong>. The app gets a desktop or taskbar shortcut.</p>
+          </div>
+          <div class="welcome-disclaimer" style="margin-bottom:10px;">
+            <p><strong>Safari (Mac)</strong></p>
+            <p>Open this page in Safari, then choose <strong>File → Add to Dock</strong>.</p>
+          </div>
+          <span class="field-helper">Firefox on desktop can't install web apps. Use Chrome, Edge, or Safari for this.</span>
+        </div>
+        <div id="wizInstallMobile" hidden>
+          <div class="welcome-disclaimer" style="margin-bottom:10px;">
+            <p><strong>iPhone / iPad — use Safari</strong></p>
+            <p>1. Open this page in <strong>Safari</strong>.<br>2. Tap the <strong>Share</strong> button (square with an arrow).<br>3. Scroll down and tap <strong>Add to Home Screen</strong>.<br>4. Tap <strong>Add</strong>. The app icon appears on your Home Screen.</p>
+          </div>
+          <div class="welcome-disclaimer" style="margin-bottom:10px;">
+            <p><strong>Android — Chrome or another browser</strong></p>
+            <p>1. Open this page in <strong>Chrome</strong>. Other browsers, like Samsung Internet, Edge, or Firefox, work too.<br>2. Tap the <strong>⋮</strong> menu.<br>3. Tap <strong>Install app</strong> or <strong>Add to Home screen</strong>.<br>4. Tap <strong>Install</strong> or <strong>Add</strong>.</p>
+          </div>
+        </div>
+        <div class="field-helper" id="wizInstallStandaloneNote" hidden>You're already using the installed app.</div>
+      </div>
+
+      <!-- Step 2: Choose task force -->
+      <div class="wizard-step" id="wizardStep_3">
+        <h3 class="wizard-step-title">3. New York Mission</h3>
+        <p class="wizard-step-desc">Choose the mission type you want to plan for.</p>
+        <div class="wizard-view-grid">
+          <div class="wizard-view-card selected" id="wizMissionCard_nysad" onclick="selectWizardMission('nysad')">
+            <div class="wizard-view-name">NY SAD</div>
+            <div class="wizard-view-sub">New York State Active Duty</div>
+          </div>
+          <div class="wizard-view-card" id="wizMissionCard_deployment" onclick="selectWizardMission('deployment')">
+            <div class="wizard-view-name">Deployment</div>
+            <div class="wizard-view-sub">Entitlements by country</div>
+          </div>
+        </div>
+        <div class="welcome-disclaimer" id="wizDeploymentWip" role="status" hidden style="margin-top:12px;">
+          <p><strong>Work in progress.</strong> The Deployment option is coming soon. You will enter your information and dates, see the countries you deployed to, and check which entitlements you qualify for. Choose NY SAD to continue with the planner today.</p>
+        </div>
+      </div>
+
+      <!-- Step 3: Schedule & RDOs -->
+      <div class="wizard-step" id="wizardStep_5">
+        <h3 class="wizard-step-title">4. Shift Schedule &amp; Regular RDOs</h3>
+        <p class="wizard-step-desc">Choose your shift cadence and regular RDO block. Holiday Special Passes on regular RDOs can auto-apply where eligible.</p>
+        <div class="wizard-form-stack">
+          <div class="field-group">
+            <label for="wizSchedSelect">Shift Schedule Type</label>
+            <select id="wizSchedSelect" class="top-select" onchange="onWizardSchedChange()">
+              <option value="alt">10–12 Hr Shift — 4/3 (6 RDOs / PP)</option>
+              <option value="std">8 Hr Shift — 5/2 (4 RDOs / PP)</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label for="wizRdoSelect">Regular RDO Preset</label>
+            <select id="wizRdoSelect" class="top-select"></select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 4: SAD Pay & Leave -->
+      <div class="wizard-step" id="wizardStep_6">
+        <h3 class="wizard-step-title">5. SAD Pay Profile &amp; 18 NOV 2026 Leave Balance</h3>
+        <p class="wizard-step-desc">Enter your assignment role, pay grade, years of service, ZIP code or MHA for the BAH rate area, BAH/BAS eligibility, and your leave balance as of 18 Nov 2026.</p>
+        <div class="wizard-form-stack">
+          <div class="field-group">
+            <label for="wizSmRoleInput">Assignment Role</label>
+            <select id="wizSmRoleInput" class="top-select" onchange="onWizardPayChange()">
+              <option value="">-- Select Assignment Role --</option>
+              <option value="C2">C2</option>
+              <option value="External Support">External Support</option>
+              <option value="Facility Leadership">Facility Leadership</option>
+              <option value="General Purpose">General Purpose</option>
+            </select>
+            <span class="field-helper">Used to estimate any eligible Incentive Pay.</span>
+          </div>
+
+          <div class="wizard-field-grid-2">
+            <div class="field-group">
+              <label for="wizPayGradeSelect">Pay Grade (Rank)</label>
+              <select id="wizPayGradeSelect" class="top-select" onchange="onWizardPayChange()">
+                <option value="E-1">E-1</option>
+                <option value="E-2">E-2</option>
+                <option value="E-3">E-3</option>
+                <option value="E-4" selected>E-4</option>
+                <option value="E-5">E-5</option>
+                <option value="E-6">E-6</option>
+                <option value="E-7">E-7</option>
+                <option value="E-8">E-8</option>
+                <option value="E-9">E-9</option>
+                <option value="W-1">W-1</option>
+                <option value="W-2">W-2</option>
+                <option value="W-3">W-3</option>
+                <option value="W-4">W-4</option>
+                <option value="W-5">W-5</option>
+                <option value="O-1">O-1</option>
+                <option value="O-2">O-2</option>
+                <option value="O-3">O-3</option>
+                <option value="O-1E">O-1E</option>
+                <option value="O-2E">O-2E</option>
+                <option value="O-3E">O-3E</option>
+                <option value="O-4">O-4</option>
+                <option value="O-5">O-5</option>
+                <option value="O-6">O-6</option>
+                <option value="O-7">O-7</option>
+                <option value="O-8">O-8</option>
+                <option value="O-9">O-9</option>
+                <option value="O-10">O-10</option>
+              </select>
+              <span class="field-helper">Select the rank used for your base-pay estimate.</span>
+            </div>
+
+            <div class="field-group">
+              <label for="wizPayYosSelect">Years of Service (YOS)</label>
+              <select id="wizPayYosSelect" class="top-select" onchange="onWizardPayChange()">
+                <option value="lt2">&lt; 2 Years</option>
+                <option value="over2">Over 2</option>
+                <option value="over3">Over 3</option>
+                <option value="over4">Over 4</option>
+                <option value="over6" selected>Over 6</option>
+                <option value="over8">Over 8</option>
+                <option value="over10">Over 10</option>
+                <option value="over12">Over 12</option>
+                <option value="over14">Over 14</option>
+                <option value="over16">Over 16</option>
+                <option value="over18">Over 18</option>
+                <option value="over20">Over 20</option>
+                <option value="over22">Over 22</option>
+                <option value="over24">Over 24</option>
+                <option value="over26">Over 26</option>
+                <option value="over28">Over 28</option>
+                <option value="over30">Over 30</option>
+              </select>
+              <span class="field-helper">Choose the closest service-time bracket; it affects base pay.</span>
+            </div>
+          </div>
+
+          <div class="wizard-field-grid-2">
+            <div class="field-group">
+              <label class="oconus-toggle" style="background:var(--bg-light);border:1px solid var(--border);border-radius:6px;padding:8px 10px;">
+                <input type="checkbox" id="wizBahEntitledCheck" checked onchange="onWizardPayChange()">
+                <span>Entitled to BAH</span>
+              </label>
+              <span class="field-helper">Uncheck only if you are not eligible for BAH.</span>
+            </div>
+
+            <div class="field-group">
+              <label class="oconus-toggle" style="background:var(--bg-light);border:1px solid var(--border);border-radius:6px;padding:8px 10px;">
+                <input type="checkbox" id="wizBasEntitledCheck" checked onchange="onWizardPayChange()">
+                <span>Entitled to BAS</span>
+              </label>
+              <span class="field-helper">Uncheck only if you are not eligible for BAS.</span>
+            </div>
+          </div>
+
+          <div id="wizPayBahDetails">
+          <div class="wizard-field-grid-2">
+            <div class="field-group">
+              <label for="wizPayLocationTypeSelect">BAH Rate Location</label>
+              <select id="wizPayLocationTypeSelect" class="top-select" onchange="onWizardPayLocationTypeChange()">
+                <option value="zip">Enter ZIP Code</option>
+                <option value="mha">Choose MHA</option>
+              </select>
+              <span class="field-helper">Use either a ZIP Code or select a Military Housing Area.</span>
+            </div>
+
+            <div class="field-group">
+              <label for="wizPayDepSelect">BAH Dependency Status</label>
+              <select id="wizPayDepSelect" class="top-select" onchange="onWizardPayChange()">
+                <option value="withoutDep">Without Dependents</option>
+                <option value="withDep">With Dependents</option>
+              </select>
+              <span class="field-helper">Choose the status used by the BAH rate table.</span>
+            </div>
+          </div>
+
+          <div class="wizard-field-grid-2">
+            <div class="field-group" id="wizPayZipField">
+              <label for="wizPayZipInput">Duty or Home ZIP Code</label>
+              <input type="text" id="wizPayZipInput" class="top-input" maxlength="5" inputmode="numeric" placeholder="e.g. 11228" oninput="onWizardPayChange()">
+              <span class="field-helper">Enter 5 digits to look up the BAH rate area.</span>
+            </div>
+            <div class="field-group" id="wizPayMhaField" hidden>
+              <label for="wizPayMhaSearch">Search Military Housing Areas</label>
+              <input type="search" id="wizPayMhaSearch" class="top-input" placeholder="Type a city, state, or MHA code" oninput="filterMhaOptions('wizPay');onWizardPayChange()">
+              <select id="wizPayMhaSelect" class="top-select" onchange="onMhaSelectChange('wizPay')">
+                <option value="">Choose an MHA</option>
+              </select>
+              <span class="field-helper" id="wizPayMhaSearchStatus" aria-live="polite"></span>
+            </div>
+          </div>
+          </div>
+
+          <div id="wizPayZipMhaBadge" style="font-size:11.5px;font-weight:600;color:var(--text-sub);background:var(--bg-light);padding:7px 9px;border-radius:6px;border:1px solid var(--border);"></div>
+
+          <div class="field-group">
+            <label for="wizStartingLeave">18 NOV 2026 Leave Balance (Days)</label>
+            <input type="number" id="wizStartingLeave" class="top-input" step="0.25" min="0" placeholder="0.00" required>
+            <span class="field-helper">Required. Enter your balance as of 18 Nov 2026; enter 0 if you have none.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 5: Beginning Pay Period -->
+      <div class="wizard-step" id="wizardStep_7">
+        <h3 class="wizard-step-title">6. Beginning Pay Period</h3>
+        <p class="wizard-step-desc">Choose the first pay period to include. You can add later pay periods as you plan ahead.</p>
+        <div class="wizard-form-stack">
+          <div class="field-group">
+            <label for="wizPpSelect">Beginning Pay Period</label>
+            <select id="wizPpSelect" class="top-select" onchange="updateJumpToCurrentPayPeriodButtons()"></select>
+          </div>
+          <div id="wizardJumpToCurrentPpWrap" hidden>
+            <button type="button" class="btn-action" id="wizardJumpToCurrentPpButton" onclick="setWizardToCurrentPp()">📍 Use current pay period</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 6: How-To Offer & Finish -->
+      <div class="wizard-step" id="wizardStep_8">
+        <h3 class="wizard-step-title">7. Ready to Start Planning</h3>
+        <p class="wizard-step-desc">Would you like to read the quick guide first or go straight to your schedule?</p>
+        <div class="wizard-offer-box">
+          <button type="button" class="wizard-offer-btn sop-cta" onclick="finishWizard(true)">📖 Read the quick guide</button>
+          <button type="button" class="wizard-offer-btn skip-cta" onclick="finishWizard(false)">✓ Go to my schedule</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="wizard-footer">
+      <button type="button" class="wiz-btn" id="wizBackBtn" onclick="wizardStepNav(-1)" disabled>◀ Back</button>
+      <button type="button" class="wiz-btn wiz-btn-primary" id="wizNextBtn" onclick="wizardStepNav(1)">Get Started ▶</button>
+    </div>
+  </div>
+</div>
+
+<!-- Profile and planner settings -->
+<div class="settings-backdrop" id="settingsBackdrop">
+  <div class="settings-dialog" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+    <div class="settings-header">
+      <div>
+        <h3 id="settingsTitle">⚙️ Profile &amp; Planner Settings</h3>
+        <p>Changes save on this device and do not sync to your other devices.</p>
+      </div>
+      <button type="button" class="sop-close-x" onclick="closeSettingsModal()">✕ Close</button>
+    </div>
+
+    <div class="settings-body">
+      <div class="settings-guard-alert" id="settingsGuardAlert">
+        ⚠️ Complete the highlighted service member and chain of command details before downloading the Duty Plan Report.
+      </div>
+
+      <details class="settings-advanced-details" id="cocReportDetails">
+        <summary>Service member and chain of command details (for reports)</summary>
+        <p class="details-helper">These details are only needed when you prepare a report.</p>
+        <div class="settings-section-title">Report details (required for the Duty Plan Report)</div>
+      <div class="settings-grid-2">
+        <div class="field-group" id="fg_smNameInput">
+          <label for="smNameInput">Service member (rank, last, first)</label>
+          <input type="text" id="smNameInput" class="top-input" placeholder="e.g. SPC Lee, Kenton" oninput="onUserMetadataInput()">
+          <span class="field-missing-hint">Required for the Duty Plan Report</span>
+        </div>
+
+        <div class="field-group" id="fg_smFacilityInput">
+          <label for="smFacilityInput">Facility or assignment</label>
+          <input type="text" id="smFacilityInput" class="top-input" placeholder="e.g. Cayuga CF" oninput="onUserMetadataInput()">
+          <span class="field-missing-hint">Required for the Duty Plan Report</span>
+        </div>
+
+        <div class="field-group" id="fg_smLeaderInput">
+          <label for="smLeaderInput">Next chain of command contact</label>
+          <input type="text" id="smLeaderInput" class="top-input" placeholder="e.g. SFC / OIC Name" oninput="onUserMetadataInput()">
+          <span class="field-missing-hint">Required for the Duty Plan Report</span>
+        </div>
+      </div>
+      </details>
+
+      <hr class="settings-divider">
+
+      <div class="settings-section-title">Schedule and leave settings</div>
+      <div class="field-group">
+        <label for="settingsThemeSelect">Color Theme</label>
+        <select id="settingsThemeSelect" class="top-select" onchange="setColorThemePreference(this.value)">
+          <option value="system">Use device setting</option>
+          <option value="light">Light</option>
+          <option value="dark">Dark</option>
+        </select>
+        <span class="field-helper">Follow your device theme or choose light/dark manually.</span>
+      </div>
+      <div class="settings-grid-2">
+        <div class="field-group">
+          <label for="ppSelect">Starting pay period</label>
+          <select id="ppSelect" class="top-select" onchange="onStartPayPeriodChange()"></select>
+        </div>
+
+        <div class="field-group">
+          <label for="startingLeaveInput">Leave balance as of 18 Nov 2026 (days)</label>
+          <input type="number" id="startingLeaveInput" class="top-input" step="0.25" min="0" placeholder="0.00" required oninput="onUserMetadataInput()">
+          <span class="field-helper">Required. Enter your balance as of 18 Nov 2026; enter 0 if you have none.</span>
+        </div>
+
+        <div class="field-group">
+          <label for="schedSelect">Shift schedule</label>
+          <select id="schedSelect" class="top-select" onfocus="this.dataset.previousValue=this.value" onchange="onScheduleTypeChange(this)">
+            <option value="alt">10–12 Hr Shift — 4/3 (6 RDOs / PP)</option>
+            <option value="std">8 Hr Shift — 5/2 (4 RDOs / PP)</option>
+          </select>
+          <span class="field-helper">Changing this resets the day statuses in all open pay periods to the default pattern.</span>
+        </div>
+
+      </div>
+
+      <button type="button" class="btn-action" id="settingsJumpToCurrentPpButton" onclick="jumpToCurrentPayPeriod(false)" hidden>📍 Use current pay period</button>
+      <details class="settings-advanced-details">
+        <summary>Advanced days-off options</summary>
+        <p class="details-helper">Apply the same regular day-off pattern to every open pay period.</p>
+        <div class="field-group">
+          <label for="rdoPresetSelect">Regular day-off pattern for all open pay periods</label>
+          <select id="rdoPresetSelect" class="top-select" onchange="if(this.value) applyRdoPresetAll(this.value)">
+            <option value="">Choose RDOs</option>
+          </select>
+        </div>
+        <button type="button" class="btn-action" onclick="confirmApplyDefaultPatternAll()">↺ Reset to the standard day-off pattern</button>
+      </details>
+
+      <hr class="settings-divider">
+
+      <div class="settings-section-title">SAD pay estimate</div>
+      <div class="settings-grid-2">
+        <div class="field-group" id="fg_smRoleInput">
+          <label for="smRoleInput">Assignment Role</label>
+          <select id="smRoleInput" class="top-select" onchange="onUserMetadataInput(); onPaySettingsChange();">
+            <option value="">-- Select Assignment Role --</option>
+            <option value="C2">C2</option>
+            <option value="External Support">External Support</option>
+            <option value="Facility Leadership">Facility Leadership</option>
+            <option value="General Purpose">General Purpose</option>
+          </select>
+          <span class="field-helper">Used to estimate any eligible Incentive Pay.</span>
+          <span class="field-missing-hint">Required for the Duty Plan Report</span>
+        </div>
+
+        <div class="field-group">
+          <label for="payGradeSelect">Pay Grade (Rank)</label>
+          <select id="payGradeSelect" class="top-select" onchange="onPaySettingsChange()">
+            <option value="E-1">E-1</option>
+            <option value="E-2">E-2</option>
+            <option value="E-3">E-3</option>
+            <option value="E-4">E-4</option>
+            <option value="E-5">E-5</option>
+            <option value="E-6">E-6</option>
+            <option value="E-7">E-7</option>
+            <option value="E-8">E-8</option>
+            <option value="E-9">E-9</option>
+            <option value="W-1">W-1</option>
+            <option value="W-2">W-2</option>
+            <option value="W-3">W-3</option>
+            <option value="W-4">W-4</option>
+            <option value="W-5">W-5</option>
+            <option value="O-1">O-1</option>
+            <option value="O-2">O-2</option>
+            <option value="O-3">O-3</option>
+            <option value="O-1E">O-1E</option>
+            <option value="O-2E">O-2E</option>
+            <option value="O-3E">O-3E</option>
+            <option value="O-4">O-4</option>
+            <option value="O-5">O-5</option>
+            <option value="O-6">O-6</option>
+            <option value="O-7">O-7</option>
+            <option value="O-8">O-8</option>
+            <option value="O-9">O-9</option>
+            <option value="O-10">O-10</option>
+          </select>
+          <span class="field-helper">Select the rank used for your base-pay estimate.</span>
+        </div>
+
+        <div class="field-group">
+          <label for="payYosSelect">Years of Service (YOS)</label>
+          <select id="payYosSelect" class="top-select" onchange="onPaySettingsChange()">
+            <option value="lt2">&lt; 2 Years</option>
+            <option value="over2">Over 2</option>
+            <option value="over3">Over 3</option>
+            <option value="over4">Over 4</option>
+            <option value="over6" selected>Over 6</option>
+            <option value="over8">Over 8</option>
+            <option value="over10">Over 10</option>
+            <option value="over12">Over 12</option>
+            <option value="over14">Over 14</option>
+            <option value="over16">Over 16</option>
+            <option value="over18">Over 18</option>
+            <option value="over20">Over 20</option>
+            <option value="over22">Over 22</option>
+            <option value="over24">Over 24</option>
+            <option value="over26">Over 26</option>
+            <option value="over28">Over 28</option>
+            <option value="over30">Over 30</option>
+          </select>
+          <span class="field-helper">Choose the closest service-time bracket; it affects base pay.</span>
+        </div>
+
+        <div class="field-group">
+          <label class="oconus-toggle" style="background:var(--bg-light);border:1px solid var(--border);border-radius:6px;padding:8px 10px;">
+            <input type="checkbox" id="payBahEntitledCheck" checked onchange="onPaySettingsChange()">
+            <span>Entitled to BAH</span>
+          </label>
+          <span class="field-helper">Uncheck only if you are not eligible for BAH.</span>
+        </div>
+
+        <div class="field-group">
+          <label class="oconus-toggle" style="background:var(--bg-light);border:1px solid var(--border);border-radius:6px;padding:8px 10px;">
+            <input type="checkbox" id="payBasEntitledCheck" checked onchange="onPaySettingsChange()">
+            <span>Entitled to BAS</span>
+          </label>
+          <span class="field-helper">Uncheck only if you are not eligible for BAS.</span>
+        </div>
+
+        <div id="payBahDetails">
+        <div class="field-group">
+          <label for="payLocationTypeSelect">BAH Rate Location</label>
+          <select id="payLocationTypeSelect" class="top-select" onchange="onPayLocationTypeChange()">
+            <option value="zip">Enter ZIP Code</option>
+            <option value="mha">Choose MHA</option>
+          </select>
+          <span class="field-helper">Use either a ZIP Code or select a Military Housing Area.</span>
+        </div>
+
+        <div class="field-group" id="payZipField">
+          <label for="payZipInput">Duty or Home ZIP Code</label>
+          <input type="text" id="payZipInput" class="top-input" maxlength="5" inputmode="numeric" placeholder="e.g. 11228" oninput="onPaySettingsChange()">
+          <span class="field-helper">Enter 5 digits to look up the BAH rate area.</span>
+        </div>
+
+        <div class="field-group" id="payMhaField" hidden>
+          <label for="payMhaSearch">Search Military Housing Areas</label>
+          <input type="search" id="payMhaSearch" class="top-input" placeholder="Type a city, state, or MHA code" oninput="filterMhaOptions('pay');onPaySettingsChange()">
+          <select id="payMhaSelect" class="top-select" onchange="onMhaSelectChange('pay')">
+            <option value="">Choose an MHA</option>
+          </select>
+          <span class="field-helper" id="payMhaSearchStatus" aria-live="polite"></span>
+        </div>
+
+        <div class="field-group">
+          <label for="payDepSelect">BAH Dependency Status</label>
+          <select id="payDepSelect" class="top-select" onchange="onPaySettingsChange()">
+            <option value="withoutDep">Without Dependents</option>
+            <option value="withDep">With Dependents</option>
+          </select>
+          <span class="field-helper">Choose the status used by the BAH rate table.</span>
+        </div>
+        </div>
+      </div>
+
+      <div id="payZipMhaBadge" style="font-size:11.5px;font-weight:600;color:var(--text-sub);background:var(--bg-light);padding:7px 9px;border-radius:6px;border:1px solid var(--border);"></div>
+    </div>
+
+    <div class="settings-footer">
+      <button type="button" class="btn-rerun-wizard" onclick="rerunSetupWizard()">🧭 Re-Run Setup Wizard</button>
+      <button type="button" class="settings-save-btn" id="settingsPrimaryBtn" onclick="onSettingsPrimaryAction()">✓ Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- Special Pass Conflict & Past-Date Confirmation Modal -->
+<div class="sp-conflict-backdrop" id="spConflictBackdrop">
+  <div class="sp-conflict-dialog" role="dialog" aria-modal="true" aria-labelledby="spConflictTitle">
+    <div class="sp-conflict-header" id="spConflictHeader">
+      <h3 id="spConflictTitle">⚠️ Special Pass Conflict</h3>
+      <button type="button" class="sop-close-x" onclick="closeSpConflictModal()">✕</button>
+    </div>
+    <div class="sp-conflict-body" id="spConflictBody"></div>
+  </div>
+</div>
+
+<!-- How-To / SOP Modal -->
+<div class="sop-modal-backdrop" id="sopModalBackdrop">
+  <div class="sop-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="sopModalTitle">
+    <div class="sop-modal-header">
+      <div>
+        <h3 id="sopModalTitle">📖 How to Use the Planner</h3>
+        <p>Quick steps for setting up, planning leave and REFRAD, and saving your schedule.</p>
+      </div>
+      <button type="button" class="sop-close-x" onclick="closeSopModal()">✕ Close</button>
+    </div>
+
+    <div class="sop-tabs-bar">
+      <button type="button" class="sop-tab-btn active" id="sopTabBtn_start" onclick="switchSopTab('start')">1. Start Here</button>
+      <button type="button" class="sop-tab-btn" id="sopTabBtn_leave" onclick="switchSopTab('leave')">2. Plan Leave</button>
+      <button type="button" class="sop-tab-btn" id="sopTabBtn_refrad" onclick="switchSopTab('refrad')">3. Plan REFRAD</button>
+      <button type="button" class="sop-tab-btn" id="sopTabBtn_save" onclick="switchSopTab('save')">4. Save &amp; Export</button>
+    </div>
+
+    <div class="sop-modal-body">
+      <div class="alert alert-success" id="sopUpgradeBanner" style="display:none;margin-bottom:10px;">
+        <strong>✓ Your saved plan was upgraded.</strong> Review your settings and leave balance before continuing.
+      </div>
+
+      <div class="sop-panel active" id="sopPanel_start">
+        <div class="sop-step-card">
+          <div class="sop-step-title">1. Set up your planner</div>
+          <ul class="sop-list">
+            <li>Open <strong>⚙️ Profile &amp; Settings</strong>. Enter your <strong>18 Nov 2026 leave balance</strong>; this field is required. Enter <strong>0</strong> if you have no leave balance.</li>
+            <li>Choose your beginning pay period and shift schedule. Add your pay profile and ZIP code if you want an estimated pay calculation.</li>
+            <li>Tap a date in Phone view or click a date in Desktop view to change its status. Open <strong>Tools</strong> for leave, TDY/travel, REFRAD, and schedule actions.</li>
+          </ul>
+        </div>
+        <div class="sop-step-card">
+          <div class="sop-step-title">Status key</div>
+          <ul class="sop-list">
+            <li><strong>SHFT:</strong> Present / On Shift. <strong>RDO:</strong> Regular Day Off. <strong>LV:</strong> State Active Duty (SAD) Leave.</li>
+            <li><strong>XFER:</strong> Transfer Day. It counts as paid On Shift time and accrues leave; record the destination assignment role in Tools.</li>
+            <li><strong>TDY:</strong> Drill / TDY. <strong>TRV:</strong> In-Transit travel. <strong>SP:</strong> Special Pass. <strong>INCP:</strong> INCAP Pay.</li>
+            <li><strong>RFRD, TERM, and OFF</strong> are managed by the REFRAD planner; use <strong>Plan REFRAD</strong> to change that plan.</li>
+          </ul>
+        </div>
+        <div class="sop-step-card warn-card">
+          <div class="sop-step-title">Important</div>
+          <ul class="sop-list">
+            <li>Your plan saves in this browser on this device. It does not automatically sync between your phone and computer.</li>
+            <li>This is an unofficial planning aid. Verify policy, pay, leave, and approval decisions through your chain of command and official channels.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="sop-panel" id="sopPanel_leave">
+        <div class="sop-step-card">
+          <div class="sop-step-title">Plan a day or a date range</div>
+          <ul class="sop-list">
+            <li>For one day, select the date and choose <strong>SAD Leave</strong> in the status picker.</li>
+            <li>For several days, open <strong>Tools</strong> and choose <strong>Plan a date range</strong>. Select SAD Leave or AT / Drill / TDY, then enter the start and end dates; both dates are included. The planner adds pay periods when needed.</li>
+            <li>For a transfer, open <strong>Tools</strong> → <strong>Plan Transfer</strong>, choose the transfer date and destination role, then apply. The date counts as paid On Shift time and accrues leave. Incentive Pay uses the highest assignment role held during a pay period, so a higher-role incentive remains for a transition pay period.</li>
+            <li>For a multi-day AT / Drill / TDY plan, answer whether your assigned facility is more than 120 miles from your home station. If it is, the first and last dates are In-Transit with AT / Drill / TDY in between; the range must be at least 3 days. In-Transit must connect On Shift with AT / Drill / TDY. If the distance is 120 miles or less, every date is AT / Drill / TDY. Choosing In-Transit for one date opens a confirmation; choosing No leaves that date unchanged.</li>
+          </ul>
+        </div>
+        <div class="sop-step-card">
+          <div class="sop-step-title">Save the SAD Leave Request Form</div>
+          <ul class="sop-list">
+            <li>The first time you choose SAD Leave, the planner asks whether you want to save the request form.</li>
+            <li>You can also choose <strong>📄 Download SAD Leave Request Form (PDF)</strong> below the schedule at any time.</li>
+            <li>Leave submission deadlines shown in the planner are estimates. Confirm the current requirements with your chain of command.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="sop-panel" id="sopPanel_refrad">
+        <div class="sop-step-card">
+          <div class="sop-step-title">Choose the date method that matches your plan</div>
+          <ul class="sop-list">
+            <li>Open <strong>Tools</strong> → <strong>Plan REFRAD</strong>. The planner supports two voluntary date methods; it does not have a separate involuntary REFRAD flow or determine eligibility or approval. Follow your chain of command's instructions for an involuntary REFRAD.</li>
+            <li><strong>REFRAD Report Date:</strong> Choose the day you report for work. That day is marked RFRD and counts as Present / On Shift. Terminal Leave starts the next day; Off Mission follows the Terminal Leave block.</li>
+            <li><strong>Mission End Date:</strong> Choose the last mission-paid day. Terminal Leave is planned before that date; Off Mission follows it.</li>
+            <li>Review the schedule after applying the plan. It can replace later planned statuses and shorten the displayed schedule after the plan cutoff.</li>
+          </ul>
+        </div>
+        <div class="sop-step-card">
+          <div class="sop-step-title">Change or clear a REFRAD plan</div>
+          <ul class="sop-list">
+            <li>Open <strong>Plan REFRAD</strong> to apply a different date or method.</li>
+            <li>To remove the plan, open <strong>Tools</strong> → <strong>Clear REFRAD plan</strong>. This restores the schedule that was saved before the plan was applied.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="sop-panel" id="sopPanel_save">
+        <div class="sop-step-card">
+          <div class="sop-step-title">Save the leave form</div>
+          <ul class="sop-list">
+            <li>On supported phones and tablets, tap <strong>Download SAD Leave Request Form (PDF)</strong> and choose <strong>Save to Files</strong> or another destination in the share menu.</li>
+            <li>On desktop, the button downloads the PDF through your browser. Look in the browser's Downloads location or use its save prompt.</li>
+          </ul>
+        </div>
+        <div class="sop-step-card">
+          <div class="sop-step-title">Export your schedule</div>
+          <ul class="sop-list">
+            <li>For a printable schedule, choose <strong>🖨️ Print DA Form 6</strong>, then select a printer or Save as PDF in the print dialog.</li>
+            <li>To download an HTML copy, choose <strong>💾 Download Duty Plan Report</strong>. Add the service member and chain of command details in <strong>⚙️ Profile &amp; Settings</strong> first.</li>
+          </ul>
+        </div>
+        <div class="sop-step-card warn-card">
+          <div class="sop-step-title">Before sharing or submitting</div>
+          <ul class="sop-list">
+            <li>Review the dates, leave balance, statuses, and pay assumptions. Estimates and policy checks are not official determinations or approvals.</li>
+            <li>Choose <strong>Manage saved data</strong> only when you intend to clear the information saved on this device.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="sop-modal-footer">
+      <span>Unofficial planning guide • Verify current requirements with official channels</span>
+      <button type="button" class="status-sheet-close" onclick="closeSopModal()">Done</button>
+    </div>
+  </div>
+</div>
+
+<div class="calc-card">
+  <!-- ====================================================================================
+       [EDIT-HEADER-HTML] HEADER, QUICK PROFILE STRIP & STICKY ERROR JUMP BANNER
+       ==================================================================================== -->
+  <div class="header-top">
+    <div>
+      <div class="calc-title">NY SAD Duty, Leave &amp; Pay Planner</div>
+      <div class="calc-sub">New York State Active Duty | Desktop schedule | Phone calendar | Saves on this device</div>
+    </div>
+
+    <div class="header-right-actions">
+      <span class="save-badge" id="saveStatusBadge" aria-live="polite">✓ Saved on this device</span>
+      <button type="button" class="undo-schedule-btn" id="undoScheduleButton" onclick="undoLastDayStatusChange()" hidden disabled>↶ Undo last date change</button>
+      <button type="button" class="header-settings-btn" onclick="openSettingsModal()">⚙️ Profile &amp; Settings</button>
+      <button type="button" class="header-refrad-btn" onclick="openRefradPlanner()">🧭 Plan REFRAD</button>
+      <button type="button" class="header-sop-btn" onclick="openSopModal()">📖 How to Use</button>
+      <details class="header-more-tools" id="headerMoreTools">
+        <summary>Tools</summary>
+        <div class="more-tools-menu">
+          <button type="button" class="more-tools-button" onclick="openRangeBuilderFromMenu()">📅 Plan a date range</button>
+          <button type="button" class="more-tools-button" onclick="openTransferPlannerFromMenu()">Plan Transfer</button>
+          <button type="button" class="more-tools-button" onclick="confirmApplyDefaultPatternAll()">↺ Reset day-off pattern</button>
+          <button type="button" class="more-tools-button" id="clearRefradPlanButton" onclick="clearRefradOnly()" hidden>Clear REFRAD plan</button>
+        </div>
+      </details>
+      <details class="phone-tools" id="phoneTools">
+        <summary>Tools</summary>
+        <div class="phone-tools-menu">
+          <div class="phone-tools-group-title">Plan</div>
+          <button type="button" class="phone-tools-button" onclick="openPhoneRangePlanner()">Plan a date range</button>
+          <button type="button" class="phone-tools-button" onclick="openPhoneRangePlanner('transfer')">Plan Transfer</button>
+          <button type="button" class="phone-tools-button" onclick="closePhoneToolsMenu();openRefradPlanner()">Plan REFRAD</button>
+          <div class="phone-tools-group-title">Schedule</div>
+          <button type="button" class="phone-tools-button" onclick="addPayPeriodFromPhoneTools()">Add pay period</button>
+          <button type="button" class="phone-tools-button" onclick="confirmApplyDefaultPatternAll()">Reset day-off pattern</button>
+          <button type="button" class="phone-tools-button" id="phoneRemoveLastPayPeriodButton" onclick="removeLastPayPeriodFromPhoneTools()" hidden>Remove last pay period</button>
+          <button type="button" class="phone-tools-button" id="phoneClearRefradPlanButton" onclick="clearRefradFromPhoneTools()" hidden>Clear REFRAD plan</button>
+        </div>
+      </details>
+      <div class="view-toggle-bar">
+        <button type="button" id="modeDesktopBtn" class="view-toggle-btn active" onclick="setViewMode('desktop')">💻 Desktop</button>
+        <button type="button" id="modeMobileBtn" class="view-toggle-btn" onclick="setViewMode('mobile')">📱 Phone</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Compact Profile & Schedule Summary Bar -->
+  <div class="quick-profile-strip" id="quickProfileStrip">
+    <div class="quick-profile-chips" id="quickProfileChips">
+      <span class="qp-chip"><span class="qp-label">Member:</span> <strong id="qpName">Not entered</strong></span>
+      <span class="qp-chip"><span class="qp-label">Schedule:</span> <strong id="qpSched">4/3 (6 RDOs)</strong></span>
+      <span class="qp-chip"><span class="qp-label">Days off:</span> <strong id="qpRdo">Fri – Sat – Sun</strong></span>
+      <span class="qp-chip"><span class="qp-label">Leave as of 18 Nov:</span> <strong id="qpLeave">0.00 days</strong></span>
+    </div>
+  </div>
+
+  <nav class="mobile-pp-navigator" id="mobilePpNavigator" aria-label="Pay period navigation" hidden>
+    <div class="mobile-pp-nav-controls">
+      <button type="button" id="mobilePpPreviousButton" class="mobile-pp-arrow" onclick="moveMobilePayPeriod(-1)" aria-label="Previous pay period">‹</button>
+      <label class="sr-only" for="mobilePpSelect">Choose pay period</label>
+      <select id="mobilePpSelect" class="mobile-pp-select" onchange="selectMobilePayPeriod(this.value)"></select>
+      <button type="button" id="mobilePpNextButton" class="mobile-pp-arrow" onclick="moveMobilePayPeriod(1)" aria-label="Next pay period">›</button>
+      <button type="button" id="mobileJumpToCurrentPpButton" class="mobile-current-pp-button" onclick="jumpMobileToCurrentPayPeriod()" hidden>Current</button>
+    </div>
+    <span class="mobile-pp-position" id="mobilePpPosition" aria-live="polite"></span>
+  </nav>
+
+  <!-- Sticky One-Tap Error Jump Banner -->
+  <div class="error-jump-banner" id="errorJumpBanner" onclick="jumpToFirstPolicyError()">
+    <div class="error-jump-text" id="errorJumpText">❌ Policy error detected in your schedule.</div>
+    <button type="button" class="error-jump-btn">Review Highlighted Issue ↓</button>
+  </div>
+
+  <!-- Date-range planner -->
+  <div class="range-builder-card" id="rangeBuilderCard">
+    <div class="range-builder-hdr">
+      <div class="range-builder-title">📅 Plan Dates</div>
+      <button type="button" class="status-sheet-close" onclick="closeRangeBuilderModal()">✕ Close</button>
+    </div>
+    <div class="range-builder-grid">
+      <div class="range-field range-field-full">
+        <label for="rangeStatusSelect">What are you planning?</label>
+        <select id="rangeStatusSelect" class="range-input" onchange="onRangeStatusChange()">
+          <option value="lv">SAD Leave</option>
+          <option value="tdy">AT / Drill / TDY</option>
+          <option value="transfer">Transfer Day</option>
+          <option value="shift">On Shift (Present for Duty)</option>
+          <option value="rdo">RDO</option>
+        </select>
+      </div>
+
+      <div class="range-field range-field-full" id="transferRoleField" hidden>
+        <label for="transferRoleSelect">Assignment after transfer</label>
+        <select id="transferRoleSelect" class="range-input">
+          <option value="C2">C2</option>
+          <option value="External Support">External Support</option>
+          <option value="Facility Leadership">Facility Leadership</option>
+          <option value="General Purpose">General Purpose</option>
+        </select>
+      </div>
+
+      <!-- 120-Mile Radius In-Transit Qualification Prompt (Shown Only When TDY is Selected) -->
+      <div class="tdy-qual-box" id="tdyQualBox">
+        <div class="tdy-qual-question">
+          🚗 Is your assigned facility more than 120 miles from your home station?
+        </div>
+        <div class="tdy-qual-options">
+          <label class="tdy-qual-radio-card" id="tdyQualCard_yes">
+            <input type="radio" name="tdyInTransitQual" id="tdyQualRadio_yes" value="yes" onchange="onTdyQualRadioChange()">
+            <span><strong>Yes — more than 120 miles</strong><br><span style="color:var(--text-sub);font-size:10.5px;">Set the first and last dates to In-Transit (Travel)</span></span>
+          </label>
+          <label class="tdy-qual-radio-card selected" id="tdyQualCard_no">
+            <input type="radio" name="tdyInTransitQual" id="tdyQualRadio_no" value="no" checked onchange="onTdyQualRadioChange()">
+            <span><strong>No — 120 miles or less</strong><br><span style="color:var(--text-sub);font-size:10.5px;">Set every date to TDY (no In-Transit dates)</span></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="range-field">
+        <label for="rangeStartDate">Start Date</label>
+        <input type="date" id="rangeStartDate" class="range-input">
+      </div>
+      <div class="range-field">
+        <label for="rangeEndDate">End Date</label>
+        <input type="date" id="rangeEndDate" class="range-input">
+      </div>
+    </div>
+    <div class="range-helper-note" id="rangeHelperNote">
+      Applies SAD Leave to every date from start through end, including both dates. Adds pay periods if needed.
+    </div>
+    <div class="range-btn-row">
+      <button type="button" class="range-apply-btn" onclick="applyPlannedDateRange()">✓ Apply to schedule</button>
+      <button type="button" class="range-cancel-btn" onclick="closeRangeBuilderModal()">Cancel</button>
+    </div>
+  </div>
+
+  <div class="refrad-planner-backdrop" id="refradPlannerBackdrop">
+    <div class="refrad-planner-dialog" role="dialog" aria-modal="true" aria-labelledby="refradPlannerTitle">
+      <div class="refrad-planner-header">
+        <div>
+          <h2 id="refradPlannerTitle">Plan Voluntary REFRAD</h2>
+          <p>Choose your REFRAD date and how you want the planner to use your remaining leave.</p>
+        </div>
+        <button type="button" class="sop-close-x" onclick="closeRefradPlanner()">✕</button>
+      </div>
+      <div class="refrad-planner-body">
+        <div class="field-group">
+          <label for="refradPlanModeSelect">How do you want to plan REFRAD?</label>
+          <select id="refradPlanModeSelect" class="top-select" onchange="onRefradModeChange()">
+            <option value="report_date">I choose the day I want to report for REFRAD (Terminal Leave after)</option>
+            <option value="mission_end">I have a fixed last mission-paid day (MISSION END DATE)</option>
+          </select>
+        </div>
+        <p class="refrad-mode-helper" id="refradModeHelper"></p>
+        <div class="field-group">
+          <label for="refradPlanDateInput" id="refradDateLabel">REFRAD REPORT DATE</label>
+          <input type="date" id="refradPlanDateInput" class="top-input" required>
+        </div>
+        <div class="refrad-plan-notice" id="refradPlanNotice">
+          Select a REFRAD mode to see how the date and Terminal Leave will be planned. Your leave balance is as of 18 Nov 2026, so the selected date must be 19 Nov 2026 or later.
+        </div>
+      </div>
+      <div class="refrad-planner-footer">
+        <button type="button" class="btn" onclick="closeRefradPlanner()">Cancel</button>
+        <button type="button" class="btn btn-pdf" onclick="applyRefradPlan()">Apply REFRAD Plan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pay periods are stacked on Desktop and shown one at a time in Phone view. -->
+  <div id="multiPpContainer"></div>
+
+  <div class="btn-row">
+    <button type="button" class="btn btn-pdf" onclick="exportToPdfForCoC()">🖨️ Print DA Form 6</button>
+    <button type="button" class="btn btn-download" onclick="downloadStandaloneReport()">💾 Download Duty Plan Report</button>
+    <button type="button" class="btn btn-download leave-form-download" onclick="downloadLeaveForm()">📄 Download SAD Leave Request Form (PDF)</button>
+  </div>
+  <details class="data-management-options">
+    <summary>Manage saved data</summary>
+    <p class="details-helper">Your schedule and profile are saved only in this browser on this device.</p>
+    <div class="data-management-actions">
+      <button type="button" class="btn btn-danger-outline" onclick="clearSavedLocalStorage()">🗑️ Clear saved data on this device</button>
+    </div>
+  </details>
+
+  <!-- ====================================================================================
+       [EDIT-FEEDBACK-HTML] BOTTOM COMMENTS, SUGGESTIONS & IMPROVEMENTS BAR
+       ==================================================================================== -->
+  <div class="feedback-footer-card" id="feedbackFooterCard">
+    <div class="feedback-footer-text">
+      <strong>💬 Comments, Suggestions &amp; Improvements:</strong>
+      Have feedback on policy rules, pay estimates, or usability for v1? Email
+      <a href="mailto:kenton.lee4.mil@army.mil?subject=NY%20SAD%20Planner%20Feedback">kenton.lee4.mil@army.mil</a>.
+    </div>
+    <div class="feedback-footer-actions">
+      <a class="feedback-email-btn" href="mailto:kenton.lee4.mil@army.mil?subject=NY%20SAD%20Planner%20Feedback">✉️ Email Feedback</a>
+      <button type="button" class="feedback-copy-btn" id="copyFeedbackEmailBtn" onclick="copyFeedbackEmail()">📋 Copy Address</button>
+    </div>
+  </div>
+</div>
