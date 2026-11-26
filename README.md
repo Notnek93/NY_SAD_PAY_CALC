@@ -1,6 +1,6 @@
-# JTF Sentinel SAD Duty, Leave, and Pay Planner
+# NY SAD Duty, Leave & Pay Planner
 
-The Sentinel Planner is a browser-based planning aid for service members and staff supporting New York Joint Task Force Sentinel on State Active Duty (SAD). It brings a duty schedule, leave and REFRAD planning, and an estimated SAD pay calculation into one place.
+The NY SAD Planner is a browser-based planning aid for the New York State Active Duty mission. It brings a duty schedule, leave and REFRAD planning, and an estimated SAD pay calculation into one place.
 
 The goal is straightforward: make it easier to see how a planned schedule fits together, catch dates and assumptions that need attention, and prepare information for the normal unit process. The planner does not approve leave, issue orders, determine eligibility, or replace official personnel, finance, or command records.
 
@@ -8,7 +8,7 @@ The goal is straightforward: make it easier to see how a planned schedule fits t
 
 | SOP item | Detail |
 | --- | --- |
-| Title | Use of the JTF Sentinel SAD Duty, Leave, and Pay Planner |
+| Title | Use of the NY SAD Duty, Leave & Pay Planner |
 | Proponent | Local planner maintainer |
 | Effective date | Upon local adoption |
 | Status | Unofficial user-level procedure; not an approved Army, New York National Guard, or JTF directive |
@@ -110,7 +110,17 @@ Pay, leave, holiday, travel, and policy logic are modeled for planning and may b
 
 Pay estimates depend on the profile entered and the rate data included with the application. They are not a pay statement or promise of payment. ZIP-to-rate-area lookup, BAH/BAS assumptions, incentives, leave accrual, and displayed deadlines should all be checked against authoritative records and guidance.
 
-### 6. Records and information handling
+### 6. Reference PDFs
+
+The same reference documents are available from **Tools → References** in Desktop and Phone views:
+
+- [RDO and leave policy (01 Apr 2026)](<assets/Pass Leave Policy 01APR2026 - Encl 255 NYS Letterhead - JTF Sentinel RDO and Leave Policy 1APR26.pdf>)
+- [CY 2026 SAD pay rates workbook](<assets/2026 SAD Pay Rates Workbook.pdf>) — includes base pay (PDF pp. 1–3), BAS and special pay (p. 4), BAH Type 2 (p. 5), and ZIP/MHA-specific BAH tables (pp. 6–21). The maintainer reports verifying the pay data in October 2026; this is not an independent audit or a guarantee of current rates.
+- [Requesting W-2s and paystubs guidance](<assets/Requesting W2s and Paystubs Guidance.pdf>)
+
+Policy warnings link to the cited paragraph and PDF page when the uploaded policy supports the reference. For example, Para 9.b (PDF p. 3) addresses In-Transit days next to RDO, leave, or Special Pass; Para 4.e (PDF p. 2) addresses the 120-mile travel authorization; and Para 9.e (PDF p. 4) covers movement and reporting when returning to the facility. The planner's On Shift/TDY status bridge and pay-period boundary checks are modeled checks; they are not presented as verbatim requirements from Para 4.e. Confirm travel coding and orders with the applicable unit.
+
+### 7. Records and information handling
 
 The planner saves its working data in browser storage on the current device; it is not an official system of record and does not provide automatic cross-device synchronization. Keep official records and submit requests through approved channels. Handle exports and screen captures as you would other documents containing personal or pay-related information.
 

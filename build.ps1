@@ -197,6 +197,20 @@ $leaveFormSource = Join-Path $SrcDir "assets\DOCCS_SAD_Leave_Request_Form.pdf"
 if (-not (Test-Path -LiteralPath $leaveFormSource)) {
   throw "Missing required source file: $leaveFormSource"
 }
+$referenceAssetNames = @(
+  "2026 SAD Pay Rates Workbook.pdf",
+  "Pass Leave Policy 01APR2026 - Encl 255 NYS Letterhead - JTF Sentinel RDO and Leave Policy 1APR26.pdf",
+  "Requesting W2s and Paystubs Guidance.pdf"
+)
+$referenceAssetSources = @($referenceAssetNames | ForEach-Object { Join-Path (Join-Path $rootDir "assets") $_ })
+foreach ($referenceAssetSource in $referenceAssetSources) {
+  if (-not (Test-Path -LiteralPath $referenceAssetSource)) {
+    throw "Missing required reference PDF: $referenceAssetSource"
+  }
+  if ((Get-Item -LiteralPath $referenceAssetSource).Length -eq 0) {
+    throw "Reference PDF is empty: $referenceAssetSource"
+  }
+}
 
 foreach ($requiredSource in $requiredSources) {
   $requiredPath = Join-Path $SrcDir $requiredSource
@@ -209,10 +223,11 @@ foreach ($requiredSource in $requiredSources) {
   }
 }
 
-$outFile      = Join-Path $DistDir "JTF_Sentinel_Planner_v1.html"
+$outFile      = Join-Path $DistDir "NY_SAD_Duty_Leave_Pay_Planner.html"
 $distIndex    = Join-Path $DistDir "index.html"
 $rootIndex    = Join-Path $rootDir "index.html"
-$tempFile     = Join-Path $env:TEMP "JTF_Sentinel_Planner_v1.tmp.html"
+$tempFile     = Join-Path $env:TEMP "NY_SAD_Duty_Leave_Pay_Planner.tmp.html"
+$legacyOutFile = Join-Path $DistDir "JTF_Sentinel_Planner_v1.html"
 
 $css     = Read-RequiredFile (Join-Path $SrcDir "01-theme-and-layout.css")
 $html    = Read-RequiredFile (Join-Path $SrcDir "02-planner-ui.html")
@@ -245,7 +260,7 @@ $doc = "<!DOCTYPE html>" + $nl +
   "  <meta charset=""UTF-8"">" + $nl +
   "  <meta name=""viewport"" content=""width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"">" + $nl +
   $pwaHeadTags +
-  "  <title>New York Joint Task Force Pay Calculator</title>" + $nl +
+  "  <title>NY SAD Duty, Leave &amp; Pay Planner</title>" + $nl +
   "  <style>" + $nl + $css + $nl + "  </style>" + $nl +
   "</head>" + $nl +
   "<body>" + $nl + $html + $nl +
@@ -255,6 +270,9 @@ $doc = "<!DOCTYPE html>" + $nl +
 
 Set-Content -LiteralPath $tempFile -Value $doc -Encoding UTF8
 Move-Item -LiteralPath $tempFile -Destination $outFile -Force
+if (Test-Path -LiteralPath $legacyOutFile) {
+  Remove-Item -LiteralPath $legacyOutFile -Force
+}
 
 $externalDoc = "<!DOCTYPE html>" + $nl +
   "<html lang=""en"">" + $nl +
@@ -262,7 +280,7 @@ $externalDoc = "<!DOCTYPE html>" + $nl +
   "  <meta charset=""UTF-8"">" + $nl +
   "  <meta name=""viewport"" content=""width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"">" + $nl +
   $pwaHeadTags +
-  "  <title>New York Joint Task Force Pay Calculator</title>" + $nl +
+  "  <title>NY SAD Duty, Leave &amp; Pay Planner</title>" + $nl +
   "  <style>" + $nl + $css + $nl + "  </style>" + $nl +
   "</head>" + $nl +
   "<body>" + $nl + $html + $nl +
@@ -291,11 +309,11 @@ if ($hasManifest) {
 
 if ($hasSw) {
   $buildStamp = (Get-Date).ToString("yyyyMMdd-HHmmss")
-  $swContent  = (Get-Content -LiteralPath $swSrc -Raw -Encoding UTF8) -replace 'const CACHE_NAME\s*=\s*"[^"]+";', "const CACHE_NAME = `"sentinel-planner-v1-$buildStamp`";"
+  $swContent  = (Get-Content -LiteralPath $swSrc -Raw -Encoding UTF8) -replace 'const CACHE_NAME\s*=\s*"[^"]+";', "const CACHE_NAME = `"ny-sad-planner-v1-$buildStamp`";"
   $swContent  = $swContent.TrimEnd([char[]]"`r`n")
   Set-Content -LiteralPath (Join-Path $DistDir "sw.js") -Value $swContent -Encoding UTF8
   Set-Content -LiteralPath (Join-Path $rootDir "sw.js") -Value $swContent -Encoding UTF8
-  Write-Host "[OK] Copied sw.js (cache: sentinel-planner-v1-$buildStamp) -> $DistDir and $rootDir" -ForegroundColor Green
+  Write-Host "[OK] Copied sw.js (cache: ny-sad-planner-v1-$buildStamp) -> $DistDir and $rootDir" -ForegroundColor Green
 }
 
 foreach ($assetRoot in @($rootDir, $DistDir)) {
@@ -304,5 +322,11 @@ foreach ($assetRoot in @($rootDir, $DistDir)) {
     New-Item -ItemType Directory -Path $assetDir -Force | Out-Null
   }
   Copy-Item -LiteralPath $leaveFormSource -Destination (Join-Path $assetDir "DOCCS_SAD_Leave_Request_Form.pdf") -Force
+  foreach ($referenceAssetSource in $referenceAssetSources) {
+    $referenceAssetDestination = Join-Path $assetDir (Split-Path -Leaf $referenceAssetSource)
+    if ([IO.Path]::GetFullPath($referenceAssetSource) -ne [IO.Path]::GetFullPath($referenceAssetDestination)) {
+      Copy-Item -LiteralPath $referenceAssetSource -Destination $referenceAssetDestination -Force
+    }
+  }
 }
-Write-Host "[OK] Copied SAD leave form PDF -> $rootDir and $DistDir" -ForegroundColor Green
+Write-Host "[OK] Copied leave form and NY SAD reference PDFs -> $rootDir and $DistDir" -ForegroundColor Green

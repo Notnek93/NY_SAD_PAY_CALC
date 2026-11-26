@@ -24,6 +24,13 @@ function isValidInTransitBridge(previousStatus, nextStatus) {
     (previousStatus === 'drl' && nextStatus === 'shift');
 }
 
+const LEAVE_POLICY_PDF_URL = './assets/Pass%20Leave%20Policy%2001APR2026%20-%20Encl%20255%20NYS%20Letterhead%20-%20JTF%20Sentinel%20RDO%20and%20Leave%20Policy%201APR26.pdf';
+
+function policyReferenceLink(label, page) {
+  const pageAnchor = page ? `#page=${page}` : '';
+  return `<a class="policy-cite" href="${LEAVE_POLICY_PDF_URL}${pageAnchor}" target="_blank" rel="noopener">${label}</a>`;
+}
+
 /* ====================================================================================
    ONE-TAP ERROR JUMP BANNER (STICKY TOP BAR)
    ==================================================================================== */
@@ -662,7 +669,10 @@ function calculateAllPayPeriodsNow() {
         rdoEarned = 0;
         if (rdoSelected > 0) {
           for (let d = 0; d < 14; d++) if (effectiveSelections[s][d] === 'rdo') flagCard(s, d);
-          perPpErrors[s].push(`<span class="policy-cite">Earned RDO Policy:</span> Minimum 3 "Present for Duty" (On Shift) days required within a pay period to earn paid Pass Days (currently ${shiftCount} On Shift days, but ${rdoSelected} RDOs selected).`);
+          perPpErrors[s].push(
+            `${policyReferenceLink('RDO Policy, Para 6.b:', null)} ` +
+            `Minimum 3 "Present for Duty" (On Shift) days required within a pay period to earn paid Pass Days (currently ${shiftCount} On Shift days, but ${rdoSelected} RDOs selected).`
+          );
         }
       } else if (schedType === 'alt') {
         if (effectiveRdoQual >= 8) rdoEarned = 6;
@@ -751,7 +761,7 @@ function calculateAllPayPeriodsNow() {
         rdoDiffEl.textContent = `${Math.abs(rdoDiff)} over limit!`;
         rdoDiffEl.style.color = 'var(--danger)';
         for (let d = 0; d < 14; d++) if (effectiveSelections[s][d] === 'rdo') flagCard(s, d);
-        perPpErrors[s].push(`<span class="policy-cite">RDO Limit Exceeded (${tableCite}):</span> Selected ${rdoSelected} RDOs, exceeding ${rdoEarned} authorized for this pay period.`);
+        perPpErrors[s].push(`${policyReferenceLink(`RDO Limit Exceeded (${tableCite}), Para 6.b:`, null)} Selected ${rdoSelected} RDOs, exceeding ${rdoEarned} authorized for this pay period.`);
       }
     }
 
@@ -892,7 +902,7 @@ function calculateAllPayPeriodsNow() {
         flagCard(curr.s, curr.d);
         hasHardError = true;
         perPpErrors[curr.s].push(
-          `<span class="policy-cite">JTF Sentinel Policy Change 2 (01 APR 2026), Para 9.b:</span> ` +
+          `${policyReferenceLink('JTF Sentinel Policy Change 2 (01 APR 2026), Para 9.b (PDF p.3):', 3)} ` +
           `In-Transit day (${curr.label}) cannot be used immediately after an RDO, Leave day, or Special Pass (${prev.label}).`
         );
       }
@@ -901,7 +911,7 @@ function calculateAllPayPeriodsNow() {
         flagCard(next.s, next.d);
         hasHardError = true;
         perPpErrors[curr.s].push(
-          `<span class="policy-cite">JTF Sentinel Policy Change 2 (01 APR 2026), Para 9.b:</span> ` +
+          `${policyReferenceLink('JTF Sentinel Policy Change 2 (01 APR 2026), Para 9.b (PDF p.3):', 3)} ` +
           `In-Transit day (${curr.label}) cannot be used immediately before an RDO, Leave day, or Special Pass (${next.label}).`
         );
       }
@@ -912,37 +922,37 @@ function calculateAllPayPeriodsNow() {
           flagCard(curr.s, curr.d);
           if (prev.isDuty && next.isDuty) {
             perPpErrors[curr.s].push(
-              `<span class="policy-cite">In-Transit TDY Requirement (01 APR 2026 Change 2):</span> ` +
-              `In-Transit (${curr.label}) must connect On Shift with TDY. Facility-to-facility travel without TDY should be coded as On Shift.`
+              `${policyReferenceLink('Modeled In-Transit rule; related policy reference: Para 4.e (PDF p.2)', 2)}: ` +
+              `In-Transit (${curr.label}) must connect On Shift with TDY. Para 4.e covers the 120-mile travel authorization; confirm status coding with orders and unit guidance.`
             );
           } else if (prev.st === 'drl' && curr.d === 13 && next.d === 0) {
             flagCard(next.s, next.d);
             perPpErrors[curr.s].push(
-              `<span class="policy-cite">In-Transit Boundary Rule (01 APR 2026 Change 2):</span> ` +
+              `${policyReferenceLink('Modeled pay-period boundary check; related policy reference: Para 4.e (PDF p.2)', 2)}: ` +
               `Day 13 is TDY and Day 14 is In-Transit (${curr.label}), so Day 1 of the next pay period (${next.label}) MUST be On Shift.`
             );
           } else if (prev.isDuty && curr.d === 13 && next.d === 0) {
             flagCard(next.s, next.d);
             perPpErrors[curr.s].push(
-              `<span class="policy-cite">In-Transit Boundary Rule (01 APR 2026 Change 2):</span> ` +
+              `${policyReferenceLink('Modeled pay-period boundary check; related policy reference: Para 4.e (PDF p.2)', 2)}: ` +
               `Day 13 is On Shift and Day 14 is In-Transit (${curr.label}), so Day 1 of the next pay period (${next.label}) MUST be TDY.`
             );
           } else if (curr.d === 0 && next.st === 'drl') {
             flagCard(prev.s, prev.d);
             perPpErrors[curr.s].push(
-              `<span class="policy-cite">In-Transit Boundary Rule (01 APR 2026 Change 2):</span> ` +
+              `${policyReferenceLink('Modeled pay-period boundary check; related policy reference: Para 4.e (PDF p.2)', 2)}: ` +
               `Day 1 is In-Transit (${curr.label}) and Day 2 is TDY, so Wednesday of the previous pay period (${prev.label}) MUST be On Shift.`
             );
           } else if (curr.d === 0 && next.isDuty) {
             flagCard(prev.s, prev.d);
             perPpErrors[curr.s].push(
-              `<span class="policy-cite">In-Transit Boundary Rule (01 APR 2026 Change 2):</span> ` +
+              `${policyReferenceLink('Modeled pay-period boundary check; related policy reference: Para 4.e (PDF p.2)', 2)}: ` +
               `Day 1 is In-Transit (${curr.label}) and Day 2 is On Shift, so Wednesday of the previous pay period (${prev.label}) MUST be TDY.`
             );
           } else {
             perPpErrors[curr.s].push(
-              `<span class="policy-cite">JTF Sentinel Policy Change 2 (01 APR 2026), Para 4.e &amp; 9.e:</span> ` +
-              `In-Transit (${curr.label}) MUST have On Shift on one side and TDY on the other.`
+              `${policyReferenceLink('Modeled In-Transit rule; related policy reference: Para 4.e (PDF p.2)', 2)}: ` +
+              `In-Transit (${curr.label}) must connect On Shift with TDY. Para 4.e covers the 120-mile travel authorization; confirm status coding with orders and unit guidance.`
             );
           }
         }
@@ -951,24 +961,24 @@ function calculateAllPayPeriodsNow() {
           if (rdoIncludesWed) {
             flagCard(curr.s, curr.d);
             perPpErrors[curr.s].push(
-              `<span class="policy-cite">Day 1 In-Transit / Wednesday RDO Conflict:</span> ` +
+              `${policyReferenceLink('Modeled In-Transit / RDO check; related policy reference: Para 4.e (PDF p.2)', 2)}: ` +
               `Day 1 (${curr.label}) is In-Transit and Day 2 is TDY, but your regular RDOs include Wednesday. Confirm Wednesday of the previous pay period is switched to On Shift.`
             );
           } else {
             perPpWarnings[curr.s].push(
-              `<span class="policy-cite">Previous Pay Period Check (Day 1 In-Transit):</span> ` +
+              `${policyReferenceLink('Modeled previous pay-period check; related policy reference: Para 4.e (PDF p.2)', 2)}: ` +
               `Because Day 1 (${curr.label}) is In-Transit and Day 2 is TDY, make sure the last day (Wednesday) of the previous pay period is coded as On Shift.`
             );
           }
         } else if (next.isDuty) {
           perPpWarnings[curr.s].push(
-            `<span class="policy-cite">Previous Pay Period Check (Day 1 In-Transit):</span> ` +
+            `${policyReferenceLink('Modeled previous pay-period check; related policy reference: Para 4.e (PDF p.2)', 2)}: ` +
             `Because Day 1 (${curr.label}) is In-Transit and Day 2 is On Shift, make sure the last day (Wednesday) of the previous pay period is coded as TDY.`
           );
         } else if (!hasHardError) {
           flagCard(curr.s, curr.d);
           perPpErrors[curr.s].push(
-            `<span class="policy-cite">In-Transit TDY Requirement (01 APR 2026 Change 2):</span> ` +
+            `${policyReferenceLink('Modeled In-Transit rule; related policy reference: Para 4.e (PDF p.2)', 2)}: ` +
             `Day 1 (${curr.label}) is In-Transit, so Day 2 must be either TDY or On Shift.`
           );
         }
@@ -976,24 +986,24 @@ function calculateAllPayPeriodsNow() {
         if (prev.st === 'drl') {
           if (rdoIncludesThu) {
             perPpWarnings[curr.s].push(
-              `<span class="policy-cite">Next Pay Period Check (Day 14 In-Transit / Thursday RDO):</span> ` +
+              `${policyReferenceLink('Modeled next pay-period / RDO check; related policy reference: Para 4.e (PDF p.2)', 2)}: ` +
               `Day 13 is TDY and Day 14 (${curr.label}) is In-Transit. Your regular RDOs include Thursday—make sure Day 1 (Thursday) of the next pay period is switched to On Shift.`
             );
           } else {
             perPpWarnings[curr.s].push(
-              `<span class="policy-cite">Next Pay Period Check (Day 14 In-Transit):</span> ` +
+              `${policyReferenceLink('Modeled next pay-period check; related policy reference: Para 4.e (PDF p.2)', 2)}: ` +
               `Day 13 is TDY and Day 14 (${curr.label}) is In-Transit—make sure Day 1 (Thursday) of the next pay period is coded as On Shift.`
             );
           }
         } else if (prev.isDuty) {
           perPpWarnings[curr.s].push(
-            `<span class="policy-cite">Next Pay Period Check (Day 14 In-Transit):</span> ` +
+            `${policyReferenceLink('Modeled next pay-period check; related policy reference: Para 4.e (PDF p.2)', 2)}: ` +
             `Day 13 is On Shift and Day 14 (${curr.label}) is In-Transit—make sure Day 1 (Thursday) of the next pay period is coded as On Shift.`
           );
         } else if (!hasHardError) {
           flagCard(curr.s, curr.d);
           perPpErrors[curr.s].push(
-            `<span class="policy-cite">In-Transit TDY Requirement (01 APR 2026 Change 2):</span> ` +
+            `${policyReferenceLink('Modeled In-Transit rule; related policy reference: Para 4.e (PDF p.2)', 2)}: ` +
             `Day 14 (${curr.label}) is In-Transit, so Day 13 must be either TDY or On Shift.`
           );
         }

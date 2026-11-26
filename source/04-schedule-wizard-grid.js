@@ -170,26 +170,18 @@ function openTransferPlannerFromMenu() {
 /* ====================================================================================
    TASK FORCE ONBOARDING WIZARD (FIRST-TIME USERS & RE-RUN OPTION)
    ==================================================================================== */
-const TASK_FORCE_STORAGE_KEY = 'JTF_SENTINEL_DOCCS_TASK_FORCE';
-const WIZARD_SENTINEL_STEP_NAMES = [
+const WIZARD_STEP_NAMES = [
   'Welcome',
   'Choose View',
-  'Task Force',
+  'New York Mission',
   'Schedule & RDOs',
   'SAD Pay & Leave',
   'Pay Period',
   'How-To Offer'
 ];
-const WIZARD_EMPIRE_STEP_NAMES = [
-  'Welcome',
-  'Choose View',
-  'Task Force',
-  'Work in Progress'
-];
 let wizardCurrentStep = 1;
 let wizardSelectedView = currentViewMode;
 let wizardSelectedTheme = colorThemePreference;
-let wizardSelectedTaskForce = 'sentinel';
 let wizardIsRerun = false;
 let wizardInitialSnapshot = null;
 
@@ -269,14 +261,6 @@ function openSetupWizard(isRerun) {
   wizardCurrentStep = 1;
   wizardSelectedView = currentViewMode;
   wizardSelectedTheme = colorThemePreference;
-  try {
-    const savedTaskForce = localStorage.getItem(TASK_FORCE_STORAGE_KEY);
-    wizardSelectedTaskForce = savedTaskForce === 'empire-shield' ? savedTaskForce : 'sentinel';
-  } catch (e) {
-    console.warn('Task force preference load skipped:', e);
-    wizardSelectedTaskForce = 'sentinel';
-  }
-
   const schedType = document.getElementById('schedSelect').value || 'alt';
   const latestAllowedIdx = typeof getLatestAllowedPayPeriodIndex === 'function'
     ? getLatestAllowedPayPeriodIndex()
@@ -326,7 +310,6 @@ function openSetupWizard(isRerun) {
   const themeSelect = document.getElementById('wizThemeSelect');
   if (themeSelect) themeSelect.value = wizardSelectedTheme;
   selectWizardView(wizardSelectedView);
-  selectWizardTaskForce(wizardSelectedTaskForce);
   renderWizardStep();
 
   const backdrop = document.getElementById('wizardBackdrop');
@@ -348,28 +331,6 @@ function selectWizardView(mode) {
 
 function selectWizardTheme(preference) {
   if (['system', 'light', 'dark'].includes(preference)) wizardSelectedTheme = preference;
-}
-
-function selectWizardTaskForce(taskForce) {
-  wizardSelectedTaskForce = taskForce === 'empire-shield' ? 'empire-shield' : 'sentinel';
-  const sentinelCard = document.getElementById('wizTaskForceCard_sentinel');
-  const empireCard = document.getElementById('wizTaskForceCard_empire');
-  if (sentinelCard) {
-    const selected = wizardSelectedTaskForce === 'sentinel';
-    sentinelCard.classList.toggle('selected', selected);
-    sentinelCard.setAttribute('aria-pressed', String(selected));
-  }
-  if (empireCard) {
-    const selected = wizardSelectedTaskForce === 'empire-shield';
-    empireCard.classList.toggle('selected', selected);
-    empireCard.setAttribute('aria-pressed', String(selected));
-  }
-  try {
-    localStorage.setItem(TASK_FORCE_STORAGE_KEY, wizardSelectedTaskForce);
-  } catch (e) {
-    console.warn('Task force preference save skipped:', e);
-  }
-  if (wizardCurrentStep === 3) renderWizardStep();
 }
 
 function populateWizardRdoOptions(schedType, preferredPreset) {
@@ -593,19 +554,16 @@ function renderWizardStep() {
   const backBtn = document.getElementById('wizBackBtn');
   const nextBtn = document.getElementById('wizNextBtn');
 
-  const isEmpireShield = wizardSelectedTaskForce === 'empire-shield';
-  const displayStep = isEmpireShield || wizardCurrentStep <= 3 ? wizardCurrentStep : wizardCurrentStep - 1;
-  const totalSteps = isEmpireShield ? 4 : 7;
-  const stepName = isEmpireShield
-    ? WIZARD_EMPIRE_STEP_NAMES[wizardCurrentStep - 1]
-    : WIZARD_SENTINEL_STEP_NAMES[displayStep - 1];
+  const displayStep = wizardCurrentStep <= 3 ? wizardCurrentStep : wizardCurrentStep - 1;
+  const totalSteps = 7;
+  const stepName = WIZARD_STEP_NAMES[displayStep - 1];
 
   if (labelEl) labelEl.textContent = `Step ${displayStep} of ${totalSteps}`;
   if (nameEl) nameEl.textContent = stepName || '';
   if (fillEl) fillEl.style.width = `${(displayStep / totalSteps) * 100}%`;
   if (backBtn) backBtn.disabled = wizardCurrentStep <= 1;
   if (nextBtn) {
-    nextBtn.style.display = (isEmpireShield && wizardCurrentStep === 4) || (!isEmpireShield && wizardCurrentStep === 8)
+    nextBtn.style.display = wizardCurrentStep === 8
       ? 'none'
       : 'inline-block';
     nextBtn.textContent = wizardCurrentStep === 1 ? 'Get Started ▶' : 'Next ▶';
@@ -614,11 +572,11 @@ function renderWizardStep() {
 
 function wizardStepNav(delta) {
   if (delta > 0 && wizardCurrentStep === 3) {
-    wizardCurrentStep = wizardSelectedTaskForce === 'empire-shield' ? 4 : 5;
+    wizardCurrentStep = 5;
     renderWizardStep();
     return;
   }
-  if (delta < 0 && wizardSelectedTaskForce === 'sentinel' && wizardCurrentStep === 5) {
+  if (delta < 0 && wizardCurrentStep === 5) {
     wizardCurrentStep = 3;
     renderWizardStep();
     return;
@@ -636,17 +594,14 @@ function wizardStepNav(delta) {
   }
   const nextStep = wizardCurrentStep + delta;
   if (nextStep < 1 || nextStep > 8) return;
-  if (wizardSelectedTaskForce === 'empire-shield' && nextStep > 4) return;
-  if (wizardSelectedTaskForce === 'sentinel' && nextStep === 4) return;
+  if (nextStep === 4) return;
   wizardCurrentStep = nextStep;
   renderWizardStep();
 }
 
 function finishWizard(openSopAfter) {
-  if (wizardSelectedTaskForce === 'sentinel') {
-    const leaveBalanceEl = document.getElementById('wizStartingLeave');
-    if (leaveBalanceEl && !leaveBalanceEl.reportValidity()) return;
-  }
+  const leaveBalanceEl = document.getElementById('wizStartingLeave');
+  if (leaveBalanceEl && !leaveBalanceEl.reportValidity()) return;
 
   const chosenView = wizardSelectedView || currentViewMode;
   const chosenSched = document.getElementById('wizSchedSelect').value || 'alt';

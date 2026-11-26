@@ -28,3 +28,10 @@ test('In-Transit cannot substitute other statuses for On Shift or AT / Drill / T
     assert.equal(isValidInTransitBridge('drl', status), false, `${status} must not count as AT / Drill / TDY`);
   }
 });
+
+test('policy citations link to the cited page in the uploaded leave policy', () => {
+  const link = vm.runInContext("policyReferenceLink('Para 9.b', 3)", policyContext);
+  assert.match(link, /href="\.\/assets\/Pass%20Leave%20Policy[^"]*#page=3"/);
+  assert.match(link, /target="_blank" rel="noopener"/);
+  assert.match(link, />Para 9\.b<\/a>/);
+});

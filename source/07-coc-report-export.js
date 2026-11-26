@@ -135,7 +135,7 @@ function buildStandaloneReportHtml(autoTriggerPrint) {
 <html>
 <head>
 <meta charset="UTF-8">
-<title>JTF Sentinel Duty Status &amp; Leave Plan - ${smName}</title>
+<title>NY SAD Duty, Leave &amp; Pay Plan - ${smName}</title>
 <style>
   * { box-sizing: border-box; }
   body { font-family: 'Segoe UI', Roboto, Arial, sans-serif; color: #202124; margin: 0; padding: 6px; background: #fff; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
@@ -171,7 +171,7 @@ function buildStandaloneReportHtml(autoTriggerPrint) {
   </div>
   <div class="top-bar">
     <div>
-      <div class="title">JTF Sentinel Duty Status &amp; Leave Plan (DA Form 6 layout)</div>
+      <div class="title">NY SAD Duty, Leave &amp; Pay Plan (DA Form 6 layout)</div>
       <div class="sub">Planning rules modeled: 01 Apr 2026 Policy Change 2 | CY27 Holiday Memo (02 Oct 2026) | 49-day limit effective 03 Dec 2026</div>
     </div>
     <div style="font-size:9px; color:#5f6368; text-align:right;">Generated: ${nowStr}</div>
@@ -214,7 +214,7 @@ function downloadStandaloneReport() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `JTF_Sentinel_Duty_Plan_${smNameClean}.html`;
+  a.download = `NY_SAD_Duty_Plan_${smNameClean}.html`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
