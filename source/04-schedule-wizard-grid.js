@@ -972,11 +972,41 @@ function offerLeaveFormDownload() {
   }
   if (alreadyOffered) return;
 
-  if (!confirm('Would you like to download the SAD Leave Request Form (PDF) now? You can also download it later from the planner.')) return;
+  if (!confirm('Would you like to save the SAD Leave Request Form (PDF) now? You can also save it later from the planner.')) return;
+  downloadLeaveForm();
+}
+
+async function downloadLeaveForm() {
+  const fileName = 'DOCCS_SAD_Leave_Request_Form.pdf';
+  const fileUrl = new URL('./assets/DOCCS_SAD_Leave_Request_Form.pdf', document.baseURI);
+  if (navigator.share && navigator.canShare && typeof File === 'function') {
+    try {
+      const response = await fetch(fileUrl);
+      if (!response.ok) throw new Error(`Leave form download failed (${response.status}).`);
+      const file = new File([await response.blob()], fileName, { type: 'application/pdf' });
+      if (navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({ files: [file], title: 'SAD Leave Request Form' });
+          return;
+        } catch (error) {
+          if (error && error.name === 'AbortError') return;
+          console.warn('Native file sharing failed:', error);
+          alert('The Save to Files menu could not be opened. A browser download will be attempted instead.');
+        }
+      }
+    } catch (error) {
+      console.warn('Could not prepare the leave form for file sharing:', error);
+      alert('The leave form could not be prepared for Save to Files. A browser download will be attempted instead.');
+    }
+  }
+
   const link = document.createElement('a');
-  link.href = './assets/DOCCS_SAD_Leave_Request_Form.pdf';
-  link.download = 'DOCCS_SAD_Leave_Request_Form.pdf';
+  link.href = fileUrl.href;
+  link.download = fileName;
+  link.hidden = true;
+  document.body.appendChild(link);
   link.click();
+  link.remove();
 }
 
 /* ====================================================================================
