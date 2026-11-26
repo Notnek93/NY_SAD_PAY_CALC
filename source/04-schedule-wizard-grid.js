@@ -35,14 +35,18 @@ function updatePresetDropdownOptions() {
   const schedType = document.getElementById('schedSelect').value;
   const presetSelect = document.getElementById('rdoPresetSelect');
   if (!presetSelect) return;
-  presetSelect.innerHTML = '<option value="">-- Choose RDOs --</option>';
+  presetSelect.innerHTML = '<option value="">Choose RDOs</option>';
 
-  getRdoPresetList(schedType).forEach(o => {
+  const presets = getRdoPresetList(schedType);
+  presets.forEach(o => {
     const opt = document.createElement('option');
     opt.value = o.val;
     opt.textContent = o.text;
     presetSelect.appendChild(opt);
   });
+  presetSelect.value = hasAppliedRdoPreset && presets.some(o => o.val === activeRdoPreset)
+    ? activeRdoPreset
+    : '';
 }
 
 function isSpecialPassAlreadyUsedBeforeSlot(spId, upToSlotIdx) {
@@ -117,13 +121,14 @@ function applyRdoPresetForSlot(slotIdx, presetKey) {
 
 function applyRdoPresetAll(presetKey) {
   activeRdoPreset = presetKey || (document.getElementById('schedSelect').value === 'alt' ? 'fri_sun' : 'sat_sun');
+  hasAppliedRdoPreset = true;
   ensureSlotCapacity(activePayPeriodCount);
   updateDynamicSpecialPassPalette();
   for (let s = 0; s < activePayPeriodCount; s++) {
     applyRdoPresetForSlot(s, activeRdoPreset);
   }
   const presetEl = document.getElementById('rdoPresetSelect');
-  if (presetEl) presetEl.value = '';
+  if (presetEl) presetEl.value = activeRdoPreset;
   updateQuickProfileStrip();
   buildAllPayPeriodGrids();
   saveStateToLocalStorage();
@@ -134,17 +139,27 @@ function applyDefaultPatternAll() {
 }
 
 /* ====================================================================================
-   5-STEP ONBOARDING WIZARD (FIRST-TIME USERS & RE-RUN OPTION)
+   TASK FORCE ONBOARDING WIZARD (FIRST-TIME USERS & RE-RUN OPTION)
    ==================================================================================== */
-const WIZARD_STEP_NAMES = [
+const TASK_FORCE_STORAGE_KEY = 'JTF_SENTINEL_DOCCS_TASK_FORCE';
+const WIZARD_SENTINEL_STEP_NAMES = [
+  'Welcome',
   'Choose View',
+  'Task Force',
   'Schedule & RDOs',
   'SAD Pay & Leave',
   'Pay Period',
   'How-To Offer'
 ];
+const WIZARD_EMPIRE_STEP_NAMES = [
+  'Welcome',
+  'Choose View',
+  'Task Force',
+  'Work in Progress'
+];
 let wizardCurrentStep = 1;
 let wizardSelectedView = currentViewMode;
+let wizardSelectedTaskForce = 'sentinel';
 let wizardIsRerun = false;
 let wizardInitialSnapshot = null;
 
@@ -223,6 +238,13 @@ function openSetupWizard(isRerun) {
   wizardIsRerun = Boolean(isRerun);
   wizardCurrentStep = 1;
   wizardSelectedView = currentViewMode;
+  try {
+    const savedTaskForce = localStorage.getItem(TASK_FORCE_STORAGE_KEY);
+    wizardSelectedTaskForce = savedTaskForce === 'empire-shield' ? savedTaskForce : 'sentinel';
+  } catch (e) {
+    console.warn('Task force preference load skipped:', e);
+    wizardSelectedTaskForce = 'sentinel';
+  }
 
   const schedType = document.getElementById('schedSelect').value || 'alt';
   const latestAllowedIdx = typeof getLatestAllowedPayPeriodIndex === 'function'
@@ -271,6 +293,7 @@ function openSetupWizard(isRerun) {
 
   populateWizardPpOptions(startPpIdx);
   selectWizardView(wizardSelectedView);
+  selectWizardTaskForce(wizardSelectedTaskForce);
   renderWizardStep();
 
   const backdrop = document.getElementById('wizardBackdrop');
@@ -288,6 +311,28 @@ function selectWizardView(mode) {
   const mCard = document.getElementById('wizViewCard_mobile');
   if (dCard) dCard.classList.toggle('selected', mode === 'desktop');
   if (mCard) mCard.classList.toggle('selected', mode === 'mobile');
+}
+
+function selectWizardTaskForce(taskForce) {
+  wizardSelectedTaskForce = taskForce === 'empire-shield' ? 'empire-shield' : 'sentinel';
+  const sentinelCard = document.getElementById('wizTaskForceCard_sentinel');
+  const empireCard = document.getElementById('wizTaskForceCard_empire');
+  if (sentinelCard) {
+    const selected = wizardSelectedTaskForce === 'sentinel';
+    sentinelCard.classList.toggle('selected', selected);
+    sentinelCard.setAttribute('aria-pressed', String(selected));
+  }
+  if (empireCard) {
+    const selected = wizardSelectedTaskForce === 'empire-shield';
+    empireCard.classList.toggle('selected', selected);
+    empireCard.setAttribute('aria-pressed', String(selected));
+  }
+  try {
+    localStorage.setItem(TASK_FORCE_STORAGE_KEY, wizardSelectedTaskForce);
+  } catch (e) {
+    console.warn('Task force preference save skipped:', e);
+  }
+  if (wizardCurrentStep === 3) renderWizardStep();
 }
 
 function populateWizardRdoOptions(schedType, preferredPreset) {
@@ -344,7 +389,7 @@ function setWizardToCurrentPp() {
 }
 
 function renderWizardStep() {
-  for (let i = 1; i <= 5; i++) {
+  for (let i = 1; i <= 8; i++) {
     const panel = document.getElementById(`wizardStep_${i}`);
     if (panel) panel.classList.toggle('active', i === wizardCurrentStep);
   }
@@ -354,15 +399,37 @@ function renderWizardStep() {
   const backBtn = document.getElementById('wizBackBtn');
   const nextBtn = document.getElementById('wizNextBtn');
 
-  if (labelEl) labelEl.textContent = `Step ${wizardCurrentStep} of 5`;
-  if (nameEl) nameEl.textContent = WIZARD_STEP_NAMES[wizardCurrentStep - 1] || '';
-  if (fillEl) fillEl.style.width = `${(wizardCurrentStep / 5) * 100}%`;
+  const isEmpireShield = wizardSelectedTaskForce === 'empire-shield';
+  const displayStep = isEmpireShield || wizardCurrentStep <= 3 ? wizardCurrentStep : wizardCurrentStep - 1;
+  const totalSteps = isEmpireShield ? 4 : 7;
+  const stepName = isEmpireShield
+    ? WIZARD_EMPIRE_STEP_NAMES[wizardCurrentStep - 1]
+    : WIZARD_SENTINEL_STEP_NAMES[displayStep - 1];
+
+  if (labelEl) labelEl.textContent = `Step ${displayStep} of ${totalSteps}`;
+  if (nameEl) nameEl.textContent = stepName || '';
+  if (fillEl) fillEl.style.width = `${(displayStep / totalSteps) * 100}%`;
   if (backBtn) backBtn.disabled = wizardCurrentStep <= 1;
-  if (nextBtn) nextBtn.style.display = wizardCurrentStep >= 5 ? 'none' : 'inline-block';
+  if (nextBtn) {
+    nextBtn.style.display = (isEmpireShield && wizardCurrentStep === 4) || (!isEmpireShield && wizardCurrentStep === 8)
+      ? 'none'
+      : 'inline-block';
+    nextBtn.textContent = wizardCurrentStep === 1 ? 'Get Started ▶' : 'Next ▶';
+  }
 }
 
 function wizardStepNav(delta) {
   if (delta > 0 && wizardCurrentStep === 3) {
+    wizardCurrentStep = wizardSelectedTaskForce === 'empire-shield' ? 4 : 5;
+    renderWizardStep();
+    return;
+  }
+  if (delta < 0 && wizardSelectedTaskForce === 'sentinel' && wizardCurrentStep === 5) {
+    wizardCurrentStep = 3;
+    renderWizardStep();
+    return;
+  }
+  if (delta > 0 && wizardCurrentStep === 6) {
     const wizRoleEl = document.getElementById('wizSmRoleInput');
     if (wizRoleEl && wizRoleEl.value.trim() === '') {
       wizRoleEl.classList.add('field-missing');
@@ -372,7 +439,9 @@ function wizardStepNav(delta) {
     }
   }
   const nextStep = wizardCurrentStep + delta;
-  if (nextStep < 1 || nextStep > 5) return;
+  if (nextStep < 1 || nextStep > 8) return;
+  if (wizardSelectedTaskForce === 'empire-shield' && nextStep > 4) return;
+  if (wizardSelectedTaskForce === 'sentinel' && nextStep === 4) return;
   wizardCurrentStep = nextStep;
   renderWizardStep();
 }

@@ -80,6 +80,9 @@ if ($baseCsvPath -and $bahRawFile -and $zipRawFile) {
   # A. Parse BasePay CSV
   $baseMap = @{}
   $baseRows = Import-Csv -LiteralPath $baseCsvPath
+  if (-not $baseRows -or $baseRows.Count -eq 0) {
+    throw "Base pay CSV contains no data rows: $baseCsvPath"
+  }
   if ($baseRows.Count -gt 0) {
     $yosCols = $baseRows[0].PSObject.Properties.Name | Where-Object { $_ -ne "Grade" -and $_ -ne "grade" }
     foreach ($row in $baseRows) {
@@ -153,7 +156,7 @@ if ($baseCsvPath -and $bahRawFile -and $zipRawFile) {
   Set-Content -LiteralPath $payDataJsPath -Value "const PAY_RATE_DB = $json;" -Encoding UTF8
   Write-Host "[OK] Compiled $($zipToMhaIdx.Count) ZIPs across $($mhaList.Count) MHAs." -ForegroundColor Green
 } else {
-  Write-Host "[!] Skipping pay DB compile (missing BasePay.csv or data\raw\bah-rates-YYYY.csv / zip-to-mha-YYYY.csv)." -ForegroundColor Yellow
+  throw "Cannot compile pay database; missing BasePay.csv or data\raw\bah-rates-YYYY.csv / zip-to-mha-YYYY.csv."
 }
 
 # ------------------------------------------------------------------
@@ -161,6 +164,26 @@ if ($baseCsvPath -and $bahRawFile -and $zipRawFile) {
 # ------------------------------------------------------------------
 if (-not (Test-Path -LiteralPath $DistDir)) {
   New-Item -ItemType Directory -Path $DistDir -Force | Out-Null
+}
+
+$requiredSources = @(
+  "01-theme-and-layout.css",
+  "02-planner-ui.html",
+  "03-calendar-holidays-storage.js",
+  "04-schedule-wizard-grid.js",
+  "05-policy-leave-engine.js",
+  "06-sad-pay-calculator.js",
+  "07-coc-report-export.js",
+  "08-app-startup.js"
+)
+foreach ($requiredSource in $requiredSources) {
+  $requiredPath = Join-Path $SrcDir $requiredSource
+  if (-not (Test-Path -LiteralPath $requiredPath)) {
+    throw "Missing required source file: $requiredPath"
+  }
+  if ((Get-Item -LiteralPath $requiredPath).Length -eq 0) {
+    throw "Required source file is empty: $requiredPath"
+  }
 }
 
 $outFile      = Join-Path $DistDir "JTF_Sentinel_Planner_v1.html"
@@ -199,7 +222,7 @@ $doc = "<!DOCTYPE html>" + $nl +
   "  <meta charset=""UTF-8"">" + $nl +
   "  <meta name=""viewport"" content=""width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"">" + $nl +
   $pwaHeadTags +
-  "  <title>JTF Sentinel SAD DOCCS Duty Status &amp; Leave Planner (v1)</title>" + $nl +
+  "  <title>New York Joint Task Force Pay Calculator</title>" + $nl +
   "  <style>" + $nl + $css + $nl + "  </style>" + $nl +
   "</head>" + $nl +
   "<body>" + $nl + $html + $nl +
@@ -209,8 +232,32 @@ $doc = "<!DOCTYPE html>" + $nl +
 
 Set-Content -LiteralPath $tempFile -Value $doc -Encoding UTF8
 Move-Item -LiteralPath $tempFile -Destination $outFile -Force
-Copy-Item -LiteralPath $outFile -Destination $distIndex -Force
-Copy-Item -LiteralPath $outFile -Destination $rootIndex -Force
+
+$externalDoc = "<!DOCTYPE html>" + $nl +
+  "<html lang=""en"">" + $nl +
+  "<head>" + $nl +
+  "  <meta charset=""UTF-8"">" + $nl +
+  "  <meta name=""viewport"" content=""width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"">" + $nl +
+  $pwaHeadTags +
+  "  <title>New York Joint Task Force Pay Calculator</title>" + $nl +
+  "  <style>" + $nl + $css + $nl + "  </style>" + $nl +
+  "</head>" + $nl +
+  "<body>" + $nl + $html + $nl +
+  "<script>" + $nl + $js3 + $nl + $js4 + $nl + $js5 + $nl + "</script>" + $nl +
+  "<script src=""./pay-data.js""></script>" + $nl +
+  "<script>" + $nl + $js6Pay + $nl + $js7Exp + $nl + $js8Init + $nl + "</script>" + $nl +
+  "</body>" + $nl +
+  "</html>"
+
+Set-Content -LiteralPath $distIndex -Value $externalDoc -Encoding UTF8
+Set-Content -LiteralPath $rootIndex -Value $externalDoc -Encoding UTF8
+
+if (-not [string]::IsNullOrWhiteSpace($payData)) {
+  $distPayData = Join-Path $DistDir "pay-data.js"
+  $rootPayData = Join-Path $rootDir "pay-data.js"
+  Set-Content -LiteralPath $distPayData -Value $payData -Encoding UTF8
+  Set-Content -LiteralPath $rootPayData -Value $payData -Encoding UTF8
+}
 Write-Host "[OK] Built HTML -> $outFile, $distIndex, and $rootIndex" -ForegroundColor Green
 
 if ($hasManifest) {
@@ -222,6 +269,7 @@ if ($hasManifest) {
 if ($hasSw) {
   $buildStamp = (Get-Date).ToString("yyyyMMdd-HHmmss")
   $swContent  = (Get-Content -LiteralPath $swSrc -Raw -Encoding UTF8) -replace 'const CACHE_NAME\s*=\s*"[^"]+";', "const CACHE_NAME = `"sentinel-planner-v1-$buildStamp`";"
+  $swContent  = $swContent.TrimEnd([char[]]"`r`n")
   Set-Content -LiteralPath (Join-Path $DistDir "sw.js") -Value $swContent -Encoding UTF8
   Set-Content -LiteralPath (Join-Path $rootDir "sw.js") -Value $swContent -Encoding UTF8
   Write-Host "[OK] Copied sw.js (cache: sentinel-planner-v1-$buildStamp) -> $DistDir and $rootDir" -ForegroundColor Green

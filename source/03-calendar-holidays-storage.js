@@ -54,6 +54,7 @@ let userSelections = [new Array(14).fill('shift')];
 let effectiveSelections = [new Array(14).fill('shift')];
 
 let activeRdoPreset = 'fri_sun';
+let hasAppliedRdoPreset = false;
 let oconusBlockFlags = {};
 
 const generatedHolidayYears = new Set();
@@ -342,7 +343,9 @@ function getStatusMeta(statusId) {
 /* ====================================================================================
    LOCALSTORAGE PERSISTENCE, V5 -> V6 MIGRATION & QUICK PROFILE STRIP
    ==================================================================================== */
-function saveStateToLocalStorage() {
+let SAVE_STATE_TIMER = null;
+
+function saveStateToLocalStorageNow() {
   try {
     const payload = {
       viewMode: currentViewMode,
@@ -368,6 +371,22 @@ function saveStateToLocalStorage() {
     console.warn('Auto-save skipped:', e);
   }
 }
+
+function saveStateToLocalStorage() {
+  if (SAVE_STATE_TIMER !== null) window.clearTimeout(SAVE_STATE_TIMER);
+  SAVE_STATE_TIMER = window.setTimeout(() => {
+    SAVE_STATE_TIMER = null;
+    saveStateToLocalStorageNow();
+  }, 250);
+}
+
+window.addEventListener('pagehide', () => {
+  if (SAVE_STATE_TIMER !== null) {
+    window.clearTimeout(SAVE_STATE_TIMER);
+    SAVE_STATE_TIMER = null;
+    saveStateToLocalStorageNow();
+  }
+});
 
 function loadStateFromLocalStorage() {
   try {
@@ -403,7 +422,10 @@ function loadStateFromLocalStorage() {
     if (data.smRole !== undefined) document.getElementById('smRoleInput').value = data.smRole;
     if (data.smFacility !== undefined) document.getElementById('smFacilityInput').value = data.smFacility;
     if (data.smLeader !== undefined) document.getElementById('smLeaderInput').value = data.smLeader;
-    if (data.activeRdoPreset) activeRdoPreset = data.activeRdoPreset;
+    if (data.activeRdoPreset) {
+      activeRdoPreset = data.activeRdoPreset;
+      hasAppliedRdoPreset = true;
+    }
     if (Array.isArray(data.userSelections) && data.userSelections.length > 0) {
       userSelections = data.userSelections.map(row => Array.isArray(row) && row.length === 14 ? row : new Array(14).fill('shift'));
     }
@@ -429,6 +451,7 @@ function clearSavedLocalStorage() {
   document.getElementById('startingLeaveInput').value = '';
   document.getElementById('schedSelect').value = 'alt';
   activeRdoPreset = 'fri_sun';
+  hasAppliedRdoPreset = false;
   activePayPeriodCount = 1;
   closeInlineStatusPicker();
   closeRangeBuilderModal();

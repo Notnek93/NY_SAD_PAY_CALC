@@ -217,7 +217,9 @@ function renderPayReadoutForSlot(s, dayStatusIds, runningTotal) {
    [EDIT-RDO-EARNING] & [EDIT-INTRANSIT-RULES]
    MASTER POLICY ENGINE ('calculateAllPayPeriods')
    ==================================================================================== */
-function calculateAllPayPeriods() {
+let CALCULATE_ALL_RAF_PENDING = false;
+
+function calculateAllPayPeriodsNow() {
   const schedType = document.getElementById('schedSelect').value;
   const startPpIdx = parseInt(document.getElementById('ppSelect').value, 10);
   const targetAnchorBal = Math.max(0, parseFloat(document.getElementById('startingLeaveInput').value) || 0);
@@ -237,6 +239,7 @@ function calculateAllPayPeriods() {
         refradSlot = s;
         refradDay = d;
       }
+
     }
   }
 
@@ -810,6 +813,15 @@ function calculateAllPayPeriods() {
     renderInlineStatusPicker(activePicker.s, activePicker.d);
     highlightSelectedDate();
   }
+}
+
+function calculateAllPayPeriods() {
+  if (CALCULATE_ALL_RAF_PENDING) return;
+  CALCULATE_ALL_RAF_PENDING = true;
+  window.requestAnimationFrame(() => {
+    CALCULATE_ALL_RAF_PENDING = false;
+    calculateAllPayPeriodsNow();
+  });
 }
 
 /* ====================================================================================

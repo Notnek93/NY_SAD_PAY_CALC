@@ -1,6 +1,9 @@
-﻿const CACHE_NAME = "sentinel-planner-v1-20261125-132708";
+﻿const CACHE_NAME = "sentinel-planner-v1-20261125-220715";
 const CORE_ASSETS = [
+  "./",
+  "./index.html",
   "./JTF_Sentinel_Planner_v1.html",
+  "./pay-data.js",
   "./manifest.json",
   "./sw.js"
 ];
@@ -32,16 +35,20 @@ self.addEventListener("fetch", (event) => {
   if (reqUrl.origin !== self.location.origin) return;
 
   event.respondWith(
-    fetch(event.request)
-      .then((networkResponse) => {
-        if (networkResponse && networkResponse.ok) {
-          const responseClone = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseClone);
-          });
-        }
-        return networkResponse;
-      })
-      .catch(() => caches.match(event.request))
+    caches.match(event.request).then((cachedResponse) => {
+      const networkResponse = fetch(event.request)
+        .then((response) => {
+          if (response && response.ok) {
+            const responseClone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseClone);
+            });
+          }
+          return response;
+        })
+        .catch(() => cachedResponse);
+
+      return cachedResponse || networkResponse;
+    })
   );
 });

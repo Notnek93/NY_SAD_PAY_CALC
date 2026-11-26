@@ -1,21 +1,21 @@
 <!-- 02-planner-ui.html -->
 
 <!-- ====================================================================================
-     [EDIT-MODALS-UI] 5-STEP WIZARD, EDIT SETTINGS, SOP MODAL, SP CONFLICT & MAIN UI
+     [EDIT-MODALS-UI] SETUP WIZARD, EDIT SETTINGS, SOP MODAL, SP CONFLICT & MAIN UI
      ==================================================================================== -->
 
-<!-- 5-Step Onboarding Wizard -->
+<!-- Onboarding Wizard -->
 <div class="wizard-backdrop" id="wizardBackdrop">
   <div class="wizard-dialog" role="dialog" aria-modal="true" aria-labelledby="wizardTitle">
     <div class="wizard-header">
-      <h2 id="wizardTitle">🧭 JTF Sentinel Duty &amp; Leave Planner Setup</h2>
-      <p>Quick initial configuration — you can adjust everything later in Edit Settings.</p>
+      <h2 id="wizardTitle">New York Joint Task Force Pay Calculator</h2>
+      <p>Setup and personalize your duty, leave, and pay planning.</p>
     </div>
 
     <div class="wizard-progress-wrap">
       <div class="wizard-progress-top">
-        <span id="wizardStepLabel">Step 1 of 5</span>
-        <span id="wizardStepName">Choose View</span>
+        <span id="wizardStepLabel">Step 1 of 7</span>
+        <span id="wizardStepName">Welcome</span>
       </div>
       <div class="wizard-progress-track">
         <div class="wizard-progress-fill" id="wizardProgressFill"></div>
@@ -23,27 +23,55 @@
     </div>
 
     <div class="wizard-body">
-      <!-- Step 1: Choose View -->
+      <!-- Welcome -->
       <div class="wizard-step active" id="wizardStep_1">
+        <h3 class="wizard-step-title">Welcome</h3>
+        <p class="wizard-step-desc">A pay and duty-planning tool for New York Joint Task Force service members.</p>
+        <p class="wizard-step-desc"><strong>By SPC Lee, Kenton</strong></p>
+        <p class="wizard-step-desc">Get started by choosing your preferred view and task force.</p>
+      </div>
+
+      <!-- Step 1: Choose View -->
+      <div class="wizard-step" id="wizardStep_2">
         <h3 class="wizard-step-title">1. Choose Your Preferred View</h3>
         <p class="wizard-step-desc">Select Desktop for the wide DA Form 6 matrix or Phone for a 7-column THU–WED mini-calendar.</p>
         <div class="wizard-view-grid">
           <div class="wizard-view-card selected" id="wizViewCard_desktop" onclick="selectWizardView('desktop')">
             <div class="wizard-view-icon">💻</div>
             <div class="wizard-view-name">Desktop View</div>
-            <div class="wizard-view-sub">Full 14-day DA-6 horizontal matrix &amp; wide summary</div>
           </div>
           <div class="wizard-view-card" id="wizViewCard_mobile" onclick="selectWizardView('mobile')">
             <div class="wizard-view-icon">📱</div>
             <div class="wizard-view-name">Phone View</div>
-            <div class="wizard-view-sub">Compact THU–WED weekly tiles &amp; inline status picker</div>
           </div>
         </div>
       </div>
 
-      <!-- Step 2: Schedule & RDOs -->
-      <div class="wizard-step" id="wizardStep_2">
-        <h3 class="wizard-step-title">2. Shift Schedule &amp; Regular RDOs</h3>
+      <!-- Step 2: Choose task force -->
+      <div class="wizard-step" id="wizardStep_3">
+        <h3 class="wizard-step-title">2. Choose Your Task Force</h3>
+        <p class="wizard-step-desc">Select the task force you are supporting. Empire Shield planning is still in progress.</p>
+        <div class="wizard-view-grid">
+          <div class="wizard-view-card selected" id="wizTaskForceCard_sentinel" role="button" aria-pressed="true" tabindex="0" onclick="selectWizardTaskForce('sentinel')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectWizardTaskForce('sentinel')}">
+            <div class="wizard-view-name">JTF Sentinel</div>
+            <div class="wizard-view-sub">Open the duty, leave, and SAD pay planner</div>
+          </div>
+          <div class="wizard-view-card" id="wizTaskForceCard_empire" role="button" aria-pressed="false" tabindex="0" onclick="selectWizardTaskForce('empire-shield')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectWizardTaskForce('empire-shield')}">
+            <div class="wizard-view-name">JTF Empire Shield</div>
+            <div class="wizard-view-sub">Work in progress</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empire Shield placeholder -->
+      <div class="wizard-step" id="wizardStep_4">
+        <h3 class="wizard-step-title">JTF Empire Shield — Work in Progress</h3>
+        <p class="wizard-step-desc">The Empire Shield pay planner is not available yet. The planned tool will estimate pay from the number of drill days in a pay period. Pay rates and incentive details are still being defined.</p>
+      </div>
+
+      <!-- Step 3: Schedule & RDOs -->
+      <div class="wizard-step" id="wizardStep_5">
+        <h3 class="wizard-step-title">3. Shift Schedule &amp; Regular RDOs</h3>
         <p class="wizard-step-desc">Choose your shift cadence and regular RDO block. Holiday Special Passes on regular RDOs can auto-apply where eligible.</p>
         <div class="wizard-form-stack">
           <div class="field-group">
@@ -60,9 +88,9 @@
         </div>
       </div>
 
-      <!-- Step 3: SAD Pay & Leave -->
-      <div class="wizard-step" id="wizardStep_3">
-        <h3 class="wizard-step-title">3. SAD Pay Profile &amp; 18 NOV 2026 Leave Balance</h3>
+      <!-- Step 4: SAD Pay & Leave -->
+      <div class="wizard-step" id="wizardStep_6">
+        <h3 class="wizard-step-title">4. SAD Pay Profile &amp; 18 NOV 2026 Leave Balance</h3>
         <p class="wizard-step-desc">Enter your assignment role, grade, years of service, 5-digit ZIP for BAH/MHA lookup, BAH/BAS entitlement, and your 18 NOV 2026 SAD leave balance.</p>
         <div class="wizard-form-stack">
           <div class="field-group">
@@ -170,9 +198,9 @@
         </div>
       </div>
 
-      <!-- Step 4: Beginning Pay Period -->
-      <div class="wizard-step" id="wizardStep_4">
-        <h3 class="wizard-step-title">4. Beginning Pay Period</h3>
+      <!-- Step 5: Beginning Pay Period -->
+      <div class="wizard-step" id="wizardStep_7">
+        <h3 class="wizard-step-title">5. Beginning Pay Period</h3>
         <p class="wizard-step-desc">Select the pay period where your plan starts (up to the current pay period). Additional pay periods can be added as you plan ahead.</p>
         <div class="wizard-form-stack">
           <div class="field-group">
@@ -185,9 +213,9 @@
         </div>
       </div>
 
-      <!-- Step 5: How-To Offer & Finish -->
-      <div class="wizard-step" id="wizardStep_5">
-        <h3 class="wizard-step-title">5. Ready to Start Planning</h3>
+      <!-- Step 6: How-To Offer & Finish -->
+      <div class="wizard-step" id="wizardStep_8">
+        <h3 class="wizard-step-title">6. Ready to Start Planning</h3>
         <p class="wizard-step-desc">Would you like to review the quick How-To / SOP guide first, or jump straight into your schedule?</p>
         <div class="wizard-offer-box">
           <button type="button" class="wizard-offer-btn sop-cta" onclick="finishWizard(true)">📖 Open How-To / SOP Guide First</button>
@@ -198,7 +226,7 @@
 
     <div class="wizard-footer">
       <button type="button" class="wiz-btn" id="wizBackBtn" onclick="wizardStepNav(-1)" disabled>◀ Back</button>
-      <button type="button" class="wiz-btn wiz-btn-primary" id="wizNextBtn" onclick="wizardStepNav(1)">Next ▶</button>
+      <button type="button" class="wiz-btn wiz-btn-primary" id="wizNextBtn" onclick="wizardStepNav(1)">Get Started ▶</button>
     </div>
   </div>
 </div>
@@ -277,7 +305,7 @@
         <div class="field-group">
           <label for="rdoPresetSelect">Apply RDO Preset Across All Open PPs</label>
           <select id="rdoPresetSelect" class="top-select" onchange="if(this.value) applyRdoPresetAll(this.value)">
-            <option value="">-- Choose RDOs --</option>
+            <option value="">Choose RDOs</option>
           </select>
         </div>
       </div>
