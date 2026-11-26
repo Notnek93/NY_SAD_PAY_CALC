@@ -53,6 +53,7 @@ Select a date and choose the status that best reflects the plan. Common labels a
 | TRV | In-Transit travel |
 | SP | Special Pass |
 | INCP | INCAP Pay |
+| XFER | Transfer Day; counts as paid On Shift time and accrues leave |
 | RFRD | REFRAD Report Date |
 | TERM | Terminal Leave |
 | OFF | Post-REFRAD / Off Mission |
@@ -75,7 +76,15 @@ Deadlines and leave calculations are planning estimates. Confirm current submiss
 
 The prompt records the user's answer; it does not verify distance, orders, travel authorization, or eligibility. Use current orders and unit guidance for those determinations.
 
-#### E. Plan voluntary REFRAD
+#### E. Plan a transfer
+
+1. Open **Tools** and choose **Plan Transfer**. Select the transfer date and destination assignment role: **C2**, **External Support**, **Facility Leadership**, or **General Purpose**. These options remain separate.
+2. Apply the transfer. The date is marked XFER and counts as paid On Shift time for SAD pay and leave accrual; it is not leave.
+3. Incentive Pay is estimated at the highest assignment-role rate held during each pay period, provided the period includes an On Shift or Transfer Day. A pay period that includes Facility Leadership or General Purpose retains the $2,000 rate; later periods use the role after the transfer. Transfers between facilities with no role-category change do not change the estimate.
+
+Use official records and unit guidance to verify assignment and incentive eligibility. The planner records user-entered assumptions; it does not verify a transfer or determine entitlement.
+
+#### F. Plan voluntary REFRAD
 
 1. Open **Plan REFRAD** and select the method that matches the plan: **REFRAD Report Date** or **Mission End Date**.
 2. Review the date and the displayed treatment of Terminal Leave and Off Mission dates before applying the plan.
@@ -84,7 +93,7 @@ The prompt records the user's answer; it does not verify distance, orders, trave
 
 This workflow covers voluntary planning only. It does not determine eligibility, create an involuntary REFRAD process, or approve a separation date. Follow command instructions for any other situation.
 
-#### F. Review and export
+#### G. Review and export
 
 Before sharing or submitting anything:
 

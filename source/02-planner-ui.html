@@ -514,6 +514,7 @@
           <div class="sop-step-title">Status key</div>
           <ul class="sop-list">
             <li><strong>SHFT:</strong> Present / On Shift. <strong>RDO:</strong> Regular Day Off. <strong>LV:</strong> State Active Duty (SAD) Leave.</li>
+            <li><strong>XFER:</strong> Transfer Day. It counts as paid On Shift time and accrues leave; record the destination assignment role in Tools.</li>
             <li><strong>TDY:</strong> Drill / TDY. <strong>TRV:</strong> In-Transit travel. <strong>SP:</strong> Special Pass. <strong>INCP:</strong> INCAP Pay.</li>
             <li><strong>RFRD, TERM, and OFF</strong> are managed by the REFRAD planner; use <strong>Plan REFRAD</strong> to change that plan.</li>
           </ul>
@@ -533,6 +534,7 @@
           <ul class="sop-list">
             <li>For one day, select the date and choose <strong>SAD Leave</strong> in the status picker.</li>
             <li>For several days, open <strong>Tools</strong> and choose <strong>Plan Leave</strong> or <strong>Plan TDY / Travel</strong>. Select the start and end dates; both dates are included. The planner adds pay periods when needed.</li>
+            <li>For a transfer, open <strong>Tools</strong> → <strong>Plan Transfer</strong>, choose the transfer date and destination role, then apply. The date counts as paid On Shift time and accrues leave. Incentive Pay uses the highest assignment role held during a pay period, so a higher-role incentive remains for a transition pay period.</li>
             <li>For a multi-day TDY plan, answer whether your assigned facility is more than 120 miles from your home station. If it is, the first and last dates are In-Transit with TDY in between; the range must be at least 3 days. If not, every date is TDY. Choosing In-Transit for one date opens a confirmation; choosing No leaves that date unchanged.</li>
           </ul>
         </div>
@@ -617,6 +619,7 @@
         <summary>Tools</summary>
         <div class="more-tools-menu">
           <button type="button" class="more-tools-button" onclick="openRangeBuilderFromMenu()">📅 Plan a date range</button>
+          <button type="button" class="more-tools-button" onclick="openTransferPlannerFromMenu()">Plan Transfer</button>
           <button type="button" class="more-tools-button" onclick="confirmApplyDefaultPatternAll()">↺ Reset day-off pattern</button>
           <button type="button" class="more-tools-button" id="clearRefradPlanButton" onclick="clearRefradOnly()" hidden>Clear REFRAD plan</button>
         </div>
@@ -627,6 +630,7 @@
           <div class="phone-tools-group-title">Plan</div>
           <button type="button" class="phone-tools-button" onclick="openPhoneRangePlanner('lv')">Plan Leave</button>
           <button type="button" class="phone-tools-button" onclick="openPhoneRangePlanner('tdy')">Plan TDY / Travel</button>
+          <button type="button" class="phone-tools-button" onclick="openPhoneRangePlanner('transfer')">Plan Transfer</button>
           <button type="button" class="phone-tools-button" onclick="closePhoneToolsMenu();openRefradPlanner()">Plan REFRAD</button>
           <button type="button" class="phone-tools-button" onclick="openPhoneRangePlanner()">Plan a date range</button>
           <div class="phone-tools-group-title">Schedule</div>
@@ -673,7 +677,7 @@
   <!-- Date-range planner -->
   <div class="range-builder-card" id="rangeBuilderCard">
     <div class="range-builder-hdr">
-      <div class="range-builder-title">📅 Plan Leave or TDY Dates</div>
+      <div class="range-builder-title">📅 Plan Dates</div>
       <button type="button" class="status-sheet-close" onclick="closeRangeBuilderModal()">✕ Close</button>
     </div>
     <div class="range-builder-grid">
@@ -682,8 +686,19 @@
         <select id="rangeStatusSelect" class="range-input" onchange="onRangeStatusChange()">
           <option value="lv">SAD Leave</option>
           <option value="tdy">TDY</option>
+          <option value="transfer">Transfer Day</option>
           <option value="shift">On Shift (Present for Duty)</option>
           <option value="rdo">RDO</option>
+        </select>
+      </div>
+
+      <div class="range-field range-field-full" id="transferRoleField" hidden>
+        <label for="transferRoleSelect">Assignment after transfer</label>
+        <select id="transferRoleSelect" class="range-input">
+          <option value="C2">C2</option>
+          <option value="External Support">External Support</option>
+          <option value="Facility Leadership">Facility Leadership</option>
+          <option value="General Purpose">General Purpose</option>
         </select>
       </div>
 

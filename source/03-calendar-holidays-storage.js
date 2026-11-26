@@ -34,6 +34,8 @@ let colorThemePreference = 'system';
 let activePayPeriodCount = 1;
 let previousStartPpIdx = 0;
 let mobileVisiblePayPeriodSlot = 0;
+let transferRoleBase = '';
+let transferEvents = [];
 
 function applyColorTheme() {
   const systemPrefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -77,6 +79,7 @@ let pendingExportAction = null;
    ==================================================================================== */
 const BASE_STATUS_OPTIONS = [
   { id: 'shift',      name: 'Present (On Shift)',            shortName: 'SHFT', leaveQual: true,  rdoQual: true,  paidSad: true,  color: 'var(--surface)', textCol: 'var(--text-main)', border: 'var(--border)' },
+  { id: 'transfer',   name: 'Transfer Day',                  shortName: 'XFER', leaveQual: true,  rdoQual: true,  paidSad: true,  color: '#f3e5f5', textCol: '#7b1fa2', border: '#e1bee7', isToolOnly: true },
   { id: 'rdo',        name: 'Regular Day Off (RDO)',      shortName: 'RDO',  leaveQual: false, rdoQual: false, paidSad: true,  color: 'var(--status-rdo-bg)', textCol: 'var(--status-rdo-text)', border: 'var(--status-rdo-border)' },
   { id: 'lv',         name: 'SAD Leave',           shortName: 'LV',   leaveQual: true,  rdoQual: true,  paidSad: true,  color: 'var(--status-leave-bg)', textCol: 'var(--status-leave-text)', border: 'var(--status-leave-border)' },
   { id: 'refrad_rpt', name: 'REFRAD Report Date',  shortName: 'RFRD', leaveQual: true,  rdoQual: true,  paidSad: true,  color: 'var(--status-refrad-bg)', textCol: 'var(--status-refrad-text)', border: 'var(--status-refrad-border)', isToolOnly: true },
@@ -113,7 +116,11 @@ function cloneRefradScheduleSnapshot(snapshot) {
     startPpIdx: snapshot.startPpIdx,
     previousStartPpIdx: snapshot.previousStartPpIdx,
     activePayPeriodCount: snapshot.activePayPeriodCount,
-    userSelections: snapshot.userSelections.map(row => [...row])
+    userSelections: snapshot.userSelections.map(row => [...row]),
+    transferRoleBase: snapshot.transferRoleBase || '',
+    transferEvents: Array.isArray(snapshot.transferEvents)
+      ? snapshot.transferEvents.map(event => ({ ...event }))
+      : []
   };
 }
 
@@ -418,6 +425,8 @@ function saveStateToLocalStorageNow() {
       refradPlanMode,
       refradPlanDate,
       refradScheduleSnapshot: cloneRefradScheduleSnapshot(refradScheduleSnapshot),
+      transferRoleBase,
+      transferEvents: transferEvents.map(event => ({ ...event })),
       userSelections: userSelections.slice(0, activePayPeriodCount),
       oconusBlockFlags
     };
@@ -491,6 +500,15 @@ function loadStateFromLocalStorage() {
     if (data.smRole !== undefined) document.getElementById('smRoleInput').value = data.smRole;
     if (data.smFacility !== undefined) document.getElementById('smFacilityInput').value = data.smFacility;
     if (data.smLeader !== undefined) document.getElementById('smLeaderInput').value = data.smLeader;
+    transferRoleBase = normalizeRoleName(data.transferRoleBase);
+    transferEvents = Array.isArray(data.transferEvents)
+      ? data.transferEvents.filter(event =>
+          event &&
+          /^\d{4}-\d{2}-\d{2}$/.test(event.date) &&
+          ROLE_PP_INCENTIVE_BONUS[normalizeRoleName(event.roleName)] !== undefined
+        ).map(event => ({ date: event.date, roleName: normalizeRoleName(event.roleName) }))
+        .sort((a, b) => a.date.localeCompare(b.date))
+      : [];
     if (data.activeRdoPreset) {
       activeRdoPreset = data.activeRdoPreset;
       hasAppliedRdoPreset = true;
@@ -569,6 +587,8 @@ function clearSavedLocalStorage() {
   refradPlanMode = '';
   refradPlanDate = '';
   refradScheduleSnapshot = null;
+  transferRoleBase = '';
+  transferEvents = [];
   if (typeof updateRefradClearButton === 'function') updateRefradClearButton();
   document.getElementById('schedSelect').value = 'alt';
   activeRdoPreset = 'fri_sun';

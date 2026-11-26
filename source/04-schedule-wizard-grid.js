@@ -160,6 +160,13 @@ function openRangeBuilderFromMenu() {
   openRangeBuilderModal(currentViewMode === 'mobile' ? mobileVisiblePayPeriodSlot : 0);
 }
 
+function openTransferPlannerFromMenu() {
+  const menu = document.getElementById('headerMoreTools');
+  if (menu) menu.open = false;
+  closePhoneToolsMenu();
+  openRangeBuilderModal(currentViewMode === 'mobile' ? mobileVisiblePayPeriodSlot : 0, 'transfer');
+}
+
 /* ====================================================================================
    TASK FORCE ONBOARDING WIZARD (FIRST-TIME USERS & RE-RUN OPTION)
    ==================================================================================== */
@@ -517,6 +524,44 @@ function closePhoneToolsMenu() {
   if (menu) menu.open = false;
 }
 
+function positionPhoneToolsMenu() {
+  const details = document.getElementById('phoneTools');
+  const menu = details?.querySelector('.phone-tools-menu');
+  const summary = details?.querySelector('summary');
+  if (!details?.open || !menu || !summary) return;
+
+  const summaryRect = summary.getBoundingClientRect();
+  const menuWidth = menu.getBoundingClientRect().width;
+  const menuHeight = menu.getBoundingClientRect().height;
+  const left = Math.max(12, Math.min(summaryRect.right - menuWidth, window.innerWidth - menuWidth - 12));
+  const top = Math.max(12, Math.min(summaryRect.bottom + 6, window.innerHeight - menuHeight - 12));
+  menu.style.left = `${left}px`;
+  menu.style.right = 'auto';
+  menu.style.top = `${top}px`;
+}
+
+document.getElementById('phoneTools')?.addEventListener('toggle', () => {
+  if (document.getElementById('phoneTools')?.open) requestAnimationFrame(positionPhoneToolsMenu);
+});
+window.addEventListener('resize', positionPhoneToolsMenu);
+
+function syncAssignmentRoleToTransferHistory() {
+  const roleInput = document.getElementById('smRoleInput');
+  const latestRole = transferEvents.length
+    ? transferEvents[transferEvents.length - 1].roleName
+    : transferRoleBase;
+  if (roleInput && latestRole) roleInput.value = latestRole;
+  if (!transferEvents.length) transferRoleBase = '';
+}
+
+function removeTransferEventForDate(dateIso) {
+  const existingCount = transferEvents.length;
+  transferEvents = transferEvents.filter(event => event.date !== dateIso);
+  if (transferEvents.length === existingCount) return false;
+  syncAssignmentRoleToTransferHistory();
+  return true;
+}
+
 function openPhoneRangePlanner(statusId) {
   closePhoneToolsMenu();
   openRangeBuilderModal(mobileVisiblePayPeriodSlot, statusId);
@@ -814,6 +859,10 @@ function openRangeBuilderModal(slotOverride, statusOverride) {
   const endInput = document.getElementById('rangeEndDate');
   const statusSelect = document.getElementById('rangeStatusSelect');
   if (statusSelect && statusOverride) statusSelect.value = statusOverride;
+  const transferRoleSelect = document.getElementById('transferRoleSelect');
+  if (transferRoleSelect) {
+    transferRoleSelect.value = document.getElementById('smRoleInput')?.value || 'C2';
+  }
   if (startInput) startInput.value = defaultIso;
   if (endInput) endInput.value = defaultIso;
 
@@ -840,9 +889,11 @@ function onTdyQualRadioChange() {
 function onRangeStatusChange() {
   const mode = document.getElementById('rangeStatusSelect').value;
   const qualBox = document.getElementById('tdyQualBox');
+  const transferRoleField = document.getElementById('transferRoleField');
   if (qualBox) {
     qualBox.classList.toggle('visible', mode === 'tdy');
   }
+  if (transferRoleField) transferRoleField.hidden = mode !== 'transfer';
   updateRangeHelperNote();
 }
 
@@ -863,6 +914,8 @@ function updateRangeHelperNote() {
     noteEl.innerHTML = 'Applies <strong>SAD Leave</strong> to every date from start through end, including both dates, and calculates the 30-day / 60-day OCONUS deadline.';
   } else if (mode === 'rdo') {
     noteEl.innerHTML = 'Applies <strong>Regular Day Off (RDO)</strong> to every date from start through end, including both dates.';
+  } else if (mode === 'transfer') {
+    noteEl.innerHTML = 'Marks one <strong>Transfer Day</strong> as paid, leave-accruing On Shift time and records the selected assignment role for incentive estimates.';
   } else {
     noteEl.innerHTML = 'Sets every date from start through end to <strong>Present (On Shift)</strong>, replacing the current selections.';
   }
@@ -897,6 +950,11 @@ function applyPlannedDateRange() {
   const useTdyInTransit = (mode === 'tdy' && Boolean(yesRadio && yesRadio.checked));
   const totalDays = Math.floor((endDate.getTime() - startDate.getTime()) / 86400000) + 1;
 
+  if (mode === 'transfer' && totalDays !== 1) {
+    alert('A transfer is recorded on one date. Choose the same start and end date.');
+    return;
+  }
+
   if (useTdyInTransit && totalDays < 3) {
     alert('For a trip more than 120 miles away, this range must be at least 3 days so a TDY day falls between the two In-Transit dates. For a 1–2 day trip, close this planner and set each date individually; the planner will ask you to confirm before applying In-Transit.');
     return;
@@ -904,7 +962,13 @@ function applyPlannedDateRange() {
 
   const endOffsetDays = Math.floor((endDate.getTime() - firstPpStart.getTime()) / 86400000);
   const requiredSlots = Math.floor(endOffsetDays / 14) + 1;
-  clearLastDayStatusUndo();
+  const transferRole = document.getElementById('transferRoleSelect')?.value || '';
+  if (mode === 'transfer' && !ROLE_PP_INCENTIVE_BONUS[transferRole]) {
+    alert('Choose one of the four assignment roles for the transfer.');
+    return;
+  }
+  if (mode === 'transfer') captureLastDayStatusUndo();
+  else clearLastDayStatusUndo();
 
   if (requiredSlots > activePayPeriodCount) {
     const prevCount = activePayPeriodCount;
@@ -917,6 +981,7 @@ function applyPlannedDateRange() {
   }
 
   let firstModifiedSlot = -1;
+  let removedTransferEvent = false;
   for (let i = 0; i < totalDays; i++) {
     const curDate = addDays(startDate, i);
     const offsetFromFirst = Math.floor((curDate.getTime() - firstPpStart.getTime()) / 86400000);
@@ -932,7 +997,26 @@ function applyPlannedDateRange() {
         statusToApply = 'drl';
       }
     }
+    if (mode !== 'transfer') {
+      removedTransferEvent = removeTransferEventForDate(toIsoDate(curDate)) || removedTransferEvent;
+    }
     userSelections[s][d] = statusToApply;
+  }
+
+  if (mode === 'transfer') {
+    const dateIso = toIsoDate(startDate);
+    const currentRole = document.getElementById('smRoleInput')?.value || getPayProfile().roleName;
+    if (!transferRoleBase) transferRoleBase = normalizeRoleName(currentRole);
+    const existingEventIdx = transferEvents.findIndex(event => event.date === dateIso);
+    const transferEvent = { date: dateIso, roleName: transferRole };
+    if (existingEventIdx >= 0) transferEvents[existingEventIdx] = transferEvent;
+    else transferEvents.push(transferEvent);
+    transferEvents.sort((a, b) => a.date.localeCompare(b.date));
+    const roleInput = document.getElementById('smRoleInput');
+    if (roleInput) roleInput.value = transferRole;
+    onPaySettingsChange();
+  } else if (removedTransferEvent) {
+    onPaySettingsChange();
   }
 
   closeRangeBuilderModal();
@@ -1510,7 +1594,10 @@ function captureLastDayStatusUndo() {
     userSelections: userSelections.map(row => [...row]),
     refradPlanMode,
     refradPlanDate,
-    refradScheduleSnapshot: cloneRefradScheduleSnapshot(refradScheduleSnapshot)
+    refradScheduleSnapshot: cloneRefradScheduleSnapshot(refradScheduleSnapshot),
+    transferRoleBase,
+    transferEvents: transferEvents.map(event => ({ ...event })),
+    assignmentRole: document.getElementById('smRoleInput')?.value || ''
   };
   const button = document.getElementById('undoScheduleButton');
   if (button) {
@@ -1528,8 +1615,13 @@ function undoLastDayStatusChange() {
   refradPlanMode = lastDayStatusUndoSnapshot.refradPlanMode;
   refradPlanDate = lastDayStatusUndoSnapshot.refradPlanDate;
   refradScheduleSnapshot = cloneRefradScheduleSnapshot(lastDayStatusUndoSnapshot.refradScheduleSnapshot);
+  transferRoleBase = lastDayStatusUndoSnapshot.transferRoleBase;
+  transferEvents = lastDayStatusUndoSnapshot.transferEvents.map(event => ({ ...event }));
+  const roleInput = document.getElementById('smRoleInput');
+  if (roleInput) roleInput.value = lastDayStatusUndoSnapshot.assignmentRole;
   updateRefradClearButton();
   clearLastDayStatusUndo();
+  onPaySettingsChange();
   buildAllPayPeriodGrids();
   saveStateToLocalStorage();
 }
@@ -1908,6 +2000,10 @@ function clearRefradOnly() {
     userSelections = savedSchedule.userSelections.map(row =>
       row.map(statusId => statusId === 'refrad_rpt' ? 'shift' : statusId)
     );
+    transferRoleBase = savedSchedule.transferRoleBase || '';
+    transferEvents = savedSchedule.transferEvents.map(event => ({ ...event }));
+    syncAssignmentRoleToTransferHistory();
+    onPaySettingsChange();
   } else {
     for (let s = 0; s < userSelections.length; s++) {
       for (let d = 0; d < 14; d++) {
@@ -2096,7 +2192,9 @@ function applyRefradPlan() {
       activePayPeriodCount,
       userSelections: userSelections.slice(0, activePayPeriodCount).map(row =>
         row.map(statusId => statusId === 'refrad_rpt' ? 'shift' : statusId)
-      )
+      ),
+      transferRoleBase,
+      transferEvents: transferEvents.map(event => ({ ...event }))
     };
   }
   userSelections.forEach(row => {

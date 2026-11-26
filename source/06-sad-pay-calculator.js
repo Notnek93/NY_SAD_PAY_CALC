@@ -162,6 +162,27 @@ function getPpIncentiveBonusForRole(roleName) {
   return Math.max(0, Number(ROLE_PP_INCENTIVE_BONUS[key]) || 0);
 }
 
+function getPayPeriodRoleIncentive(slotIdx, dayStatusIds, fallbackRoleName) {
+  const startPpIdx = parseInt(document.getElementById("ppSelect")?.value, 10) || 0;
+  const pp = payPeriods[startPpIdx + slotIdx];
+  if (!pp) return 0;
+
+  const events = [...transferEvents].sort((a, b) => a.date.localeCompare(b.date));
+  let eventIdx = 0;
+  let roleName = normalizeRoleName(transferRoleBase) || normalizeRoleName(fallbackRoleName);
+  let periodBonus = 0;
+
+  for (let d = 0; d < dayStatusIds.length; d++) {
+    const dayIso = toIsoDate(addDays(pp.start, d));
+    while (eventIdx < events.length && events[eventIdx].date <= dayIso) {
+      roleName = events[eventIdx].roleName;
+      eventIdx++;
+    }
+    periodBonus = Math.max(periodBonus, getPpIncentiveBonusForRole(roleName));
+  }
+  return periodBonus;
+}
+
 function resolveActiveRoleName(profile) {
   if (typeof document !== "undefined") {
     const wizBackdrop = document.getElementById("wizardBackdrop");
@@ -259,7 +280,11 @@ function lookupDailySadRates(profile, includeBas = INCLUDE_BAS_BY_DEFAULT) {
 function computePayForPayPeriod(slotIdx, dayStatusIds) {
   const profile = getPayProfile();
   const rates = lookupDailySadRates(profile);
+  const startPpIdx = parseInt(document.getElementById("ppSelect")?.value, 10) || 0;
+  const payPeriodStart = payPeriods[startPpIdx + slotIdx]?.start;
   const cacheKey = JSON.stringify({
+    slotIdx,
+    payPeriodStart: payPeriodStart ? toIsoDate(payPeriodStart) : "",
     grade: profile.grade,
     yosKey: profile.yosKey,
     zipCode: normalizeZip5(profile.zipCode),
@@ -267,6 +292,8 @@ function computePayForPayPeriod(slotIdx, dayStatusIds) {
     bahEntitled: normalizeBooleanFlag(profile.bahEntitled, true),
     basEntitled: normalizeBooleanFlag(profile.basEntitled, true),
     roleName: rates.roleName,
+    transferRoleBase,
+    transferEvents,
     dayStatusIds
   });
   if (PAY_PERIOD_COMPUTATION_CACHE.has(cacheKey)) {
@@ -280,16 +307,17 @@ function computePayForPayPeriod(slotIdx, dayStatusIds) {
     const statusId = dayStatusIds[d];
     const meta = getStatusMeta(statusId);
     if (meta && meta.paidSad) paidSadDays++;
-    if (statusId === "shift") onShiftDays++;
+    if (statusId === "shift" || statusId === "transfer") onShiftDays++;
   }
 
+  const ppIncentiveBonus = getPayPeriodRoleIncentive(slotIdx, dayStatusIds, rates.roleName);
   const basePayTotal = truncateCents(paidSadDays * rates.dailyBasePay);
   const bahTotal = truncateCents(paidSadDays * rates.dailyBahRate);
   const incentiveQualified = onShiftDays >= 1;
-  const incentiveTotal = incentiveQualified ? truncateCents(rates.ppIncentiveBonus) : 0;
+  const incentiveTotal = incentiveQualified ? truncateCents(ppIncentiveBonus) : 0;
   const totalPay = truncateCents(basePayTotal + bahTotal + incentiveTotal);
 
-  const incentivePart = rates.ppIncentiveBonus > 0
+  const incentivePart = ppIncentiveBonus > 0
     ? ` + ${PAY_LABELS.incentive} ${formatUsd(incentiveTotal)}`
     : "";
 
@@ -298,6 +326,7 @@ function computePayForPayPeriod(slotIdx, dayStatusIds) {
     onShiftDays,
     incentiveQualified,
     ...rates,
+    ppIncentiveBonus,
     basePayTotal,
     bahTotal,
     incentiveTotal,

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -358,13 +358,13 @@ body {
 .phone-tools[open] > summary { border-color: var(--primary); color: var(--primary); }
 
 .phone-tools-menu {
-  position: absolute;
+  position: fixed;
   z-index: 30;
-  top: calc(100% + 6px);
-  right: 0;
+  top: calc(env(safe-area-inset-top, 0px) + 56px);
+  right: max(12px, env(safe-area-inset-right, 0px));
   display: grid;
   gap: 5px;
-  width: min(280px, calc(100vw - 32px));
+  width: min(280px, calc(100vw - 24px));
   max-height: min(70dvh, 520px);
   overflow-y: auto;
   padding: 8px;
@@ -373,6 +373,8 @@ body {
   border-radius: 8px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
 }
+
+.range-field[hidden] { display: none; }
 
 .phone-tools-group-title {
   padding: 5px 4px 2px;
@@ -2608,6 +2610,7 @@ body {
           <div class="sop-step-title">Status key</div>
           <ul class="sop-list">
             <li><strong>SHFT:</strong> Present / On Shift. <strong>RDO:</strong> Regular Day Off. <strong>LV:</strong> State Active Duty (SAD) Leave.</li>
+            <li><strong>XFER:</strong> Transfer Day. It counts as paid On Shift time and accrues leave; record the destination assignment role in Tools.</li>
             <li><strong>TDY:</strong> Drill / TDY. <strong>TRV:</strong> In-Transit travel. <strong>SP:</strong> Special Pass. <strong>INCP:</strong> INCAP Pay.</li>
             <li><strong>RFRD, TERM, and OFF</strong> are managed by the REFRAD planner; use <strong>Plan REFRAD</strong> to change that plan.</li>
           </ul>
@@ -2627,6 +2630,7 @@ body {
           <ul class="sop-list">
             <li>For one day, select the date and choose <strong>SAD Leave</strong> in the status picker.</li>
             <li>For several days, open <strong>Tools</strong> and choose <strong>Plan Leave</strong> or <strong>Plan TDY / Travel</strong>. Select the start and end dates; both dates are included. The planner adds pay periods when needed.</li>
+            <li>For a transfer, open <strong>Tools</strong> → <strong>Plan Transfer</strong>, choose the transfer date and destination role, then apply. The date counts as paid On Shift time and accrues leave. Incentive Pay uses the highest assignment role held during a pay period, so a higher-role incentive remains for a transition pay period.</li>
             <li>For a multi-day TDY plan, answer whether your assigned facility is more than 120 miles from your home station. If it is, the first and last dates are In-Transit with TDY in between; the range must be at least 3 days. If not, every date is TDY. Choosing In-Transit for one date opens a confirmation; choosing No leaves that date unchanged.</li>
           </ul>
         </div>
@@ -2711,6 +2715,7 @@ body {
         <summary>Tools</summary>
         <div class="more-tools-menu">
           <button type="button" class="more-tools-button" onclick="openRangeBuilderFromMenu()">📅 Plan a date range</button>
+          <button type="button" class="more-tools-button" onclick="openTransferPlannerFromMenu()">Plan Transfer</button>
           <button type="button" class="more-tools-button" onclick="confirmApplyDefaultPatternAll()">↺ Reset day-off pattern</button>
           <button type="button" class="more-tools-button" id="clearRefradPlanButton" onclick="clearRefradOnly()" hidden>Clear REFRAD plan</button>
         </div>
@@ -2721,6 +2726,7 @@ body {
           <div class="phone-tools-group-title">Plan</div>
           <button type="button" class="phone-tools-button" onclick="openPhoneRangePlanner('lv')">Plan Leave</button>
           <button type="button" class="phone-tools-button" onclick="openPhoneRangePlanner('tdy')">Plan TDY / Travel</button>
+          <button type="button" class="phone-tools-button" onclick="openPhoneRangePlanner('transfer')">Plan Transfer</button>
           <button type="button" class="phone-tools-button" onclick="closePhoneToolsMenu();openRefradPlanner()">Plan REFRAD</button>
           <button type="button" class="phone-tools-button" onclick="openPhoneRangePlanner()">Plan a date range</button>
           <div class="phone-tools-group-title">Schedule</div>
@@ -2767,7 +2773,7 @@ body {
   <!-- Date-range planner -->
   <div class="range-builder-card" id="rangeBuilderCard">
     <div class="range-builder-hdr">
-      <div class="range-builder-title">📅 Plan Leave or TDY Dates</div>
+      <div class="range-builder-title">📅 Plan Dates</div>
       <button type="button" class="status-sheet-close" onclick="closeRangeBuilderModal()">✕ Close</button>
     </div>
     <div class="range-builder-grid">
@@ -2776,8 +2782,19 @@ body {
         <select id="rangeStatusSelect" class="range-input" onchange="onRangeStatusChange()">
           <option value="lv">SAD Leave</option>
           <option value="tdy">TDY</option>
+          <option value="transfer">Transfer Day</option>
           <option value="shift">On Shift (Present for Duty)</option>
           <option value="rdo">RDO</option>
+        </select>
+      </div>
+
+      <div class="range-field range-field-full" id="transferRoleField" hidden>
+        <label for="transferRoleSelect">Assignment after transfer</label>
+        <select id="transferRoleSelect" class="range-input">
+          <option value="C2">C2</option>
+          <option value="External Support">External Support</option>
+          <option value="Facility Leadership">Facility Leadership</option>
+          <option value="General Purpose">General Purpose</option>
         </select>
       </div>
 
@@ -2918,6 +2935,8 @@ let colorThemePreference = 'system';
 let activePayPeriodCount = 1;
 let previousStartPpIdx = 0;
 let mobileVisiblePayPeriodSlot = 0;
+let transferRoleBase = '';
+let transferEvents = [];
 
 function applyColorTheme() {
   const systemPrefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -2961,6 +2980,7 @@ let pendingExportAction = null;
    ==================================================================================== */
 const BASE_STATUS_OPTIONS = [
   { id: 'shift',      name: 'Present (On Shift)',            shortName: 'SHFT', leaveQual: true,  rdoQual: true,  paidSad: true,  color: 'var(--surface)', textCol: 'var(--text-main)', border: 'var(--border)' },
+  { id: 'transfer',   name: 'Transfer Day',                  shortName: 'XFER', leaveQual: true,  rdoQual: true,  paidSad: true,  color: '#f3e5f5', textCol: '#7b1fa2', border: '#e1bee7', isToolOnly: true },
   { id: 'rdo',        name: 'Regular Day Off (RDO)',      shortName: 'RDO',  leaveQual: false, rdoQual: false, paidSad: true,  color: 'var(--status-rdo-bg)', textCol: 'var(--status-rdo-text)', border: 'var(--status-rdo-border)' },
   { id: 'lv',         name: 'SAD Leave',           shortName: 'LV',   leaveQual: true,  rdoQual: true,  paidSad: true,  color: 'var(--status-leave-bg)', textCol: 'var(--status-leave-text)', border: 'var(--status-leave-border)' },
   { id: 'refrad_rpt', name: 'REFRAD Report Date',  shortName: 'RFRD', leaveQual: true,  rdoQual: true,  paidSad: true,  color: 'var(--status-refrad-bg)', textCol: 'var(--status-refrad-text)', border: 'var(--status-refrad-border)', isToolOnly: true },
@@ -2997,7 +3017,11 @@ function cloneRefradScheduleSnapshot(snapshot) {
     startPpIdx: snapshot.startPpIdx,
     previousStartPpIdx: snapshot.previousStartPpIdx,
     activePayPeriodCount: snapshot.activePayPeriodCount,
-    userSelections: snapshot.userSelections.map(row => [...row])
+    userSelections: snapshot.userSelections.map(row => [...row]),
+    transferRoleBase: snapshot.transferRoleBase || '',
+    transferEvents: Array.isArray(snapshot.transferEvents)
+      ? snapshot.transferEvents.map(event => ({ ...event }))
+      : []
   };
 }
 
@@ -3302,6 +3326,8 @@ function saveStateToLocalStorageNow() {
       refradPlanMode,
       refradPlanDate,
       refradScheduleSnapshot: cloneRefradScheduleSnapshot(refradScheduleSnapshot),
+      transferRoleBase,
+      transferEvents: transferEvents.map(event => ({ ...event })),
       userSelections: userSelections.slice(0, activePayPeriodCount),
       oconusBlockFlags
     };
@@ -3375,6 +3401,15 @@ function loadStateFromLocalStorage() {
     if (data.smRole !== undefined) document.getElementById('smRoleInput').value = data.smRole;
     if (data.smFacility !== undefined) document.getElementById('smFacilityInput').value = data.smFacility;
     if (data.smLeader !== undefined) document.getElementById('smLeaderInput').value = data.smLeader;
+    transferRoleBase = normalizeRoleName(data.transferRoleBase);
+    transferEvents = Array.isArray(data.transferEvents)
+      ? data.transferEvents.filter(event =>
+          event &&
+          /^\d{4}-\d{2}-\d{2}$/.test(event.date) &&
+          ROLE_PP_INCENTIVE_BONUS[normalizeRoleName(event.roleName)] !== undefined
+        ).map(event => ({ date: event.date, roleName: normalizeRoleName(event.roleName) }))
+        .sort((a, b) => a.date.localeCompare(b.date))
+      : [];
     if (data.activeRdoPreset) {
       activeRdoPreset = data.activeRdoPreset;
       hasAppliedRdoPreset = true;
@@ -3453,6 +3488,8 @@ function clearSavedLocalStorage() {
   refradPlanMode = '';
   refradPlanDate = '';
   refradScheduleSnapshot = null;
+  transferRoleBase = '';
+  transferEvents = [];
   if (typeof updateRefradClearButton === 'function') updateRefradClearButton();
   document.getElementById('schedSelect').value = 'alt';
   activeRdoPreset = 'fri_sun';
@@ -3664,6 +3701,13 @@ function openRangeBuilderFromMenu() {
   if (menu) menu.open = false;
   closePhoneToolsMenu();
   openRangeBuilderModal(currentViewMode === 'mobile' ? mobileVisiblePayPeriodSlot : 0);
+}
+
+function openTransferPlannerFromMenu() {
+  const menu = document.getElementById('headerMoreTools');
+  if (menu) menu.open = false;
+  closePhoneToolsMenu();
+  openRangeBuilderModal(currentViewMode === 'mobile' ? mobileVisiblePayPeriodSlot : 0, 'transfer');
 }
 
 /* ====================================================================================
@@ -4023,6 +4067,44 @@ function closePhoneToolsMenu() {
   if (menu) menu.open = false;
 }
 
+function positionPhoneToolsMenu() {
+  const details = document.getElementById('phoneTools');
+  const menu = details?.querySelector('.phone-tools-menu');
+  const summary = details?.querySelector('summary');
+  if (!details?.open || !menu || !summary) return;
+
+  const summaryRect = summary.getBoundingClientRect();
+  const menuWidth = menu.getBoundingClientRect().width;
+  const menuHeight = menu.getBoundingClientRect().height;
+  const left = Math.max(12, Math.min(summaryRect.right - menuWidth, window.innerWidth - menuWidth - 12));
+  const top = Math.max(12, Math.min(summaryRect.bottom + 6, window.innerHeight - menuHeight - 12));
+  menu.style.left = `${left}px`;
+  menu.style.right = 'auto';
+  menu.style.top = `${top}px`;
+}
+
+document.getElementById('phoneTools')?.addEventListener('toggle', () => {
+  if (document.getElementById('phoneTools')?.open) requestAnimationFrame(positionPhoneToolsMenu);
+});
+window.addEventListener('resize', positionPhoneToolsMenu);
+
+function syncAssignmentRoleToTransferHistory() {
+  const roleInput = document.getElementById('smRoleInput');
+  const latestRole = transferEvents.length
+    ? transferEvents[transferEvents.length - 1].roleName
+    : transferRoleBase;
+  if (roleInput && latestRole) roleInput.value = latestRole;
+  if (!transferEvents.length) transferRoleBase = '';
+}
+
+function removeTransferEventForDate(dateIso) {
+  const existingCount = transferEvents.length;
+  transferEvents = transferEvents.filter(event => event.date !== dateIso);
+  if (transferEvents.length === existingCount) return false;
+  syncAssignmentRoleToTransferHistory();
+  return true;
+}
+
 function openPhoneRangePlanner(statusId) {
   closePhoneToolsMenu();
   openRangeBuilderModal(mobileVisiblePayPeriodSlot, statusId);
@@ -4320,6 +4402,10 @@ function openRangeBuilderModal(slotOverride, statusOverride) {
   const endInput = document.getElementById('rangeEndDate');
   const statusSelect = document.getElementById('rangeStatusSelect');
   if (statusSelect && statusOverride) statusSelect.value = statusOverride;
+  const transferRoleSelect = document.getElementById('transferRoleSelect');
+  if (transferRoleSelect) {
+    transferRoleSelect.value = document.getElementById('smRoleInput')?.value || 'C2';
+  }
   if (startInput) startInput.value = defaultIso;
   if (endInput) endInput.value = defaultIso;
 
@@ -4346,9 +4432,11 @@ function onTdyQualRadioChange() {
 function onRangeStatusChange() {
   const mode = document.getElementById('rangeStatusSelect').value;
   const qualBox = document.getElementById('tdyQualBox');
+  const transferRoleField = document.getElementById('transferRoleField');
   if (qualBox) {
     qualBox.classList.toggle('visible', mode === 'tdy');
   }
+  if (transferRoleField) transferRoleField.hidden = mode !== 'transfer';
   updateRangeHelperNote();
 }
 
@@ -4369,6 +4457,8 @@ function updateRangeHelperNote() {
     noteEl.innerHTML = 'Applies <strong>SAD Leave</strong> to every date from start through end, including both dates, and calculates the 30-day / 60-day OCONUS deadline.';
   } else if (mode === 'rdo') {
     noteEl.innerHTML = 'Applies <strong>Regular Day Off (RDO)</strong> to every date from start through end, including both dates.';
+  } else if (mode === 'transfer') {
+    noteEl.innerHTML = 'Marks one <strong>Transfer Day</strong> as paid, leave-accruing On Shift time and records the selected assignment role for incentive estimates.';
   } else {
     noteEl.innerHTML = 'Sets every date from start through end to <strong>Present (On Shift)</strong>, replacing the current selections.';
   }
@@ -4403,6 +4493,11 @@ function applyPlannedDateRange() {
   const useTdyInTransit = (mode === 'tdy' && Boolean(yesRadio && yesRadio.checked));
   const totalDays = Math.floor((endDate.getTime() - startDate.getTime()) / 86400000) + 1;
 
+  if (mode === 'transfer' && totalDays !== 1) {
+    alert('A transfer is recorded on one date. Choose the same start and end date.');
+    return;
+  }
+
   if (useTdyInTransit && totalDays < 3) {
     alert('For a trip more than 120 miles away, this range must be at least 3 days so a TDY day falls between the two In-Transit dates. For a 1–2 day trip, close this planner and set each date individually; the planner will ask you to confirm before applying In-Transit.');
     return;
@@ -4410,7 +4505,13 @@ function applyPlannedDateRange() {
 
   const endOffsetDays = Math.floor((endDate.getTime() - firstPpStart.getTime()) / 86400000);
   const requiredSlots = Math.floor(endOffsetDays / 14) + 1;
-  clearLastDayStatusUndo();
+  const transferRole = document.getElementById('transferRoleSelect')?.value || '';
+  if (mode === 'transfer' && !ROLE_PP_INCENTIVE_BONUS[transferRole]) {
+    alert('Choose one of the four assignment roles for the transfer.');
+    return;
+  }
+  if (mode === 'transfer') captureLastDayStatusUndo();
+  else clearLastDayStatusUndo();
 
   if (requiredSlots > activePayPeriodCount) {
     const prevCount = activePayPeriodCount;
@@ -4423,6 +4524,7 @@ function applyPlannedDateRange() {
   }
 
   let firstModifiedSlot = -1;
+  let removedTransferEvent = false;
   for (let i = 0; i < totalDays; i++) {
     const curDate = addDays(startDate, i);
     const offsetFromFirst = Math.floor((curDate.getTime() - firstPpStart.getTime()) / 86400000);
@@ -4438,7 +4540,26 @@ function applyPlannedDateRange() {
         statusToApply = 'drl';
       }
     }
+    if (mode !== 'transfer') {
+      removedTransferEvent = removeTransferEventForDate(toIsoDate(curDate)) || removedTransferEvent;
+    }
     userSelections[s][d] = statusToApply;
+  }
+
+  if (mode === 'transfer') {
+    const dateIso = toIsoDate(startDate);
+    const currentRole = document.getElementById('smRoleInput')?.value || getPayProfile().roleName;
+    if (!transferRoleBase) transferRoleBase = normalizeRoleName(currentRole);
+    const existingEventIdx = transferEvents.findIndex(event => event.date === dateIso);
+    const transferEvent = { date: dateIso, roleName: transferRole };
+    if (existingEventIdx >= 0) transferEvents[existingEventIdx] = transferEvent;
+    else transferEvents.push(transferEvent);
+    transferEvents.sort((a, b) => a.date.localeCompare(b.date));
+    const roleInput = document.getElementById('smRoleInput');
+    if (roleInput) roleInput.value = transferRole;
+    onPaySettingsChange();
+  } else if (removedTransferEvent) {
+    onPaySettingsChange();
   }
 
   closeRangeBuilderModal();
@@ -5016,7 +5137,10 @@ function captureLastDayStatusUndo() {
     userSelections: userSelections.map(row => [...row]),
     refradPlanMode,
     refradPlanDate,
-    refradScheduleSnapshot: cloneRefradScheduleSnapshot(refradScheduleSnapshot)
+    refradScheduleSnapshot: cloneRefradScheduleSnapshot(refradScheduleSnapshot),
+    transferRoleBase,
+    transferEvents: transferEvents.map(event => ({ ...event })),
+    assignmentRole: document.getElementById('smRoleInput')?.value || ''
   };
   const button = document.getElementById('undoScheduleButton');
   if (button) {
@@ -5034,8 +5158,13 @@ function undoLastDayStatusChange() {
   refradPlanMode = lastDayStatusUndoSnapshot.refradPlanMode;
   refradPlanDate = lastDayStatusUndoSnapshot.refradPlanDate;
   refradScheduleSnapshot = cloneRefradScheduleSnapshot(lastDayStatusUndoSnapshot.refradScheduleSnapshot);
+  transferRoleBase = lastDayStatusUndoSnapshot.transferRoleBase;
+  transferEvents = lastDayStatusUndoSnapshot.transferEvents.map(event => ({ ...event }));
+  const roleInput = document.getElementById('smRoleInput');
+  if (roleInput) roleInput.value = lastDayStatusUndoSnapshot.assignmentRole;
   updateRefradClearButton();
   clearLastDayStatusUndo();
+  onPaySettingsChange();
   buildAllPayPeriodGrids();
   saveStateToLocalStorage();
 }
@@ -5414,6 +5543,9 @@ function clearRefradOnly() {
     userSelections = savedSchedule.userSelections.map(row =>
       row.map(statusId => statusId === 'refrad_rpt' ? 'shift' : statusId)
     );
+    transferRoleBase = savedSchedule.transferRoleBase || '';
+    transferEvents = savedSchedule.transferEvents.map(event => ({ ...event }));
+    syncAssignmentRoleToTransferHistory();
   } else {
     for (let s = 0; s < userSelections.length; s++) {
       for (let d = 0; d < 14; d++) {
@@ -5602,7 +5734,9 @@ function applyRefradPlan() {
       activePayPeriodCount,
       userSelections: userSelections.slice(0, activePayPeriodCount).map(row =>
         row.map(statusId => statusId === 'refrad_rpt' ? 'shift' : statusId)
-      )
+      ),
+      transferRoleBase,
+      transferEvents: transferEvents.map(event => ({ ...event }))
     };
   }
   userSelections.forEach(row => {
@@ -5880,7 +6014,7 @@ function renderPayReadoutForSlot(s, dayStatusIds, runningTotal) {
         <div class="pay-estimate-assumptions-body">
           <div>${profileAssumption}</div>
           <div>Base pay and applicable BAH + BAS convert monthly rates to daily rates using ÷ 30, round down to cents, then multiply by ${info.paidSadDays} eligible SAD days. The displayed daily rate excludes Incentive Pay.</div>
-          <div>Incentive Pay is added once for the pay period when at least one On Shift day qualifies; it is not part of the daily rate.</div>
+          <div>Incentive Pay is added once for the pay period when at least one On Shift or Transfer Day qualifies; it is not part of the daily rate.</div>
           <div>Rate data: ${rateAssumptions}</div>
           <div>Estimate is before tax; daily rates are rounded down to cents.</div>
         </div>
@@ -6238,7 +6372,7 @@ function calculateAllPayPeriodsNow() {
       if (stObj.rdoQual) rdoQualDays++;
       if (stObj.leaveQual) leaveQualDays++;
 
-      if (stId === 'shift' || stId === 'refrad_rpt') shiftCount++;
+      if (stId === 'shift' || stId === 'transfer' || stId === 'refrad_rpt') shiftCount++;
       else if (stId === 'rdo') rdoSelected++;
       else if (stId === 'lv') sadLeaveCount++;
       else if (stId === 'term_lv') termLeaveCount++;
@@ -6259,7 +6393,7 @@ function calculateAllPayPeriodsNow() {
           const holSt = effectiveSelections[s][holIdx];
           if (holSt === 'term_lv' || holSt === 'off_mission') return;
           const isSp = isSpecialPassStatus(holSt);
-          if (!isSp && holSt !== 'shift' && holSt !== 'refrad_rpt' && holSt !== 'drl') {
+          if (!isSp && holSt !== 'shift' && holSt !== 'transfer' && holSt !== 'refrad_rpt' && holSt !== 'drl') {
             flagCard(s, holIdx);
             perPpErrors[s].push(
               `<span class="policy-cite">NYS SAD Special Holiday Pass Memo (02 OCT 2026), Para 2 &amp; 5:</span> ` +
@@ -6278,7 +6412,7 @@ function calculateAllPayPeriodsNow() {
             flagCard(s, d1Idx);
             flagCard(s, d2Idx);
             perPpErrors[s].push(`<span class="policy-cite">Weekend Holiday Rule (02 OCT 2026 Memo):</span> ${h.baseName} cannot be RDO + RDO.`);
-          } else if (((s1 === 'shift' || s1 === 'refrad_rpt') && s2 === 'rdo') || (s1 === 'rdo' && (s2 === 'shift' || s2 === 'refrad_rpt'))) {
+          } else if (((s1 === 'shift' || s1 === 'transfer' || s1 === 'refrad_rpt') && s2 === 'rdo') || (s1 === 'rdo' && (s2 === 'shift' || s2 === 'transfer' || s2 === 'refrad_rpt'))) {
             flagCard(s, d1Idx);
             flagCard(s, d2Idx);
             perPpErrors[s].push(`<span class="policy-cite">Weekend Holiday Rule (02 OCT 2026 Memo):</span> ${h.baseName} cannot pair On Shift with RDO. Replace RDO with Special Pass.`);
@@ -6453,7 +6587,7 @@ function calculateAllPayPeriodsNow() {
         st,
         isPassOrSp: st === 'rdo' || isSpecialPassStatus(st),
         isSp: isSpecialPassStatus(st),
-        isDuty: st === 'shift' || st === 'refrad_rpt',
+        isDuty: st === 'shift' || st === 'transfer' || st === 'refrad_rpt',
         dateObj: addDays(pp.start, d),
         label: getDayLabel(pp, d)
       });
@@ -6938,6 +7072,27 @@ function getPpIncentiveBonusForRole(roleName) {
   return Math.max(0, Number(ROLE_PP_INCENTIVE_BONUS[key]) || 0);
 }
 
+function getPayPeriodRoleIncentive(slotIdx, dayStatusIds, fallbackRoleName) {
+  const startPpIdx = parseInt(document.getElementById("ppSelect")?.value, 10) || 0;
+  const pp = payPeriods[startPpIdx + slotIdx];
+  if (!pp) return 0;
+
+  const events = [...transferEvents].sort((a, b) => a.date.localeCompare(b.date));
+  let eventIdx = 0;
+  let roleName = normalizeRoleName(transferRoleBase) || normalizeRoleName(fallbackRoleName);
+  let periodBonus = 0;
+
+  for (let d = 0; d < dayStatusIds.length; d++) {
+    const dayIso = toIsoDate(addDays(pp.start, d));
+    while (eventIdx < events.length && events[eventIdx].date <= dayIso) {
+      roleName = events[eventIdx].roleName;
+      eventIdx++;
+    }
+    periodBonus = Math.max(periodBonus, getPpIncentiveBonusForRole(roleName));
+  }
+  return periodBonus;
+}
+
 function resolveActiveRoleName(profile) {
   if (typeof document !== "undefined") {
     const wizBackdrop = document.getElementById("wizardBackdrop");
@@ -7035,7 +7190,11 @@ function lookupDailySadRates(profile, includeBas = INCLUDE_BAS_BY_DEFAULT) {
 function computePayForPayPeriod(slotIdx, dayStatusIds) {
   const profile = getPayProfile();
   const rates = lookupDailySadRates(profile);
+  const startPpIdx = parseInt(document.getElementById("ppSelect")?.value, 10) || 0;
+  const payPeriodStart = payPeriods[startPpIdx + slotIdx]?.start;
   const cacheKey = JSON.stringify({
+    slotIdx,
+    payPeriodStart: payPeriodStart ? toIsoDate(payPeriodStart) : "",
     grade: profile.grade,
     yosKey: profile.yosKey,
     zipCode: normalizeZip5(profile.zipCode),
@@ -7043,6 +7202,8 @@ function computePayForPayPeriod(slotIdx, dayStatusIds) {
     bahEntitled: normalizeBooleanFlag(profile.bahEntitled, true),
     basEntitled: normalizeBooleanFlag(profile.basEntitled, true),
     roleName: rates.roleName,
+    transferRoleBase,
+    transferEvents,
     dayStatusIds
   });
   if (PAY_PERIOD_COMPUTATION_CACHE.has(cacheKey)) {
@@ -7056,16 +7217,17 @@ function computePayForPayPeriod(slotIdx, dayStatusIds) {
     const statusId = dayStatusIds[d];
     const meta = getStatusMeta(statusId);
     if (meta && meta.paidSad) paidSadDays++;
-    if (statusId === "shift") onShiftDays++;
+    if (statusId === "shift" || statusId === "transfer") onShiftDays++;
   }
 
+  const ppIncentiveBonus = getPayPeriodRoleIncentive(slotIdx, dayStatusIds, rates.roleName);
   const basePayTotal = truncateCents(paidSadDays * rates.dailyBasePay);
   const bahTotal = truncateCents(paidSadDays * rates.dailyBahRate);
   const incentiveQualified = onShiftDays >= 1;
-  const incentiveTotal = incentiveQualified ? truncateCents(rates.ppIncentiveBonus) : 0;
+  const incentiveTotal = incentiveQualified ? truncateCents(ppIncentiveBonus) : 0;
   const totalPay = truncateCents(basePayTotal + bahTotal + incentiveTotal);
 
-  const incentivePart = rates.ppIncentiveBonus > 0
+  const incentivePart = ppIncentiveBonus > 0
     ? ` + ${PAY_LABELS.incentive} ${formatUsd(incentiveTotal)}`
     : "";
 
@@ -7074,6 +7236,7 @@ function computePayForPayPeriod(slotIdx, dayStatusIds) {
     onShiftDays,
     incentiveQualified,
     ...rates,
+    ppIncentiveBonus,
     basePayTotal,
     bahTotal,
     incentiveTotal,
