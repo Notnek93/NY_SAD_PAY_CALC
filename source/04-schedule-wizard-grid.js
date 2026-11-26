@@ -906,9 +906,9 @@ function updateRangeHelperNote() {
     const yesRadio = document.getElementById('tdyQualRadio_yes');
     const qualifiesInTransit = Boolean(yesRadio && yesRadio.checked);
     if (qualifiesInTransit) {
-      noteEl.innerHTML = 'More than 120 miles: Sets the first and last dates to <strong>In-Transit (Travel)</strong> and fills the dates in between as <strong>TDY</strong>. Automatically adds pay periods if needed.';
+      noteEl.innerHTML = 'For AT / Drill / TDY more than 120 miles away: Sets the first and last dates to <strong>In-Transit (Travel)</strong> and fills the dates in between as <strong>AT / Drill / TDY</strong>. Automatically adds pay periods if needed.';
     } else {
-      noteEl.innerHTML = '120 miles or less: Sets every date from start through end to <strong>TDY</strong>, with no In-Transit dates.';
+      noteEl.innerHTML = 'For AT / Drill / TDY 120 miles or less: Sets every date from start through end to <strong>AT / Drill / TDY</strong>, with no In-Transit dates.';
     }
   } else if (mode === 'lv') {
     noteEl.innerHTML = 'Applies <strong>SAD Leave</strong> to every date from start through end, including both dates, and calculates the 30-day / 60-day OCONUS deadline.';

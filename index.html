@@ -2629,9 +2629,9 @@ body {
           <div class="sop-step-title">Plan a day or a date range</div>
           <ul class="sop-list">
             <li>For one day, select the date and choose <strong>SAD Leave</strong> in the status picker.</li>
-            <li>For several days, open <strong>Tools</strong> and choose <strong>Plan Leave</strong> or <strong>Plan TDY / Travel</strong>. Select the start and end dates; both dates are included. The planner adds pay periods when needed.</li>
+            <li>For several days, open <strong>Tools</strong> and choose <strong>Plan a date range</strong>. Select SAD Leave or AT / Drill / TDY, then enter the start and end dates; both dates are included. The planner adds pay periods when needed.</li>
             <li>For a transfer, open <strong>Tools</strong> → <strong>Plan Transfer</strong>, choose the transfer date and destination role, then apply. The date counts as paid On Shift time and accrues leave. Incentive Pay uses the highest assignment role held during a pay period, so a higher-role incentive remains for a transition pay period.</li>
-            <li>For a multi-day TDY plan, answer whether your assigned facility is more than 120 miles from your home station. If it is, the first and last dates are In-Transit with TDY in between; the range must be at least 3 days. If not, every date is TDY. Choosing In-Transit for one date opens a confirmation; choosing No leaves that date unchanged.</li>
+            <li>For a multi-day AT / Drill / TDY plan, answer whether your assigned facility is more than 120 miles from your home station. If it is, the first and last dates are In-Transit with AT / Drill / TDY in between; the range must be at least 3 days. In-Transit must connect On Shift with AT / Drill / TDY. If the distance is 120 miles or less, every date is AT / Drill / TDY. Choosing In-Transit for one date opens a confirmation; choosing No leaves that date unchanged.</li>
           </ul>
         </div>
         <div class="sop-step-card">
@@ -2724,11 +2724,9 @@ body {
         <summary>Tools</summary>
         <div class="phone-tools-menu">
           <div class="phone-tools-group-title">Plan</div>
-          <button type="button" class="phone-tools-button" onclick="openPhoneRangePlanner('lv')">Plan Leave</button>
-          <button type="button" class="phone-tools-button" onclick="openPhoneRangePlanner('tdy')">Plan TDY / Travel</button>
+          <button type="button" class="phone-tools-button" onclick="openPhoneRangePlanner()">Plan a date range</button>
           <button type="button" class="phone-tools-button" onclick="openPhoneRangePlanner('transfer')">Plan Transfer</button>
           <button type="button" class="phone-tools-button" onclick="closePhoneToolsMenu();openRefradPlanner()">Plan REFRAD</button>
-          <button type="button" class="phone-tools-button" onclick="openPhoneRangePlanner()">Plan a date range</button>
           <div class="phone-tools-group-title">Schedule</div>
           <button type="button" class="phone-tools-button" onclick="addPayPeriodFromPhoneTools()">Add pay period</button>
           <button type="button" class="phone-tools-button" onclick="confirmApplyDefaultPatternAll()">Reset day-off pattern</button>
@@ -2781,7 +2779,7 @@ body {
         <label for="rangeStatusSelect">What are you planning?</label>
         <select id="rangeStatusSelect" class="range-input" onchange="onRangeStatusChange()">
           <option value="lv">SAD Leave</option>
-          <option value="tdy">TDY</option>
+          <option value="tdy">AT / Drill / TDY</option>
           <option value="transfer">Transfer Day</option>
           <option value="shift">On Shift (Present for Duty)</option>
           <option value="rdo">RDO</option>
@@ -4449,9 +4447,9 @@ function updateRangeHelperNote() {
     const yesRadio = document.getElementById('tdyQualRadio_yes');
     const qualifiesInTransit = Boolean(yesRadio && yesRadio.checked);
     if (qualifiesInTransit) {
-      noteEl.innerHTML = 'More than 120 miles: Sets the first and last dates to <strong>In-Transit (Travel)</strong> and fills the dates in between as <strong>TDY</strong>. Automatically adds pay periods if needed.';
+      noteEl.innerHTML = 'For AT / Drill / TDY more than 120 miles away: Sets the first and last dates to <strong>In-Transit (Travel)</strong> and fills the dates in between as <strong>AT / Drill / TDY</strong>. Automatically adds pay periods if needed.';
     } else {
-      noteEl.innerHTML = '120 miles or less: Sets every date from start through end to <strong>TDY</strong>, with no In-Transit dates.';
+      noteEl.innerHTML = 'For AT / Drill / TDY 120 miles or less: Sets every date from start through end to <strong>AT / Drill / TDY</strong>, with no In-Transit dates.';
     }
   } else if (mode === 'lv') {
     noteEl.innerHTML = 'Applies <strong>SAD Leave</strong> to every date from start through end, including both dates, and calculates the 30-day / 60-day OCONUS deadline.';
@@ -5799,6 +5797,11 @@ function getLeaveCapResumeThreshold(maxCap = MAX_LEAVE_DAYS, bufferDays = LEAVE_
   return Math.round((maxCap - safeBuffer) * 100) / 100;
 }
 
+function isValidInTransitBridge(previousStatus, nextStatus) {
+  return (previousStatus === 'shift' && nextStatus === 'drl') ||
+    (previousStatus === 'drl' && nextStatus === 'shift');
+}
+
 /* ====================================================================================
    ONE-TAP ERROR JUMP BANNER (STICKY TOP BAR)
    ==================================================================================== */
@@ -6682,7 +6685,7 @@ function calculateAllPayPeriodsNow() {
       }
 
       if (prev && next) {
-        const bridgesShiftAndTdy = (prev.isDuty && next.st === 'drl') || (prev.st === 'drl' && next.isDuty);
+        const bridgesShiftAndTdy = isValidInTransitBridge(prev.st, next.st);
         if (!bridgesShiftAndTdy && !hasHardError) {
           flagCard(curr.s, curr.d);
           if (prev.isDuty && next.isDuty) {

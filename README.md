@@ -62,7 +62,7 @@ Use **Undo last date change** when available to reverse an unintended single-dat
 
 #### C. Plan leave
 
-1. For a single date, select the date and choose **SAD Leave**. For a range, open **Tools** and choose **Plan Leave**.
+1. For a single date, select the date and choose **SAD Leave**. For a range, open **Tools** → **Plan a date range**, then choose **SAD Leave**.
 2. Enter the first and last dates. Both dates are included. Review the affected pay periods and the leave deadlines shown by the planner.
 3. Download the SAD Leave Request Form if needed, complete it, and submit it through the unit's established approval process. A date shown as leave in the planner is not evidence that leave was requested or approved.
 
@@ -70,8 +70,8 @@ Deadlines and leave calculations are planning estimates. Confirm current submiss
 
 #### D. Plan TDY and travel
 
-1. Open **Tools** and choose **Plan TDY / Travel**. Enter the full date range and review the preview before applying it.
-2. The current planner asks whether the assigned facility is **more than 120 miles** from the home station. For a distance greater than 120 miles, the range must be at least three days: the first and last dates become TRV, with TDY between them. At 120 miles or less, all dates in the range become TDY.
+1. Open **Tools** and choose **Plan a date range**, then select **AT / Drill / TDY**. Enter the full date range and review the preview before applying it.
+2. The planner asks whether the assigned facility is **more than 120 miles** from the home station. For a distance greater than 120 miles, the range must be at least three days: the first and last dates become TRV, with AT / Drill / TDY between them. Each In-Transit day must connect On Shift with AT / Drill / TDY. At 120 miles or less, all dates in the range become AT / Drill / TDY.
 3. If selecting TRV for an individual date, answer the in-app confirmation prompt. Choose **No** to leave that date unchanged.
 
 The prompt records the user's answer; it does not verify distance, orders, travel authorization, or eligibility. Use current orders and unit guidance for those determinations.
@@ -142,3 +142,5 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\build.ps1 -SrcDir .\so
 ```
 
 The build refreshes the generated root `index.html`, `pay-data.js`, and `sw.js`, plus the matching files under `distribution\`. `build.bat` is a convenience wrapper that also cleans the distribution folder before rebuilding.
+
+Run the automated regression tests with `node --test tests/*.test.js`.

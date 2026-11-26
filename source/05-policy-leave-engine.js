@@ -19,6 +19,11 @@ function getLeaveCapResumeThreshold(maxCap = MAX_LEAVE_DAYS, bufferDays = LEAVE_
   return Math.round((maxCap - safeBuffer) * 100) / 100;
 }
 
+function isValidInTransitBridge(previousStatus, nextStatus) {
+  return (previousStatus === 'shift' && nextStatus === 'drl') ||
+    (previousStatus === 'drl' && nextStatus === 'shift');
+}
+
 /* ====================================================================================
    ONE-TAP ERROR JUMP BANNER (STICKY TOP BAR)
    ==================================================================================== */
@@ -902,7 +907,7 @@ function calculateAllPayPeriodsNow() {
       }
 
       if (prev && next) {
-        const bridgesShiftAndTdy = (prev.isDuty && next.st === 'drl') || (prev.st === 'drl' && next.isDuty);
+        const bridgesShiftAndTdy = isValidInTransitBridge(prev.st, next.st);
         if (!bridgesShiftAndTdy && !hasHardError) {
           flagCard(curr.s, curr.d);
           if (prev.isDuty && next.isDuty) {
