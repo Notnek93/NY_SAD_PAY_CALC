@@ -235,7 +235,7 @@ function renderPayReadoutForSlot(s, dayStatusIds, runningTotal) {
         <div class="pay-estimate-assumptions-body">
           <div>${profileAssumption}</div>
           <div>Base pay and applicable BAH + BAS convert monthly rates to daily rates using ÷ 30, round down to cents, then multiply by ${info.paidSadDays} eligible SAD days. The displayed daily rate excludes Incentive Pay.</div>
-          <div>Incentive Pay is added once for the pay period when at least one On Shift day qualifies; it is not part of the daily rate.</div>
+          <div>Incentive Pay is added once for the pay period when at least one On Shift or Transfer Day qualifies; it is not part of the daily rate.</div>
           <div>Rate data: ${rateAssumptions}</div>
           <div>Estimate is before tax; daily rates are rounded down to cents.</div>
         </div>
@@ -593,7 +593,7 @@ function calculateAllPayPeriodsNow() {
       if (stObj.rdoQual) rdoQualDays++;
       if (stObj.leaveQual) leaveQualDays++;
 
-      if (stId === 'shift' || stId === 'refrad_rpt') shiftCount++;
+      if (stId === 'shift' || stId === 'transfer' || stId === 'refrad_rpt') shiftCount++;
       else if (stId === 'rdo') rdoSelected++;
       else if (stId === 'lv') sadLeaveCount++;
       else if (stId === 'term_lv') termLeaveCount++;
@@ -614,7 +614,7 @@ function calculateAllPayPeriodsNow() {
           const holSt = effectiveSelections[s][holIdx];
           if (holSt === 'term_lv' || holSt === 'off_mission') return;
           const isSp = isSpecialPassStatus(holSt);
-          if (!isSp && holSt !== 'shift' && holSt !== 'refrad_rpt' && holSt !== 'drl') {
+          if (!isSp && holSt !== 'shift' && holSt !== 'transfer' && holSt !== 'refrad_rpt' && holSt !== 'drl') {
             flagCard(s, holIdx);
             perPpErrors[s].push(
               `<span class="policy-cite">NYS SAD Special Holiday Pass Memo (02 OCT 2026), Para 2 &amp; 5:</span> ` +
@@ -633,7 +633,7 @@ function calculateAllPayPeriodsNow() {
             flagCard(s, d1Idx);
             flagCard(s, d2Idx);
             perPpErrors[s].push(`<span class="policy-cite">Weekend Holiday Rule (02 OCT 2026 Memo):</span> ${h.baseName} cannot be RDO + RDO.`);
-          } else if (((s1 === 'shift' || s1 === 'refrad_rpt') && s2 === 'rdo') || (s1 === 'rdo' && (s2 === 'shift' || s2 === 'refrad_rpt'))) {
+          } else if (((s1 === 'shift' || s1 === 'transfer' || s1 === 'refrad_rpt') && s2 === 'rdo') || (s1 === 'rdo' && (s2 === 'shift' || s2 === 'transfer' || s2 === 'refrad_rpt'))) {
             flagCard(s, d1Idx);
             flagCard(s, d2Idx);
             perPpErrors[s].push(`<span class="policy-cite">Weekend Holiday Rule (02 OCT 2026 Memo):</span> ${h.baseName} cannot pair On Shift with RDO. Replace RDO with Special Pass.`);
@@ -808,7 +808,7 @@ function calculateAllPayPeriodsNow() {
         st,
         isPassOrSp: st === 'rdo' || isSpecialPassStatus(st),
         isSp: isSpecialPassStatus(st),
-        isDuty: st === 'shift' || st === 'refrad_rpt',
+        isDuty: st === 'shift' || st === 'transfer' || st === 'refrad_rpt',
         dateObj: addDays(pp.start, d),
         label: getDayLabel(pp, d)
       });
