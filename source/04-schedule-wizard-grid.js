@@ -173,12 +173,15 @@ function openTransferPlannerFromMenu() {
 const WIZARD_STEP_NAMES = [
   'Welcome',
   'Choose View',
+  'Install as App',
   'New York Mission',
   'Schedule & RDOs',
   'SAD Pay & Leave',
   'Pay Period',
   'How-To Offer'
 ];
+// Panel ids in the order users see them; panel 9 is the install step.
+const WIZARD_STEP_ORDER = [1, 2, 9, 3, 5, 6, 7, 8];
 let wizardCurrentStep = 1;
 let wizardSelectedView = currentViewMode;
 let wizardSelectedTheme = colorThemePreference;
@@ -566,7 +569,7 @@ function clearRefradFromPhoneTools() {
 }
 
 function renderWizardStep() {
-  for (let i = 1; i <= 8; i++) {
+  for (let i = 1; i <= 9; i++) {
     const panel = document.getElementById(`wizardStep_${i}`);
     if (panel) panel.classList.toggle('active', i === wizardCurrentStep);
   }
@@ -576,14 +579,15 @@ function renderWizardStep() {
   const backBtn = document.getElementById('wizBackBtn');
   const nextBtn = document.getElementById('wizNextBtn');
 
-  const displayStep = wizardCurrentStep <= 3 ? wizardCurrentStep : wizardCurrentStep - 1;
-  const totalSteps = 7;
+  const displayStep = WIZARD_STEP_ORDER.indexOf(wizardCurrentStep) + 1;
+  const totalSteps = WIZARD_STEP_ORDER.length;
   const stepName = WIZARD_STEP_NAMES[displayStep - 1];
 
   if (labelEl) labelEl.textContent = `Step ${displayStep} of ${totalSteps}`;
   if (nameEl) nameEl.textContent = stepName || '';
   if (fillEl) fillEl.style.width = `${(displayStep / totalSteps) * 100}%`;
   if (backBtn) backBtn.disabled = wizardCurrentStep <= 1;
+  if (wizardCurrentStep === 9) updateWizardInstallStep();
   if (nextBtn) {
     nextBtn.style.display = wizardCurrentStep === 8
       ? 'none'
@@ -594,16 +598,6 @@ function renderWizardStep() {
 }
 
 function wizardStepNav(delta) {
-  if (delta > 0 && wizardCurrentStep === 3) {
-    wizardCurrentStep = 5;
-    renderWizardStep();
-    return;
-  }
-  if (delta < 0 && wizardCurrentStep === 5) {
-    wizardCurrentStep = 3;
-    renderWizardStep();
-    return;
-  }
   if (delta > 0 && wizardCurrentStep === 6) {
     const wizRoleEl = document.getElementById('wizSmRoleInput');
     if (wizRoleEl && wizRoleEl.value.trim() === '') {
@@ -615,11 +609,21 @@ function wizardStepNav(delta) {
     const leaveBalanceEl = document.getElementById('wizStartingLeave');
     if (leaveBalanceEl && !leaveBalanceEl.reportValidity()) return;
   }
-  const nextStep = wizardCurrentStep + delta;
-  if (nextStep < 1 || nextStep > 8) return;
-  if (nextStep === 4) return;
-  wizardCurrentStep = nextStep;
+  const nextIdx = WIZARD_STEP_ORDER.indexOf(wizardCurrentStep) + delta;
+  if (nextIdx < 0 || nextIdx >= WIZARD_STEP_ORDER.length) return;
+  wizardCurrentStep = WIZARD_STEP_ORDER[nextIdx];
   renderWizardStep();
+}
+
+function updateWizardInstallStep() {
+  const isMobile = wizardSelectedView === 'mobile';
+  const desktop = document.getElementById('wizInstallDesktop');
+  const mobile = document.getElementById('wizInstallMobile');
+  const note = document.getElementById('wizInstallStandaloneNote');
+  if (desktop) desktop.hidden = isMobile;
+  if (mobile) mobile.hidden = !isMobile;
+  const standalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true;
+  if (note) note.hidden = !standalone;
 }
 
 function finishWizard(openSopAfter) {

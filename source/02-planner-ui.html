@@ -63,9 +63,37 @@
         </div>
       </div>
 
+      <!-- Install as an app (optional; content follows the chosen view) -->
+      <div class="wizard-step" id="wizardStep_9">
+        <h3 class="wizard-step-title">2. Install as an App (Optional)</h3>
+        <p class="wizard-step-desc">Add the planner to your device so it opens like an app, with its own icon. You can skip this step and do it any time.</p>
+        <div id="wizInstallDesktop">
+          <div class="welcome-disclaimer" style="margin-bottom:10px;">
+            <p><strong>Chrome or Edge (Windows, Mac, Chromebook)</strong></p>
+            <p>1. Open this page in Chrome or Edge.<br>2. Click the <strong>Install</strong> icon at the right end of the address bar. If you don't see it, open the <strong>⋮</strong> or <strong>…</strong> menu.<br>3. Chrome: choose <strong>Cast, save, and share → Install page as app</strong>. Edge: choose <strong>Apps → Install this site as an app</strong>.<br>4. Click <strong>Install</strong>. The app gets a desktop or taskbar shortcut.</p>
+          </div>
+          <div class="welcome-disclaimer" style="margin-bottom:10px;">
+            <p><strong>Safari (Mac)</strong></p>
+            <p>Open this page in Safari, then choose <strong>File → Add to Dock</strong>.</p>
+          </div>
+          <span class="field-helper">Firefox on desktop can't install web apps. Use Chrome, Edge, or Safari for this.</span>
+        </div>
+        <div id="wizInstallMobile" hidden>
+          <div class="welcome-disclaimer" style="margin-bottom:10px;">
+            <p><strong>iPhone / iPad — use Safari</strong></p>
+            <p>1. Open this page in <strong>Safari</strong>.<br>2. Tap the <strong>Share</strong> button (square with an arrow).<br>3. Scroll down and tap <strong>Add to Home Screen</strong>.<br>4. Tap <strong>Add</strong>. The app icon appears on your Home Screen.</p>
+          </div>
+          <div class="welcome-disclaimer" style="margin-bottom:10px;">
+            <p><strong>Android — Chrome or another browser</strong></p>
+            <p>1. Open this page in <strong>Chrome</strong>. Other browsers, like Samsung Internet, Edge, or Firefox, work too.<br>2. Tap the <strong>⋮</strong> menu.<br>3. Tap <strong>Install app</strong> or <strong>Add to Home screen</strong>.<br>4. Tap <strong>Install</strong> or <strong>Add</strong>.</p>
+          </div>
+        </div>
+        <div class="field-helper" id="wizInstallStandaloneNote" hidden>You're already using the installed app.</div>
+      </div>
+
       <!-- Step 2: Choose task force -->
       <div class="wizard-step" id="wizardStep_3">
-        <h3 class="wizard-step-title">2. New York Mission</h3>
+        <h3 class="wizard-step-title">3. New York Mission</h3>
         <p class="wizard-step-desc">Choose the mission type you want to plan for.</p>
         <div class="wizard-view-grid">
           <div class="wizard-view-card selected" id="wizMissionCard_nysad" onclick="selectWizardMission('nysad')">
@@ -84,7 +112,7 @@
 
       <!-- Step 3: Schedule & RDOs -->
       <div class="wizard-step" id="wizardStep_5">
-        <h3 class="wizard-step-title">3. Shift Schedule &amp; Regular RDOs</h3>
+        <h3 class="wizard-step-title">4. Shift Schedule &amp; Regular RDOs</h3>
         <p class="wizard-step-desc">Choose your shift cadence and regular RDO block. Holiday Special Passes on regular RDOs can auto-apply where eligible.</p>
         <div class="wizard-form-stack">
           <div class="field-group">
@@ -103,7 +131,7 @@
 
       <!-- Step 4: SAD Pay & Leave -->
       <div class="wizard-step" id="wizardStep_6">
-        <h3 class="wizard-step-title">4. SAD Pay Profile &amp; 18 NOV 2026 Leave Balance</h3>
+        <h3 class="wizard-step-title">5. SAD Pay Profile &amp; 18 NOV 2026 Leave Balance</h3>
         <p class="wizard-step-desc">Enter your assignment role, pay grade, years of service, ZIP code or MHA for the BAH rate area, BAH/BAS eligibility, and your leave balance as of 18 Nov 2026.</p>
         <div class="wizard-form-stack">
           <div class="field-group">
@@ -246,7 +274,7 @@
 
       <!-- Step 5: Beginning Pay Period -->
       <div class="wizard-step" id="wizardStep_7">
-        <h3 class="wizard-step-title">5. Beginning Pay Period</h3>
+        <h3 class="wizard-step-title">6. Beginning Pay Period</h3>
         <p class="wizard-step-desc">Choose the first pay period to include. You can add later pay periods as you plan ahead.</p>
         <div class="wizard-form-stack">
           <div class="field-group">
@@ -261,7 +289,7 @@
 
       <!-- Step 6: How-To Offer & Finish -->
       <div class="wizard-step" id="wizardStep_8">
-        <h3 class="wizard-step-title">6. Ready to Start Planning</h3>
+        <h3 class="wizard-step-title">7. Ready to Start Planning</h3>
         <p class="wizard-step-desc">Would you like to read the quick guide first or go straight to your schedule?</p>
         <div class="wizard-offer-box">
           <button type="button" class="wizard-offer-btn sop-cta" onclick="finishWizard(true)">📖 Read the quick guide</button>
