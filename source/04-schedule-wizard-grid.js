@@ -146,16 +146,18 @@ function applyDefaultPatternAll() {
 }
 
 function confirmApplyDefaultPatternAll() {
-  if (!confirm('Reset the RDO pattern in every open pay period? Other date selections in those pay periods may be replaced.')) return;
+  if (!confirm('Reset the regular day-off pattern in every open pay period? Other date selections may be replaced.')) return;
   applyDefaultPatternAll();
   const menu = document.getElementById('headerMoreTools');
   if (menu) menu.open = false;
+  closePhoneToolsMenu();
 }
 
 function openRangeBuilderFromMenu() {
   const menu = document.getElementById('headerMoreTools');
   if (menu) menu.open = false;
-  openRangeBuilderModal();
+  closePhoneToolsMenu();
+  openRangeBuilderModal(currentViewMode === 'mobile' ? mobileVisiblePayPeriodSlot : 0);
 }
 
 /* ====================================================================================
@@ -433,6 +435,106 @@ function updateJumpToCurrentPayPeriodButtons() {
   if (wizardSelect && wizardButtonWrap) {
     wizardButtonWrap.hidden = parseInt(wizardSelect.value, 10) === currentIdx;
   }
+  updateMobilePayPeriodNavigator();
+}
+
+function updateMobilePayPeriodNavigator() {
+  const nav = document.getElementById('mobilePpNavigator');
+  const select = document.getElementById('mobilePpSelect');
+  if (!nav || !select) return;
+
+  const startPpIdx = parseInt(document.getElementById('ppSelect').value, 10) || 0;
+  mobileVisiblePayPeriodSlot = Math.max(0, Math.min(mobileVisiblePayPeriodSlot, activePayPeriodCount - 1));
+  select.innerHTML = '';
+  for (let slot = 0; slot < activePayPeriodCount; slot++) {
+    const pp = payPeriods[startPpIdx + slot];
+    if (!pp) continue;
+    const option = document.createElement('option');
+    option.value = String(slot);
+    option.textContent = `PP ${String(pp.ppNum).padStart(2, '0')} · ${formatShortDate(pp.start)}–${formatShortDate(pp.end)}`;
+    select.appendChild(option);
+  }
+  select.value = String(mobileVisiblePayPeriodSlot);
+  nav.hidden = currentViewMode !== 'mobile';
+
+  const previousButton = document.getElementById('mobilePpPreviousButton');
+  const nextButton = document.getElementById('mobilePpNextButton');
+  const currentButton = document.getElementById('mobileJumpToCurrentPpButton');
+  const position = document.getElementById('mobilePpPosition');
+  const selectedPp = payPeriods[startPpIdx + mobileVisiblePayPeriodSlot];
+  if (previousButton) previousButton.disabled = mobileVisiblePayPeriodSlot <= 0;
+  if (nextButton) nextButton.disabled = mobileVisiblePayPeriodSlot >= activePayPeriodCount - 1;
+  if (currentButton) currentButton.hidden = !selectedPp || selectedPp.isCurrent;
+  if (position) position.textContent = `Pay period ${mobileVisiblePayPeriodSlot + 1} of ${activePayPeriodCount}`;
+
+  const removeButton = document.getElementById('phoneRemoveLastPayPeriodButton');
+  if (removeButton) removeButton.hidden = activePayPeriodCount <= 1;
+}
+
+function applyPayPeriodViewMode() {
+  const isPhoneView = currentViewMode === 'mobile';
+  document.body.classList.toggle('phone-view-active', isPhoneView);
+
+  for (let slot = 0; slot < activePayPeriodCount; slot++) {
+    const sectionEl = document.getElementById(`ppSection_${slot}`);
+    const gridEl = document.getElementById(`gridContainer_${slot}`);
+    const miniCalEl = document.getElementById(`miniCalWrap_${slot}`);
+    const hintEl = document.getElementById(`mobileCalHint_${slot}`);
+    if (sectionEl) sectionEl.style.display = !isPhoneView || slot === mobileVisiblePayPeriodSlot ? 'block' : 'none';
+    if (gridEl) gridEl.style.display = isPhoneView ? 'none' : 'block';
+    if (miniCalEl) miniCalEl.style.display = isPhoneView ? 'block' : 'none';
+    if (hintEl) hintEl.style.display = isPhoneView ? 'flex' : 'none';
+  }
+  updateMobilePayPeriodNavigator();
+}
+
+function selectMobilePayPeriod(slotValue) {
+  const slot = Number.parseInt(slotValue, 10);
+  if (!Number.isInteger(slot) || slot < 0 || slot >= activePayPeriodCount) return;
+  mobileVisiblePayPeriodSlot = slot;
+  closeInlineStatusPicker();
+  applyPayPeriodViewMode();
+}
+
+function moveMobilePayPeriod(direction) {
+  selectMobilePayPeriod(String(mobileVisiblePayPeriodSlot + direction));
+}
+
+function jumpMobileToCurrentPayPeriod() {
+  const currentIdx = getCurrentPayPeriodIndex();
+  const startPpIdx = parseInt(document.getElementById('ppSelect').value, 10);
+  const currentSlot = currentIdx - startPpIdx;
+  if (currentSlot >= 0 && currentSlot < activePayPeriodCount) {
+    selectMobilePayPeriod(String(currentSlot));
+    return;
+  }
+  mobileVisiblePayPeriodSlot = 0;
+  jumpToCurrentPayPeriod(false);
+}
+
+function closePhoneToolsMenu() {
+  const menu = document.getElementById('phoneTools');
+  if (menu) menu.open = false;
+}
+
+function openPhoneRangePlanner(statusId) {
+  closePhoneToolsMenu();
+  openRangeBuilderModal(mobileVisiblePayPeriodSlot, statusId);
+}
+
+function addPayPeriodFromPhoneTools() {
+  closePhoneToolsMenu();
+  addPayPeriod();
+}
+
+function removeLastPayPeriodFromPhoneTools() {
+  closePhoneToolsMenu();
+  removeLastPayPeriod();
+}
+
+function clearRefradFromPhoneTools() {
+  closePhoneToolsMenu();
+  clearRefradOnly();
 }
 
 function renderWizardStep() {
@@ -617,8 +719,8 @@ function openSettingsModal(guardModeAction) {
     if (alertEl) alertEl.classList.add('visible');
     if (primaryBtn) {
       primaryBtn.textContent = pendingExportAction === 'pdf'
-        ? '🖨️ Save & Print DA-6 PDF'
-        : '💾 Save & Download CoC Report';
+        ? '🖨️ Save & Print DA Form 6'
+        : '💾 Save & Download Duty Plan Report';
       primaryBtn.classList.add('guard-proceed');
     }
   } else {
@@ -690,25 +792,15 @@ function setViewMode(mode) {
   document.getElementById('modeDesktopBtn').className = 'view-toggle-btn' + (mode === 'desktop' ? ' active' : '');
   document.getElementById('modeMobileBtn').className = 'view-toggle-btn' + (mode === 'mobile' ? ' active' : '');
 
-  for (let s = 0; s < activePayPeriodCount; s++) {
-    const sectionEl = document.getElementById(`ppSection_${s}`);
-    const gridEl = document.getElementById(`gridContainer_${s}`);
-    const miniCalEl = document.getElementById(`miniCalWrap_${s}`);
-    const hintEl = document.getElementById(`mobileCalHint_${s}`);
-
-    if (sectionEl) sectionEl.style.display = 'block';
-    if (gridEl) gridEl.style.display = mode === 'desktop' ? 'block' : 'none';
-    if (miniCalEl) miniCalEl.style.display = mode === 'mobile' ? 'block' : 'none';
-    if (hintEl) hintEl.style.display = mode === 'mobile' ? 'flex' : 'none';
-  }
-
+  if (mode === 'mobile' && activePicker.open) mobileVisiblePayPeriodSlot = activePicker.s;
+  applyPayPeriodViewMode();
   if (activePicker.open) {
     highlightSelectedDate();
   }
   saveStateToLocalStorage();
 }
 
-function openRangeBuilderModal(slotOverride) {
+function openRangeBuilderModal(slotOverride, statusOverride) {
   closeInlineStatusPicker();
   const card = document.getElementById('rangeBuilderCard');
   if (!card) return;
@@ -720,6 +812,8 @@ function openRangeBuilderModal(slotOverride) {
 
   const startInput = document.getElementById('rangeStartDate');
   const endInput = document.getElementById('rangeEndDate');
+  const statusSelect = document.getElementById('rangeStatusSelect');
+  if (statusSelect && statusOverride) statusSelect.value = statusOverride;
   if (startInput) startInput.value = defaultIso;
   if (endInput) endInput.value = defaultIso;
 
@@ -761,16 +855,16 @@ function updateRangeHelperNote() {
     const yesRadio = document.getElementById('tdyQualRadio_yes');
     const qualifiesInTransit = Boolean(yesRadio && yesRadio.checked);
     if (qualifiesInTransit) {
-      noteEl.innerHTML = 'Outside 120 miles: Sets <strong>Start Date</strong> and <strong>End Date</strong> as <strong>In-Transit (Travel)</strong> and fills all days in between as <strong>TDY</strong>. Automatically adds pay periods if needed.';
+      noteEl.innerHTML = 'More than 120 miles: Sets the first and last dates to <strong>In-Transit (Travel)</strong> and fills the dates in between as <strong>TDY</strong>. Automatically adds pay periods if needed.';
     } else {
-      noteEl.innerHTML = 'Within 120 miles: Fills all dates from Start Date through End Date as <strong>TDY</strong> without In-Transit travel days.';
+      noteEl.innerHTML = '120 miles or less: Sets every date from start through end to <strong>TDY</strong>, with no In-Transit dates.';
     }
   } else if (mode === 'lv') {
-    noteEl.innerHTML = 'Fills all dates from Start Date through End Date as <strong>SAD Leave</strong> and calculates your 30-day / 60-day OCONUS deadline.';
+    noteEl.innerHTML = 'Applies <strong>SAD Leave</strong> to every date from start through end, including both dates, and calculates the 30-day / 60-day OCONUS deadline.';
   } else if (mode === 'rdo') {
-    noteEl.innerHTML = 'Fills all dates from Start Date through End Date as <strong>RDO</strong>.';
+    noteEl.innerHTML = 'Applies <strong>Regular Day Off (RDO)</strong> to every date from start through end, including both dates.';
   } else {
-    noteEl.innerHTML = 'Resets all dates from Start Date through End Date back to <strong>On Shift</strong>.';
+    noteEl.innerHTML = 'Sets every date from start through end to <strong>Present (On Shift)</strong>, replacing the current selections.';
   }
 }
 
@@ -783,11 +877,11 @@ function applyPlannedDateRange() {
   const endDate = parseIsoDateLocal(endIso);
 
   if (!startDate || !endDate) {
-    alert('Please select both a valid Start Date and End Date.');
+    alert('Choose a valid start date and end date.');
     return;
   }
   if (endDate < startDate) {
-    alert('End Date cannot be earlier than Start Date.');
+    alert('The end date must be the same as or later than the start date.');
     return;
   }
 
@@ -795,7 +889,7 @@ function applyPlannedDateRange() {
   const firstPpStart = payPeriods[startPpIdx].start;
 
   if (startDate < firstPpStart) {
-    alert(`Start Date (${formatFullDate(startDate)}) is earlier than your Beginning Pay Period (${formatFullDate(firstPpStart)}). Change Beginning Pay Period in Edit Settings first.`);
+    alert(`The start date (${formatFullDate(startDate)}) is before your schedule begins (${formatFullDate(firstPpStart)}). Change the starting pay period in Profile & Settings first.`);
     return;
   }
 
@@ -804,7 +898,7 @@ function applyPlannedDateRange() {
   const totalDays = Math.floor((endDate.getTime() - startDate.getTime()) / 86400000) + 1;
 
   if (useTdyInTransit && totalDays < 3) {
-    alert('Auto-filling In-Transit on both Start and End dates requires at least 3 days so at least 1 TDY day sits between them (Policy Change 2 requires In-Transit to bridge On Shift and TDY). For 1–2 day trips, select "No — Within 120 Miles" and set a single In-Transit day manually if needed.');
+    alert('For a trip more than 120 miles away, this range must be at least 3 days so a TDY day falls between the two In-Transit dates. For a 1–2 day trip, close this planner and set each date individually; the planner will ask you to confirm before applying In-Transit.');
     return;
   }
 
@@ -861,11 +955,11 @@ function onDateSelect(s, d) {
   }
   const currentSt = effectiveSelections[s][d];
   if (currentSt === 'refrad_rpt') {
-    alert('Use Plan REFRAD to change or clear the REFRAD date.');
+    alert('Open Tools and choose Plan REFRAD to change or clear the REFRAD date.');
     return;
   }
   if (currentSt === 'term_lv' || currentSt === 'off_mission') {
-    alert('Terminal Leave and Post-REFRAD (Off) dates are calculated by the REFRAD plan. Change or clear the plan to edit them.');
+    alert('Terminal Leave and off-mission dates are set by the REFRAD plan. Change or clear the plan to edit them.');
     return;
   }
   openInlineStatusPicker(s, d);
@@ -955,10 +1049,44 @@ function renderInlineStatusPicker(s, d) {
 }
 
 function pickStatusFromInlinePicker(s, d, statusId) {
+  if (statusId === 'trv' && userSelections[s]?.[d] !== 'trv') {
+    renderInTransitConfirmation(s, d);
+    return;
+  }
+
   setDayStatusDirect(s, d, statusId);
   if (statusId === 'lv' && userSelections[s]?.[d] === 'lv') {
     offerLeaveFormDownload();
   }
+  closeInlineStatusPicker();
+}
+
+function renderInTransitConfirmation(s, d) {
+  const sheetEl = document.getElementById(`statusSheet_${s}`);
+  const startPpIdx = parseInt(document.getElementById('ppSelect').value, 10);
+  const pp = payPeriods[startPpIdx + s];
+  if (!sheetEl || !pp) return;
+
+  const dayDate = addDays(pp.start, d);
+  const questionId = `inTransitQuestion_${s}_${d}`;
+  sheetEl.innerHTML = `
+    <div class="status-sheet-hdr">
+      <div class="status-sheet-title">Confirm In-Transit — ${DAY_NAMES[d % 7]}, ${formatFullDate(dayDate)}</div>
+      <button type="button" class="status-sheet-close" onclick="closeInlineStatusPicker()">✕ Close</button>
+    </div>
+    <div class="status-sheet-confirmation" role="group" aria-live="polite" aria-labelledby="${questionId}">
+      <p class="status-sheet-confirm-question" id="${questionId}">Is your assigned facility more than 120 miles from your home station?</p>
+      <p class="status-sheet-confirm-note">Only distances greater than 120 miles qualify. Choose No to leave this date unchanged.</p>
+      <div class="status-sheet-confirm-actions">
+        <button type="button" class="status-sheet-confirm-button primary" onclick="confirmInTransitSelection(${s}, ${d})">Yes — apply In-Transit</button>
+        <button type="button" class="status-sheet-confirm-button" onclick="renderInlineStatusPicker(${s}, ${d})">No — leave date unchanged</button>
+      </div>
+    </div>
+  `;
+}
+
+function confirmInTransitSelection(s, d) {
+  setDayStatusDirect(s, d, 'trv');
   closeInlineStatusPicker();
 }
 
@@ -1207,7 +1335,7 @@ function renderSpConflictStep1() {
       : `<strong>${stOpt.holidayName} (${oldDateStr})</strong> fell in <strong>${ppLabel}</strong>, which is not currently open in this tracker—so we can't verify whether you already took this Special Pass. ${rdoNote}`;
 
     noteHtml = conflict.mode === 'earlier_unshown'
-      ? `Opening ${ppLabel} will shift your Beginning Pay Period back to include it (double-check your 18 NOV 2026 Leave Balance in ⚙️ Edit Settings afterward).`
+      ? `Opening ${ppLabel} will move your schedule start back to include it. Review your leave balance in Profile & Settings afterward.`
       : `Opening ${ppLabel} will restore that pay period so you can review or edit ${oldShortStr}.`;
 
     const canOpenPp = conflict.oldPpIdx >= 0;
@@ -1414,11 +1542,11 @@ function setDayStatusDirect(s, d, targetStatus) {
   const stOpt = getStatusMeta(targetStatus);
 
   if (targetStatus === 'refrad_rpt') {
-    alert('Use Plan REFRAD to set the REFRAD date.');
+    alert('Open Tools and choose Plan REFRAD to set the REFRAD date.');
     return;
   }
   if (userSelections[s][d] === 'refrad_rpt') {
-    alert('Use Plan REFRAD to change or clear the REFRAD date.');
+    alert('Open Tools and choose Plan REFRAD to change or clear the REFRAD date.');
     return;
   }
 
@@ -1426,7 +1554,7 @@ function setDayStatusDirect(s, d, targetStatus) {
 
   const currentEffective = effectiveSelections[s][d];
   if (currentEffective === 'term_lv' || currentEffective === 'off_mission') {
-    alert('Terminal Leave and Post-REFRAD (Off) dates are calculated by the REFRAD plan. Change or clear the plan to edit them.');
+    alert('Terminal Leave and off-mission dates are set by the REFRAD plan. Change or clear the plan to edit them.');
     return;
   }
 
@@ -1560,10 +1688,10 @@ function buildAllPayPeriodGrids() {
         <div class="pp-header-right">
           <span class="pp-section-badge">${badgeText}</span>
           <details class="pp-more-tools">
-            <summary>More tools</summary>
+            <summary>Tools</summary>
             <div class="more-tools-menu">
-              <button type="button" class="more-tools-button" onclick="openRangeBuilderModal(${s})">📅 Plan Range for this pay period</button>
-              ${s === activePayPeriodCount - 1 && activePayPeriodCount > 1 ? `<button type="button" class="more-tools-button" onclick="removeLastPayPeriod()">🗑️ Remove Last Pay Period</button>` : ''}
+              <button type="button" class="more-tools-button" onclick="openRangeBuilderModal(${s})">📅 Plan dates for this period</button>
+              ${s === activePayPeriodCount - 1 && activePayPeriodCount > 1 ? `<button type="button" class="more-tools-button" onclick="removeLastPayPeriod()">🗑️ Remove last pay period</button>` : ''}
             </div>
           </details>
         </div>
@@ -1641,6 +1769,8 @@ function buildAllPayPeriodGrids() {
     container.appendChild(section);
   }
 
+  mobileVisiblePayPeriodSlot = Math.max(0, Math.min(mobileVisiblePayPeriodSlot, activePayPeriodCount - 1));
+  applyPayPeriodViewMode();
   calculateAllPayPeriods();
 }
 
@@ -1648,6 +1778,7 @@ function addPayPeriod() {
   clearLastDayStatusUndo();
   const newSlot = activePayPeriodCount;
   activePayPeriodCount++;
+  if (currentViewMode === 'mobile') mobileVisiblePayPeriodSlot = newSlot;
   const startPpIdx = parseInt(document.getElementById('ppSelect').value, 10);
   ensurePayPeriodIndex(startPpIdx + activePayPeriodCount + 3);
   ensureSlotCapacity(activePayPeriodCount);
@@ -1666,9 +1797,10 @@ function addPayPeriod() {
 
 function removeLastPayPeriod() {
   if (activePayPeriodCount > 1) {
-    if (!confirm(`Remove the last pay period and its scheduled dates? This cannot be undone.`)) return;
+    if (!confirm('Remove the last pay period and its scheduled dates? This cannot be undone.')) return;
     clearLastDayStatusUndo();
     activePayPeriodCount--;
+    mobileVisiblePayPeriodSlot = Math.min(mobileVisiblePayPeriodSlot, activePayPeriodCount - 1);
     buildAllPayPeriodGrids();
     saveStateToLocalStorage();
   }
@@ -1701,6 +1833,7 @@ function onStartPayPeriodChange() {
   clearLastDayStatusUndo();
   const newStartPpIdx = parseInt(document.getElementById('ppSelect').value, 10);
   const delta = newStartPpIdx - previousStartPpIdx;
+  mobileVisiblePayPeriodSlot = 0;
   updateJumpToCurrentPayPeriodButtons();
 
   if (delta !== 0) {
@@ -1737,6 +1870,7 @@ function onScheduleTypeChange(schedEl) {
 function jumpToCurrentPayPeriod(forceReset) {
   const foundIdx = getCurrentPayPeriodIndex();
   document.getElementById('ppSelect').value = foundIdx;
+  mobileVisiblePayPeriodSlot = 0;
   updateJumpToCurrentPayPeriodButtons();
   if (forceReset) {
     previousStartPpIdx = foundIdx;
@@ -1748,7 +1882,10 @@ function jumpToCurrentPayPeriod(forceReset) {
 
 function updateRefradClearButton() {
   const button = document.getElementById('clearRefradPlanButton');
-  if (button) button.hidden = !(refradPlanMode && refradPlanDate);
+  const phoneButton = document.getElementById('phoneClearRefradPlanButton');
+  const shouldShow = Boolean(refradPlanMode && refradPlanDate);
+  if (button) button.hidden = !shouldShow;
+  if (phoneButton) phoneButton.hidden = !shouldShow;
 }
 
 function clearRefradOnly() {
@@ -1757,7 +1894,10 @@ function clearRefradOnly() {
     alert('No REFRAD plan is set.');
     return;
   }
-  if (!confirm('Clear the REFRAD plan? Automatically generated Terminal Leave and Post-REFRAD days will return to the saved schedule.')) return;
+  if (!confirm('Clear the REFRAD plan? This removes the Terminal Leave and off-mission dates it added, then restores your saved schedule.')) return;
+  const desktopTools = document.getElementById('headerMoreTools');
+  if (desktopTools) desktopTools.open = false;
+  closePhoneToolsMenu();
   clearLastDayStatusUndo();
   const savedSchedule = cloneRefradScheduleSnapshot(refradScheduleSnapshot);
   if (savedSchedule) {
@@ -1982,6 +2122,7 @@ function applyRefradPlan() {
   const targetSlot = location.ppIdx - startPpIdx;
   userSelections[targetSlot][location.dayIdx] = 'refrad_rpt';
   activePayPeriodCount = targetSlot + 1;
+  if (currentViewMode === 'mobile') mobileVisiblePayPeriodSlot = targetSlot;
   userSelections = userSelections.slice(0, activePayPeriodCount);
   effectiveSelections = effectiveSelections.slice(0, activePayPeriodCount);
   closeInlineStatusPicker();

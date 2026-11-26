@@ -236,7 +236,7 @@ body {
   .header-range-btn, .header-sop-btn, .header-settings-btn, .header-refrad-btn,
   .sop-modal-backdrop, .wizard-backdrop, .settings-backdrop, .sp-conflict-backdrop, .refrad-planner-backdrop,
   .error-jump-banner, .status-sheet-card, .instructions-banner,
-  .pp-header-range-btn, .header-more-tools, .pp-more-tools, .data-management-options,
+  .pp-header-range-btn, .header-more-tools, .phone-tools, .pp-more-tools, .mobile-pp-navigator, .data-management-options,
   .mobile-cal-hint-bar, .feedback-footer-card {
     display: none !important;
   }
@@ -327,6 +327,70 @@ body {
 .pp-more-tools {
   position: relative;
 }
+
+.phone-tools {
+  display: none;
+  position: relative;
+}
+
+.phone-tools > summary {
+  list-style: none;
+  padding: 6px 10px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text-main);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.phone-tools > summary::-webkit-details-marker { display: none; }
+.phone-tools[open] > summary { border-color: var(--primary); color: var(--primary); }
+
+.phone-tools-menu {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 6px);
+  right: 0;
+  display: grid;
+  gap: 5px;
+  width: min(280px, calc(100vw - 32px));
+  max-height: min(70dvh, 520px);
+  overflow-y: auto;
+  padding: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+}
+
+.phone-tools-group-title {
+  padding: 5px 4px 2px;
+  color: var(--text-sub);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.phone-tools-button {
+  width: 100%;
+  min-height: 38px;
+  padding: 8px 10px;
+  color: var(--text-main);
+  background: var(--bg-light);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.phone-tools-button:hover,
+.phone-tools-button:focus-visible { border-color: var(--primary); color: var(--primary); }
+.phone-tools-button[hidden] { display: none; }
 
 .header-more-tools > summary,
 .pp-more-tools > summary {
@@ -475,6 +539,91 @@ body {
   margin-bottom: 12px;
   font-size: 12px;
 }
+
+.mobile-pp-navigator {
+  display: none;
+  padding: 7px;
+  margin: 0 0 10px;
+  background: var(--bg-light);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.mobile-pp-nav-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mobile-pp-position {
+  display: block;
+  padding: 4px 2px 0;
+  color: var(--text-sub);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.mobile-pp-position:empty { display: none; }
+
+.mobile-pp-navigator[hidden] { display: none !important; }
+
+.mobile-pp-select {
+  flex: 1;
+  min-width: 0;
+  min-height: 38px;
+  padding: 6px 8px;
+  color: var(--text-main);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.mobile-pp-arrow,
+.mobile-current-pp-button {
+  min-width: 38px;
+  min-height: 38px;
+  padding: 5px 9px;
+  color: var(--primary);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.mobile-current-pp-button {
+  white-space: nowrap;
+  font-size: 11px;
+}
+
+.mobile-pp-arrow:disabled {
+  color: var(--text-sub);
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.phone-view-active .header-refrad-btn,
+.phone-view-active .header-more-tools,
+.phone-view-active .pp-more-tools,
+.phone-view-active .btn-add-pp { display: none; }
+
+.phone-view-active .phone-tools { display: block; }
+.phone-view-active .mobile-pp-navigator:not([hidden]) { display: flex; }
 
 .quick-profile-chips {
   display: flex;
@@ -789,7 +938,7 @@ body {
   cursor: default;
 }
 
-/* Edit Settings Modal & Smart Print Guard */
+/* Profile and planner settings modal & export guard */
 .settings-dialog {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -1503,6 +1652,53 @@ body {
   font-weight: 700;
   cursor: pointer;
   color: var(--text-main);
+}
+
+.status-sheet-confirmation {
+  display: grid;
+  gap: 8px;
+}
+
+.status-sheet-confirm-question,
+.status-sheet-confirm-note {
+  margin: 0;
+}
+
+.status-sheet-confirm-question {
+  color: var(--text-main);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.status-sheet-confirm-note {
+  color: var(--text-sub);
+  font-size: 11.5px;
+}
+
+.status-sheet-confirm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.status-sheet-confirm-button {
+  flex: 1 1 180px;
+  min-height: 40px;
+  padding: 8px 10px;
+  color: var(--text-main);
+  background: var(--bg-light);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.status-sheet-confirm-button.primary {
+  color: #ffffff;
+  background: var(--primary);
+  border-color: var(--primary);
 }
 
 .status-sheet-grid {
