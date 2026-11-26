@@ -71,7 +71,7 @@ test('MHA choice persists while existing ZIP profiles continue defaulting to ZIP
   assert.equal(stored.legacy.locationType, 'zip');
   assert.equal(stored.restored.locationType, 'mha');
   assert.equal(stored.restored.zipCode, '11228');
-  assert.equal(stored.restored.mhaName, sandbox.PAY_RATE_DB?.mhaNames?.[0] || vm.runInContext('PAY_RATE_DB.mhaNames[0]', sandbox));
+  assert.equal(stored.restored.mhaName, vm.runInContext('PAY_RATE_DB.mhaNames[0]', sandbox));
 });
 
 test('unknown MHA does not accidentally use a saved ZIP for BAH', () => {

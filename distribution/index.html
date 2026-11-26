@@ -1059,6 +1059,8 @@ body {
   min-width: 0;
 }
 
+.field-group[hidden] { display: none !important; }
+
 .field-group label {
   font-size: 10.5px;
   font-weight: 700;
@@ -2199,7 +2201,7 @@ a.policy-cite:hover { text-decoration-thickness: 2px; }
       <!-- Step 4: SAD Pay & Leave -->
       <div class="wizard-step" id="wizardStep_6">
         <h3 class="wizard-step-title">4. SAD Pay Profile &amp; 18 NOV 2026 Leave Balance</h3>
-        <p class="wizard-step-desc">Enter your assignment role, pay grade, years of service, ZIP code for the BAH rate area, BAH/BAS eligibility, and your leave balance as of 18 Nov 2026.</p>
+        <p class="wizard-step-desc">Enter your assignment role, pay grade, years of service, ZIP code or MHA for the BAH rate area, BAH/BAS eligibility, and your leave balance as of 18 Nov 2026.</p>
         <div class="wizard-form-stack">
           <div class="field-group">
             <label for="wizSmRoleInput">Assignment Role</label>
@@ -2275,9 +2277,12 @@ a.policy-cite:hover { text-decoration-thickness: 2px; }
 
           <div class="wizard-field-grid-2">
             <div class="field-group">
-              <label for="wizPayZipInput">Duty or Home ZIP Code</label>
-              <input type="text" id="wizPayZipInput" class="top-input" maxlength="5" inputmode="numeric" placeholder="e.g. 11228" oninput="onWizardPayChange()">
-              <span class="field-helper">Enter 5 digits to look up the BAH rate area.</span>
+              <label for="wizPayLocationTypeSelect">BAH Rate Location</label>
+              <select id="wizPayLocationTypeSelect" class="top-select" onchange="onWizardPayLocationTypeChange()">
+                <option value="zip">Enter ZIP Code</option>
+                <option value="mha">Choose MHA</option>
+              </select>
+              <span class="field-helper">Use either a ZIP Code or select a Military Housing Area.</span>
             </div>
 
             <div class="field-group">
@@ -2287,6 +2292,22 @@ a.policy-cite:hover { text-decoration-thickness: 2px; }
                 <option value="withDep">With Dependents</option>
               </select>
               <span class="field-helper">Choose the status used by the BAH rate table.</span>
+            </div>
+          </div>
+
+          <div class="wizard-field-grid-2">
+            <div class="field-group" id="wizPayZipField">
+              <label for="wizPayZipInput">Duty or Home ZIP Code</label>
+              <input type="text" id="wizPayZipInput" class="top-input" maxlength="5" inputmode="numeric" placeholder="e.g. 11228" oninput="onWizardPayChange()">
+              <span class="field-helper">Enter 5 digits to look up the BAH rate area.</span>
+            </div>
+            <div class="field-group" id="wizPayMhaField" hidden>
+              <label for="wizPayMhaSearch">Search Military Housing Areas</label>
+              <input type="search" id="wizPayMhaSearch" class="top-input" placeholder="Type a city, state, or MHA code" oninput="filterMhaOptions('wizPay');onWizardPayChange()">
+              <select id="wizPayMhaSelect" class="top-select" onchange="onMhaSelectChange('wizPay')">
+                <option value="">Choose an MHA</option>
+              </select>
+              <span class="field-helper" id="wizPayMhaSearchStatus" aria-live="polite"></span>
             </div>
           </div>
 
@@ -2516,9 +2537,27 @@ a.policy-cite:hover { text-decoration-thickness: 2px; }
         </div>
 
         <div class="field-group">
+          <label for="payLocationTypeSelect">BAH Rate Location</label>
+          <select id="payLocationTypeSelect" class="top-select" onchange="onPayLocationTypeChange()">
+            <option value="zip">Enter ZIP Code</option>
+            <option value="mha">Choose MHA</option>
+          </select>
+          <span class="field-helper">Use either a ZIP Code or select a Military Housing Area.</span>
+        </div>
+
+        <div class="field-group" id="payZipField">
           <label for="payZipInput">Duty or Home ZIP Code</label>
           <input type="text" id="payZipInput" class="top-input" maxlength="5" inputmode="numeric" placeholder="e.g. 11228" oninput="onPaySettingsChange()">
           <span class="field-helper">Enter 5 digits to look up the BAH rate area.</span>
+        </div>
+
+        <div class="field-group" id="payMhaField" hidden>
+          <label for="payMhaSearch">Search Military Housing Areas</label>
+          <input type="search" id="payMhaSearch" class="top-input" placeholder="Type a city, state, or MHA code" oninput="filterMhaOptions('pay');onPaySettingsChange()">
+          <select id="payMhaSelect" class="top-select" onchange="onMhaSelectChange('pay')">
+            <option value="">Choose an MHA</option>
+          </select>
+          <span class="field-helper" id="payMhaSearchStatus" aria-live="polite"></span>
         </div>
 
         <div class="field-group">
@@ -3761,10 +3800,16 @@ function updateWizardPayZipMhaBadge(prof) {
   if (!info.bahEntitled) {
     badge.style.color = 'var(--text-main)';
     badge.textContent = `${labels.base} ${formatUsd(info.dailyBasePay)}/d + ${labels.adlCom} ${formatUsd(info.dailyBahRate)}/d${incText} (${formatUsd(info.dailyTotalRate)}/d · ${labels.estimateTag})${entNote}`;
-  } else if (!info.zipCode) {
+  } else if (info.locationType === 'mha' && !info.zipMatched && !info.selectedMhaName) {
+    badge.style.color = 'var(--text-sub)';
+    badge.textContent = `${labels.base}: ${formatUsd(info.dailyBasePay)}/d + ${labels.adlCom}: ${formatUsd(info.dailyBahRate)}/d${incText} — Choose an MHA for BAH (${labels.estimateTag})${entNote}`;
+  } else if (info.locationType === 'mha' && !info.zipMatched) {
+    badge.style.color = 'var(--danger)';
+    badge.textContent = `⚠️ MHA "${info.selectedMhaName}" unavailable in the BAH table (${labels.base} ${formatUsd(info.dailyBasePay)}/d + ${labels.adlCom} ${formatUsd(info.dailyBahRate)}/d${incText} · ${labels.estimateTag})${entNote}`;
+  } else if (info.locationType !== 'mha' && !info.zipCode) {
     badge.style.color = 'var(--text-sub)';
     badge.textContent = `${labels.base}: ${formatUsd(info.dailyBasePay)}/d + ${labels.adlCom}: ${formatUsd(info.dailyBahRate)}/d${incText} — Enter 5-digit ZIP for BAH (${labels.estimateTag})${entNote}`;
-  } else if (info.zipCode.length < 5) {
+  } else if (info.locationType !== 'mha' && info.zipCode.length < 5) {
     badge.style.color = 'var(--text-sub)';
     badge.textContent = `${info.zipCode.length}/5 digits...${entNote}`;
   } else if (info.zipMatched) {
@@ -3789,7 +3834,9 @@ function onWizardPayChange() {
   const prof = {
     grade: document.getElementById('wizPayGradeSelect')?.value || 'E-4',
     yosKey: document.getElementById('wizPayYosSelect')?.value || 'over6',
+    locationType: document.getElementById('wizPayLocationTypeSelect')?.value || 'zip',
     zipCode: document.getElementById('wizPayZipInput')?.value || '',
+    mhaName: document.getElementById('wizPayMhaSelect')?.value || '',
     depStatus: document.getElementById('wizPayDepSelect')?.value || 'withoutDep',
     bahEntitled: bahCheck ? bahCheck.checked : true,
     basEntitled: basCheck ? basCheck.checked : true,
@@ -3823,10 +3870,9 @@ function openSetupWizard(isRerun) {
 
   const payProf = typeof getPayProfile === 'function'
     ? getPayProfile()
-    : { grade: 'E-4', yosKey: 'over6', zipCode: '', depStatus: 'withoutDep', bahEntitled: true, basEntitled: true, roleTier: 'none' };
+    : { grade: 'E-4', yosKey: 'over6', locationType: 'zip', zipCode: '', mhaName: '', depStatus: 'withoutDep', bahEntitled: true, basEntitled: true, roleTier: 'none' };
   const wGrade = document.getElementById('wizPayGradeSelect');
   const wYos = document.getElementById('wizPayYosSelect');
-  const wZip = document.getElementById('wizPayZipInput');
   const wDep = document.getElementById('wizPayDepSelect');
   const wBah = document.getElementById('wizBahEntitledCheck');
   const wBas = document.getElementById('wizBasEntitledCheck');
@@ -3834,7 +3880,7 @@ function openSetupWizard(isRerun) {
 
   if (wGrade) wGrade.value = payProf.grade;
   if (wYos) wYos.value = payProf.yosKey;
-  if (wZip) wZip.value = payProf.zipCode;
+  syncPayLocationInputs('wizPay', payProf);
   if (wDep) wDep.value = payProf.depStatus;
   if (wBah) wBah.checked = payProf.bahEntitled !== false;
   if (wBas) wBas.checked = payProf.basEntitled !== false;
@@ -4167,7 +4213,9 @@ function finishWizard(openSopAfter) {
   const chosenPayProf = {
     grade: document.getElementById('wizPayGradeSelect')?.value || 'E-4',
     yosKey: document.getElementById('wizPayYosSelect')?.value || 'over6',
+    locationType: document.getElementById('wizPayLocationTypeSelect')?.value || 'zip',
     zipCode: document.getElementById('wizPayZipInput')?.value || '',
+    mhaName: document.getElementById('wizPayMhaSelect')?.value || '',
     depStatus: document.getElementById('wizPayDepSelect')?.value || 'withoutDep',
     bahEntitled: bahCheck ? bahCheck.checked : true,
     basEntitled: basCheck ? basCheck.checked : true,
@@ -5854,13 +5902,12 @@ function syncPaySettingsInputs() {
   const prof = getPayProfile();
   const gradeEl = document.getElementById('payGradeSelect');
   const yosEl = document.getElementById('payYosSelect');
-  const zipEl = document.getElementById('payZipInput');
   const depEl = document.getElementById('payDepSelect');
   const bahEl = document.getElementById('payBahEntitledCheck');
   const basEl = document.getElementById('payBasEntitledCheck');
   if (gradeEl) gradeEl.value = prof.grade;
   if (yosEl) yosEl.value = prof.yosKey;
-  if (zipEl) zipEl.value = prof.zipCode;
+  syncPayLocationInputs('pay', prof);
   if (depEl) depEl.value = prof.depStatus;
   if (bahEl) bahEl.checked = prof.bahEntitled !== false;
   if (basEl) basEl.checked = prof.basEntitled !== false;
@@ -5893,10 +5940,16 @@ function updatePayZipMhaBadge(prof) {
   if (!info.bahEntitled) {
     badge.style.color = 'var(--text-main)';
     badge.textContent = `${labels.base} ${formatUsd(info.dailyBasePay)}/d + ${labels.adlCom} ${formatUsd(info.dailyBahRate)}/d${incText} (${formatUsd(info.dailyTotalRate)}/d · ${labels.estimateTag})${entNote}`;
-  } else if (!info.zipCode) {
+  } else if (info.locationType === 'mha' && !info.zipMatched && !info.selectedMhaName) {
+    badge.style.color = 'var(--text-sub)';
+    badge.textContent = `${labels.base}: ${formatUsd(info.dailyBasePay)}/d + ${labels.adlCom}: ${formatUsd(info.dailyBahRate)}/d${incText} — Choose an MHA for BAH (${labels.estimateTag})${entNote}`;
+  } else if (info.locationType === 'mha' && !info.zipMatched) {
+    badge.style.color = 'var(--danger)';
+    badge.textContent = `⚠️ MHA "${info.selectedMhaName}" unavailable in the BAH table (${labels.base} ${formatUsd(info.dailyBasePay)}/d + ${labels.adlCom} ${formatUsd(info.dailyBahRate)}/d${incText} · ${labels.estimateTag})${entNote}`;
+  } else if (info.locationType !== 'mha' && !info.zipCode) {
     badge.style.color = 'var(--text-sub)';
     badge.textContent = `${labels.base}: ${formatUsd(info.dailyBasePay)}/d + ${labels.adlCom}: ${formatUsd(info.dailyBahRate)}/d${incText} — Enter 5-digit ZIP for BAH (${labels.estimateTag})${entNote}`;
-  } else if (info.zipCode.length < 5) {
+  } else if (info.locationType !== 'mha' && info.zipCode.length < 5) {
     badge.style.color = 'var(--text-sub)';
     badge.textContent = `${info.zipCode.length}/5 digits...${entNote}`;
   } else if (info.zipMatched) {
@@ -5916,7 +5969,9 @@ function onPaySettingsChange() {
   const prof = {
     grade: document.getElementById('payGradeSelect')?.value || 'E-4',
     yosKey: document.getElementById('payYosSelect')?.value || 'over6',
+    locationType: document.getElementById('payLocationTypeSelect')?.value || 'zip',
     zipCode: document.getElementById('payZipInput')?.value || '',
+    mhaName: document.getElementById('payMhaSelect')?.value || '',
     depStatus: document.getElementById('payDepSelect')?.value || 'withoutDep',
     bahEntitled: bahEl ? bahEl.checked : true,
     basEntitled: basEl ? basEl.checked : true,
@@ -5966,7 +6021,10 @@ function renderPayReadoutForSlot(s, dayStatusIds, runningTotal) {
   const yearsOfService = info.yosKey === 'lt2'
     ? 'under 2 years'
     : `over ${String(info.yosKey || '').replace(/^over/, '')} years`;
-  const profileAssumption = `${info.grade}, ${yearsOfService}, ZIP ${info.zipCode || 'not entered'}, ${info.depStatus === 'withDep' ? 'with' : 'without'} dependents; BAH ${info.bahEntitled ? 'included when eligible' : 'not included'}; BAS ${info.basEntitled ? 'included when eligible' : 'not included'}.`;
+  const locationAssumption = info.locationType === 'mha'
+    ? `MHA ${info.selectedMhaName || 'not selected'}`
+    : `ZIP ${info.zipCode || 'not entered'}`;
+  const profileAssumption = `${info.grade}, ${yearsOfService}, ${locationAssumption}, ${info.depStatus === 'withDep' ? 'with' : 'without'} dependents; BAH ${info.bahEntitled ? 'included when eligible' : 'not included'}; BAS ${info.basEntitled ? 'included when eligible' : 'not included'}.`;
   const rateAssumptions = typeof getPayRateDataAssumptionText === 'function'
     ? getPayRateDataAssumptionText()
     : 'Using the rate tables bundled with this app.';
@@ -6949,7 +7007,9 @@ const USD_FORMATTER = new Intl.NumberFormat("en-US", {
 const PAY_PROFILE_DEFAULTS = {
   grade: "E-4",
   yosKey: "over6",
+  locationType: "zip",
   zipCode: "",
+  mhaName: "",
   depStatus: "withoutDep", // "withDep" | "withoutDep"
   bahEntitled: true,
   basEntitled: true,
@@ -6971,6 +7031,95 @@ function normalizeZip5(rawZip) {
   return digits.length >= 5 ? digits.slice(0, 5) : digits;
 }
 
+function getMhaNames() {
+  const names = getPayDatabase().mhaNames;
+  return Array.isArray(names)
+    ? [...new Set(names.filter(name => typeof name === "string" && name.trim()))]
+      .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }))
+    : [];
+}
+
+function filterMhaOptions(prefix) {
+  const search = document.getElementById(`${prefix}MhaSearch`);
+  const select = document.getElementById(`${prefix}MhaSelect`);
+  const status = document.getElementById(`${prefix}MhaSearchStatus`);
+  if (!search || !select) return;
+
+  const names = getMhaNames();
+  const query = search.value.trim().toLocaleLowerCase();
+  const matchingNames = query
+    ? names.filter(name => name.toLocaleLowerCase().includes(query))
+    : names;
+  const selectedName = select.value;
+  const visibleNames = selectedName && !matchingNames.includes(selectedName)
+    ? [selectedName, ...matchingNames]
+    : matchingNames;
+
+  select.replaceChildren();
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = names.length ? "Choose an MHA" : "MHA data unavailable";
+  select.appendChild(placeholder);
+
+  visibleNames.forEach(name => {
+    const option = document.createElement("option");
+    option.value = name;
+    option.textContent = name;
+    select.appendChild(option);
+  });
+  select.value = selectedName;
+
+  if (status) {
+    status.textContent = query
+      ? `${matchingNames.length} matching ${matchingNames.length === 1 ? "area" : "areas"}`
+      : `${names.length} ${names.length === 1 ? "area" : "areas"} available`;
+  }
+}
+
+function syncPayLocationInputs(prefix, profile) {
+  const locationType = profile.locationType === "mha" ? "mha" : "zip";
+  const typeSelect = document.getElementById(`${prefix}LocationTypeSelect`);
+  const zipField = document.getElementById(`${prefix}ZipField`);
+  const mhaField = document.getElementById(`${prefix}MhaField`);
+  const zipInput = document.getElementById(`${prefix}ZipInput`);
+  const mhaSelect = document.getElementById(`${prefix}MhaSelect`);
+  const mhaSearch = document.getElementById(`${prefix}MhaSearch`);
+
+  if (typeSelect) typeSelect.value = locationType;
+  if (zipField) zipField.hidden = locationType === "mha";
+  if (mhaField) mhaField.hidden = locationType !== "mha";
+  if (zipInput) zipInput.value = normalizeZip5(profile.zipCode);
+  if (mhaSearch) mhaSearch.value = profile.mhaName || "";
+  filterMhaOptions(prefix);
+  if (mhaSelect) mhaSelect.value = profile.mhaName || "";
+}
+
+function onPayLocationTypeChange() {
+  const locationType = document.getElementById("payLocationTypeSelect")?.value;
+  const zipField = document.getElementById("payZipField");
+  const mhaField = document.getElementById("payMhaField");
+  if (zipField) zipField.hidden = locationType === "mha";
+  if (mhaField) mhaField.hidden = locationType !== "mha";
+  onPaySettingsChange();
+}
+
+function onWizardPayLocationTypeChange() {
+  const locationType = document.getElementById("wizPayLocationTypeSelect")?.value;
+  const zipField = document.getElementById("wizPayZipField");
+  const mhaField = document.getElementById("wizPayMhaField");
+  if (zipField) zipField.hidden = locationType === "mha";
+  if (mhaField) mhaField.hidden = locationType !== "mha";
+  onWizardPayChange();
+}
+
+function onMhaSelectChange(prefix) {
+  const select = document.getElementById(`${prefix}MhaSelect`);
+  const search = document.getElementById(`${prefix}MhaSearch`);
+  if (search && select) search.value = select.value;
+  if (prefix === "wizPay") onWizardPayChange();
+  else onPaySettingsChange();
+}
+
 function normalizeRoleName(rawRole, legacyRoleTier) {
   const role = String(rawRole || "").trim();
   if (ROLE_PP_INCENTIVE_BONUS[role] !== undefined) return role;
@@ -6987,7 +7136,9 @@ function getPayProfile() {
     return {
       grade: parsed.grade || PAY_PROFILE_DEFAULTS.grade,
       yosKey: parsed.yosKey || PAY_PROFILE_DEFAULTS.yosKey,
+      locationType: parsed.locationType === "mha" ? "mha" : "zip",
       zipCode: normalizeZip5(parsed.zipCode),
+      mhaName: typeof parsed.mhaName === "string" ? parsed.mhaName.trim() : "",
       depStatus: parsed.depStatus === "withDep" ? "withDep" : "withoutDep",
       bahEntitled: normalizeBooleanFlag(parsed.bahEntitled, PAY_PROFILE_DEFAULTS.bahEntitled),
       basEntitled: normalizeBooleanFlag(parsed.basEntitled, PAY_PROFILE_DEFAULTS.basEntitled),
@@ -7005,7 +7156,9 @@ function savePayProfile(profile) {
     localStorage.setItem(`${STORAGE_KEY}_PAY_PROFILE`, JSON.stringify({
       grade: profile.grade || PAY_PROFILE_DEFAULTS.grade,
       yosKey: profile.yosKey || PAY_PROFILE_DEFAULTS.yosKey,
+      locationType: profile.locationType === "mha" ? "mha" : "zip",
       zipCode: normalizeZip5(profile.zipCode),
+      mhaName: typeof profile.mhaName === "string" ? profile.mhaName.trim() : "",
       depStatus: profile.depStatus === "withDep" ? "withDep" : "withoutDep",
       bahEntitled: normalizeBooleanFlag(profile.bahEntitled, PAY_PROFILE_DEFAULTS.bahEntitled),
       basEntitled: normalizeBooleanFlag(profile.basEntitled, PAY_PROFILE_DEFAULTS.basEntitled),
@@ -7084,7 +7237,9 @@ function lookupDailySadRates(profile, includeBas = INCLUDE_BAS_BY_DEFAULT) {
   const cacheKey = JSON.stringify({
     grade: profile.grade,
     yosKey: profile.yosKey,
+    locationType: profile.locationType === "mha" ? "mha" : "zip",
     zipCode: normalizeZip5(profile.zipCode),
+    mhaName: typeof profile.mhaName === "string" ? profile.mhaName.trim() : "",
     depStatus: profile.depStatus,
     bahEntitled: normalizeBooleanFlag(profile.bahEntitled, true),
     basEntitled: normalizeBooleanFlag(profile.basEntitled, true),
@@ -7098,7 +7253,9 @@ function lookupDailySadRates(profile, includeBas = INCLUDE_BAS_BY_DEFAULT) {
   const db = getPayDatabase();
   const grade = profile.grade || PAY_PROFILE_DEFAULTS.grade;
   const yosKey = profile.yosKey || PAY_PROFILE_DEFAULTS.yosKey;
+  const locationType = profile.locationType === "mha" ? "mha" : "zip";
   const zipCode = normalizeZip5(profile.zipCode);
+  const selectedMhaName = typeof profile.mhaName === "string" ? profile.mhaName.trim() : "";
   const depStatus = profile.depStatus === "withDep" ? "withDep" : "withoutDep";
   const bahEntitled = normalizeBooleanFlag(profile && profile.bahEntitled, PAY_PROFILE_DEFAULTS.bahEntitled);
   const basEntitled = normalizeBooleanFlag(profile && profile.basEntitled, PAY_PROFILE_DEFAULTS.basEntitled);
@@ -7112,8 +7269,15 @@ function lookupDailySadRates(profile, includeBas = INCLUDE_BAS_BY_DEFAULT) {
   let mhaName = "";
   let rawBahRateForMha = 0;
 
-  if (zipCode.length === 5 && db.zipToMhaIdx && db.zipToMhaIdx[zipCode] !== undefined) {
-    const mhaIdx = db.zipToMhaIdx[zipCode];
+  let mhaIdx;
+  if (locationType === "mha") {
+    mhaIdx = Array.isArray(db.mhaNames) ? db.mhaNames.indexOf(selectedMhaName) : -1;
+    if (mhaIdx < 0) mhaIdx = undefined;
+  } else if (zipCode.length === 5 && db.zipToMhaIdx && db.zipToMhaIdx[zipCode] !== undefined) {
+    mhaIdx = db.zipToMhaIdx[zipCode];
+  }
+
+  if (mhaIdx !== undefined) {
     mhaName = (db.mhaNames && db.mhaNames[mhaIdx]) || "";
     const mhaGrades = (db.mhaBahByIdx && db.mhaBahByIdx[String(mhaIdx)]) || {};
     const pair = mhaGrades[grade]; // [monthlyWithDep, monthlyWithoutDep]
@@ -7134,7 +7298,9 @@ function lookupDailySadRates(profile, includeBas = INCLUDE_BAS_BY_DEFAULT) {
   const result = {
     grade,
     yosKey,
+    locationType,
     zipCode,
+    selectedMhaName,
     mhaName,
     zipMatched: Boolean(mhaName),
     depStatus,
@@ -7168,7 +7334,9 @@ function computePayForPayPeriod(slotIdx, dayStatusIds) {
     payPeriodStart: payPeriodStart ? toIsoDate(payPeriodStart) : "",
     grade: profile.grade,
     yosKey: profile.yosKey,
+    locationType: profile.locationType === "mha" ? "mha" : "zip",
     zipCode: normalizeZip5(profile.zipCode),
+    mhaName: typeof profile.mhaName === "string" ? profile.mhaName.trim() : "",
     depStatus: profile.depStatus,
     bahEntitled: normalizeBooleanFlag(profile.bahEntitled, true),
     basEntitled: normalizeBooleanFlag(profile.basEntitled, true),
